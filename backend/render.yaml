@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: labendicion-backend
+    env: java
+    plan: free
+    buildCommand: mvn clean package -DskipTests
+    startCommand: java -Dspring.profiles.active=prod -jar target/labendicion-0.0.1-SNAPSHOT.jar
+    staticPublicPath: /public
+    healthCheckPath: /actuator/health
+    healthCheckTimeout: 300
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+      - key: JAVA_TOOL_OPTIONS
+        value: -Xmx512m
+
