@@ -1,9 +1,0 @@
-[phases.setup]
-nixpkgs = ["jdk17", "maven"]
-
-[phases.build]
-cmds = ["mvn clean package -DskipTests"]
-
-[phases.start]
-cmd = "java -Dspring.profiles.active=prod -jar target/labendicion-0.0.1-SNAPSHOT.jar"
-
