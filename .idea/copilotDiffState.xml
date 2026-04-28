@@ -75,6 +75,72 @@
             </PendingDiffInfo>
           </value>
         </entry>
+        <entry key="$PROJECT_DIR$/backend/.dockerignore">
+          <value>
+            <PendingDiffInfo>
+              <option name="filePath" value="$PROJECT_DIR$/backend/.dockerignore" />
+              <option name="updatedContent" value=".git&#10;.gitignore&#10;.idea&#10;target&#10;*.jar&#10;*.log&#10;.DS_Store&#10;node_modules&#10;.env&#10;.env.local&#10;.env.*.local&#10;*.swp&#10;*.swo&#10;*~&#10;.vscode&#10;.mvn/wrapper/maven-wrapper.jar&#10;" />
+            </PendingDiffInfo>
+          </value>
+        </entry>
+        <entry key="$PROJECT_DIR$/backend/Dockerfile">
+          <value>
+            <PendingDiffInfo>
+              <option name="filePath" value="$PROJECT_DIR$/backend/Dockerfile" />
+              <option name="updatedContent" value="# Stage 1: Build&#10;FROM maven:3.9.6-eclipse-temurin-17 AS builder&#10;&#10;WORKDIR /app&#10;&#10;# Copiar pom.xml y descargar dependencias&#10;COPY pom.xml .&#10;RUN mvn dependency:go-offline -B&#10;&#10;# Copiar código fuente&#10;COPY src ./src&#10;&#10;# Compilar y empaquetar&#10;RUN mvn clean package -DskipTests -q&#10;&#10;# Stage 2: Runtime&#10;FROM eclipse-temurin:17-jre-alpine&#10;&#10;WORKDIR /app&#10;&#10;# Copiar JAR desde stage de build&#10;COPY --from=builder /app/target/labendicion-0.0.1-SNAPSHOT.jar app.jar&#10;&#10;# Exponer puerto (Render asignará dinámicamente)&#10;EXPOSE 8080&#10;&#10;# Health check&#10;HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \&#10;  CMD wget --no-verbose --tries=1 --spider http://localhost:8080/actuator/health || exit 1&#10;&#10;# Comando de inicio - usa profile desde variable de entorno&#10;ENTRYPOINT [&quot;sh&quot;, &quot;-c&quot;, &quot;java -Dspring.profiles.active=${SPRING_PROFILES_ACTIVE:-render} -jar app.jar&quot;]&#10;&#10;&#10;" />
+            </PendingDiffInfo>
+          </value>
+        </entry>
+        <entry key="$PROJECT_DIR$/backend/Procfile">
+          <value>
+            <PendingDiffInfo>
+              <option name="filePath" value="$PROJECT_DIR$/backend/Procfile" />
+              <option name="updatedContent" value="web: java -Dspring.profiles.active=prod -jar target/labendicion-0.0.1-SNAPSHOT.jar&#10;" />
+            </PendingDiffInfo>
+          </value>
+        </entry>
+        <entry key="$PROJECT_DIR$/backend/railway.json">
+          <value>
+            <PendingDiffInfo>
+              <option name="filePath" value="$PROJECT_DIR$/backend/railway.json" />
+              <option name="originalContent" value="{&#10;  &quot;$schema&quot;: &quot;https://railway.app/railway.schema.json&quot;,&#10;  &quot;build&quot;: {&#10;    &quot;builder&quot;: &quot;NIXPACKS&quot;&#10;  },&#10;  &quot;deploy&quot;: {&#10;    &quot;startCommand&quot;: &quot;java -Dspring.profiles.active=${SPRING_PROFILES_ACTIVE:-prod} -jar target/*.jar&quot;,&#10;    &quot;healthcheckPath&quot;: &quot;/actuator/health&quot;,&#10;    &quot;healthcheckTimeout&quot;: 300&#10;  }&#10;}&#10;" />
+              <option name="updatedContent" value="{&#10;  &quot;$schema&quot;: &quot;https://railway.app/railway.schema.json&quot;,&#10;  &quot;build&quot;: {&#10;    &quot;builder&quot;: &quot;DOCKERFILE&quot;,&#10;    &quot;dockerfile&quot;: &quot;Dockerfile&quot;&#10;  },&#10;  &quot;deploy&quot;: {&#10;    &quot;healthcheckPath&quot;: &quot;/actuator/health&quot;,&#10;    &quot;healthcheckTimeout&quot;: 300&#10;  }&#10;}&#10;" />
+            </PendingDiffInfo>
+          </value>
+        </entry>
+        <entry key="$PROJECT_DIR$/backend/src/main/java/dev/kali/labendicion/entity/Empleado.java">
+          <value>
+            <PendingDiffInfo>
+              <option name="filePath" value="$PROJECT_DIR$/backend/src/main/java/dev/kali/labendicion/entity/Empleado.java" />
+              <option name="updatedContent" value="package dev.kali.labendicion.entity;&#10;&#10;import jakarta.persistence.*;&#10;import lombok.Data;&#10;import java.time.LocalDateTime;&#10;&#10;@Entity&#10;@Table(name = &quot;empleados&quot;)&#10;@Data&#10;public class Empleado {&#10;    &#10;    @Id&#10;    @GeneratedValue(strategy = GenerationType.IDENTITY)&#10;    private Long id;&#10;    &#10;    @Column(nullable = false)&#10;    private String nombre;&#10;    &#10;    @Column(unique = true)&#10;    private String email;&#10;    &#10;    private String departamento;&#10;    &#10;    @Column(name = &quot;created_at&quot;, columnDefinition = &quot;TIMESTAMP DEFAULT CURRENT_TIMESTAMP&quot;)&#10;    private LocalDateTime createdAt;&#10;    &#10;    @PrePersist&#10;    protected void onCreate() {&#10;        createdAt = LocalDateTime.now();&#10;    }&#10;}&#10;" />
+            </PendingDiffInfo>
+          </value>
+        </entry>
+        <entry key="$PROJECT_DIR$/backend/src/main/resources/application-prod.properties">
+          <value>
+            <PendingDiffInfo>
+              <option name="filePath" value="$PROJECT_DIR$/backend/src/main/resources/application-prod.properties" />
+              <option name="originalContent" value="# PostgreSQL (Railway)&#10;spring.datasource.url=${DATABASE_URL}&#10;spring.datasource.driverClassName=org.postgresql.Driver&#10;spring.datasource.username=${PGUSER}&#10;spring.datasource.password=${PGPASSWORD}&#10;&#10;# JPA en producción&#10;spring.jpa.hibernate.ddl-auto=validate&#10;spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect&#10;&#10;# H2 off&#10;spring.h2.console.enabled=false&#10;&#10;# Swagger en prod (puedes poner false si no quieres exponerlo)&#10;springdoc.swagger-ui.enabled=${SWAGGER_ENABLED:true}&#10;&#10;# CORS productivo (dominio de Vercel)&#10;app.cors.allowed-origins=${CORS_ALLOWED_ORIGINS}&#10;" />
+              <option name="updatedContent" value="# PostgreSQL (Render/Railway)&#10;spring.datasource.url=${DATABASE_URL:}&#10;spring.datasource.driverClassName=org.postgresql.Driver&#10;spring.datasource.username=${PGUSER:}&#10;spring.datasource.password=${PGPASSWORD:}&#10;&#10;# JPA en producción&#10;spring.jpa.hibernate.ddl-auto=validate&#10;spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect&#10;&#10;# H2 off&#10;spring.h2.console.enabled=false&#10;&#10;# Swagger en prod (puedes poner false si no quieres exponerlo)&#10;springdoc.swagger-ui.enabled=${SWAGGER_ENABLED:true}&#10;&#10;# CORS productivo (dominio de Vercel)&#10;app.cors.allowed-origins=${CORS_ALLOWED_ORIGINS:*}&#10;&#10;" />
+            </PendingDiffInfo>
+          </value>
+        </entry>
+        <entry key="$PROJECT_DIR$/backend/src/main/resources/application-render.properties">
+          <value>
+            <PendingDiffInfo>
+              <option name="filePath" value="$PROJECT_DIR$/backend/src/main/resources/application-render.properties" />
+              <option name="updatedContent" value="# Para Render: Usa H2 temporalmente hasta configurar PostgreSQL&#10;spring.datasource.url=jdbc:h2:mem:testdb;MODE=PostgreSQL;TRACE_LEVEL_SYSTEM_OUT=0&#10;spring.datasource.driverClassName=org.h2.Driver&#10;spring.datasource.username=sa&#10;spring.datasource.password=&#10;&#10;# H2 Console (desactiva en producción real)&#10;spring.h2.console.enabled=false&#10;&#10;# JPA&#10;spring.jpa.hibernate.ddl-auto=create-drop&#10;spring.jpa.database-platform=org.hibernate.dialect.H2Dialect&#10;&#10;# Swagger&#10;springdoc.swagger-ui.enabled=true&#10;&#10;# CORS&#10;app.cors.allowed-origins=${CORS_ALLOWED_ORIGINS:*}&#10;" />
+            </PendingDiffInfo>
+          </value>
+        </entry>
+        <entry key="$PROJECT_DIR$/backend/src/main/resources/application-supabase.properties">
+          <value>
+            <PendingDiffInfo>
+              <option name="filePath" value="$PROJECT_DIR$/backend/src/main/resources/application-supabase.properties" />
+              <option name="updatedContent" value="# Supabase PostgreSQL Connection&#10;spring.datasource.url=${DATABASE_URL}&#10;spring.datasource.driver-class-name=org.postgresql.Driver&#10;spring.datasource.username=${DB_USERNAME}&#10;spring.datasource.password=${DB_PASSWORD}&#10;&#10;# Connection Pool&#10;spring.datasource.hikari.maximum-pool-size=5&#10;spring.datasource.hikari.minimum-idle=1&#10;spring.datasource.hikari.maximum-lifetime=600000&#10;spring.datasource.hikari.auto-commit=true&#10;&#10;# JPA Configuration&#10;spring.jpa.database-platform=org.hibernate.dialect.PostgreSQLDialect&#10;spring.jpa.hibernate.ddl-auto=validate&#10;spring.jpa.show-sql=false&#10;spring.jpa.properties.hibernate.format_sql=true&#10;spring.jpa.properties.hibernate.jdbc.batch_size=20&#10;spring.jpa.properties.hibernate.order_inserts=true&#10;spring.jpa.properties.hibernate.order_updates=true&#10;&#10;# Swagger&#10;springdoc.swagger-ui.enabled=true&#10;springdoc.api-docs.path=/api-docs&#10;&#10;# CORS&#10;app.cors.allowed-origins=${CORS_ALLOWED_ORIGINS:https://labendicion.vercel.app}&#10;&#10;# Logging&#10;logging.level.org.hibernate.SQL=DEBUG&#10;logging.level.org.hibernate.type.descriptor.sql.BasicBinder=TRACE&#10;" />
+            </PendingDiffInfo>
+          </value>
+        </entry>
         <entry key="$PROJECT_DIR$/frontend/.env">
           <value>
             <PendingDiffInfo>
@@ -101,11 +167,60 @@
             </PendingDiffInfo>
           </value>
         </entry>
+        <entry key="$PROJECT_DIR$/frontend/src/app/components/SupabaseExample.tsx">
+          <value>
+            <PendingDiffInfo>
+              <option name="filePath" value="$PROJECT_DIR$/frontend/src/app/components/SupabaseExample.tsx" />
+              <option name="originalContent" value="import { useState, useEffect } from 'react'&#10;import { supabase } from '../utils/supabase'&#10;&#10;interface Todo {&#10;  id: number&#10;  name: string&#10;}&#10;&#10;export default function SupabaseExample() {&#10;  const [todos, setTodos] = useState&lt;Todo[]&gt;([])&#10;  const [loading, setLoading] = useState(true)&#10;  const [error, setError] = useState&lt;string | null&gt;(null)&#10;&#10;  useEffect(() =&gt; {&#10;    async function getTodos() {&#10;      try {&#10;        setLoading(true)&#10;        const { data: todos, error } = await supabase&#10;          .from('todos')&#10;          .select('*')&#10;&#10;        if (error) throw error&#10;        if (todos) setTodos(todos)&#10;      } catch (err) {&#10;        setError(err instanceof Error ? err.message : 'Unknown error')&#10;      } finally {&#10;        setLoading(false)&#10;      }&#10;    }&#10;&#10;    getTodos()&#10;  }, [])&#10;&#10;  if (loading) return &lt;div&gt;Cargando...&lt;/div&gt;&#10;  if (error) return &lt;div&gt;Error: {error}&lt;/div&gt;&#10;&#10;  return (&#10;    &lt;div&gt;&#10;      &lt;h2&gt;Todos desde Supabase&lt;/h2&gt;&#10;      &lt;ul&gt;&#10;        {todos.map((todo) =&gt; (&#10;          &lt;li key={todo.id}&gt;{todo.name}&lt;/li&gt;&#10;        ))}&#10;      &lt;/ul&gt;&#10;    &lt;/div&gt;&#10;  )&#10;}&#10;&#10;" />
+              <option name="updatedContent" value="import { useState, useEffect } from 'react'&#10;import { supabase } from '../../utils'&#10;&#10;interface Todo {&#10;  id: number&#10;  name: string&#10;}&#10;&#10;export default function SupabaseExample() {&#10;  const [todos, setTodos] = useState&lt;Todo[]&gt;([])&#10;  const [loading, setLoading] = useState(true)&#10;  const [error, setError] = useState&lt;string | null&gt;(null)&#10;&#10;  useEffect(() =&gt; {&#10;    async function getTodos() {&#10;      try {&#10;        setLoading(true)&#10;        const { data: todos, error } = await supabase&#10;          .from('todos')&#10;          .select('*')&#10;&#10;        if (error) throw error&#10;        if (todos) setTodos(todos)&#10;      } catch (err) {&#10;        setError(err instanceof Error ? err.message : 'Unknown error')&#10;      } finally {&#10;        setLoading(false)&#10;      }&#10;    }&#10;&#10;    getTodos()&#10;  }, [])&#10;&#10;  if (loading) return &lt;div&gt;Cargando...&lt;/div&gt;&#10;  if (error) return &lt;div&gt;Error: {error}&lt;/div&gt;&#10;&#10;  return (&#10;    &lt;div&gt;&#10;      &lt;h2&gt;Todos desde Supabase&lt;/h2&gt;&#10;      &lt;ul&gt;&#10;        {todos.map((todo) =&gt; (&#10;          &lt;li key={todo.id}&gt;{todo.name}&lt;/li&gt;&#10;        ))}&#10;      &lt;/ul&gt;&#10;    &lt;/div&gt;&#10;  )&#10;}&#10;&#10;" />
+            </PendingDiffInfo>
+          </value>
+        </entry>
+        <entry key="$PROJECT_DIR$/frontend/src/utils/index.ts">
+          <value>
+            <PendingDiffInfo>
+              <option name="filePath" value="$PROJECT_DIR$/frontend/src/utils/index.ts" />
+              <option name="updatedContent" value="export { supabase } from './supabase'&#10;" />
+            </PendingDiffInfo>
+          </value>
+        </entry>
         <entry key="$PROJECT_DIR$/frontend/src/utils/supabase.ts">
           <value>
             <PendingDiffInfo>
               <option name="filePath" value="$PROJECT_DIR$/frontend/src/utils/supabase.ts" />
               <option name="updatedContent" value="import { createClient } from '@supabase/supabase-js';&#10;&#10;const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;&#10;const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;&#10;&#10;export const supabase = createClient(supabaseUrl, supabaseKey);&#10;" />
+            </PendingDiffInfo>
+          </value>
+        </entry>
+        <entry key="$PROJECT_DIR$/frontend/src/vite-env.d.ts">
+          <value>
+            <PendingDiffInfo>
+              <option name="filePath" value="$PROJECT_DIR$/frontend/src/vite-env.d.ts" />
+              <option name="updatedContent" value="/// &lt;reference types=&quot;vite/client&quot; /&gt;&#10;&#10;interface ImportMetaEnv {&#10;  readonly VITE_SUPABASE_URL: string;&#10;  readonly VITE_SUPABASE_PUBLISHABLE_KEY: string;&#10;}&#10;&#10;interface ImportMeta {&#10;  readonly env: ImportMetaEnv;&#10;}&#10;" />
+            </PendingDiffInfo>
+          </value>
+        </entry>
+        <entry key="$PROJECT_DIR$/frontend/tsconfig.json">
+          <value>
+            <PendingDiffInfo>
+              <option name="filePath" value="$PROJECT_DIR$/frontend/tsconfig.json" />
+              <option name="updatedContent" value="{&#10;  &quot;compilerOptions&quot;: {&#10;    &quot;target&quot;: &quot;ES2020&quot;,&#10;    &quot;useDefineForClassFields&quot;: true,&#10;    &quot;lib&quot;: [&quot;ES2020&quot;, &quot;DOM&quot;, &quot;DOM.Iterable&quot;],&#10;    &quot;module&quot;: &quot;ESNext&quot;,&#10;    &quot;skipLibCheck&quot;: true,&#10;&#10;    /* Bundler mode */&#10;    &quot;moduleResolution&quot;: &quot;bundler&quot;,&#10;    &quot;allowImportingTsExtensions&quot;: true,&#10;    &quot;resolveJsonModule&quot;: true,&#10;    &quot;allowJs&quot;: true,&#10;    &quot;isolatedModules&quot;: true,&#10;    &quot;noEmit&quot;: true,&#10;    &quot;jsx&quot;: &quot;react-jsx&quot;,&#10;    &quot;esModuleInterop&quot;: true,&#10;&#10;    /* Linting */&#10;    &quot;strict&quot;: true,&#10;    &quot;noUnusedLocals&quot;: false,&#10;    &quot;noUnusedParameters&quot;: false,&#10;    &quot;noFallthroughCasesInSwitch&quot;: true,&#10;&#10;    /* Path mapping */&#10;    &quot;baseUrl&quot;: &quot;.&quot;,&#10;    &quot;paths&quot;: {&#10;      &quot;@/*&quot;: [&quot;./src/*&quot;]&#10;    }&#10;  },&#10;  &quot;include&quot;: [&quot;src&quot;, &quot;src/**/*.ts&quot;, &quot;src/**/*.tsx&quot;, &quot;src/**/*.js&quot;, &quot;src/**/*.jsx&quot;],&#10;  &quot;references&quot;: [{ &quot;path&quot;: &quot;./tsconfig.node.json&quot; }]&#10;}&#10;&#10;" />
+            </PendingDiffInfo>
+          </value>
+        </entry>
+        <entry key="$PROJECT_DIR$/frontend/tsconfig.node.json">
+          <value>
+            <PendingDiffInfo>
+              <option name="filePath" value="$PROJECT_DIR$/frontend/tsconfig.node.json" />
+              <option name="updatedContent" value="{&#10;  &quot;compilerOptions&quot;: {&#10;    &quot;composite&quot;: true,&#10;    &quot;skipLibCheck&quot;: true,&#10;    &quot;module&quot;: &quot;ESNext&quot;,&#10;    &quot;moduleResolution&quot;: &quot;bundler&quot;,&#10;    &quot;allowSyntheticDefaultImports&quot;: true&#10;  },&#10;  &quot;include&quot;: [&quot;vite.config.ts&quot;, &quot;postcss.config.mjs&quot;]&#10;}&#10;" />
+            </PendingDiffInfo>
+          </value>
+        </entry>
+        <entry key="$PROJECT_DIR$/render.yaml">
+          <value>
+            <PendingDiffInfo>
+              <option name="filePath" value="$PROJECT_DIR$/render.yaml" />
+              <option name="updatedContent" value="services:&#10;  - type: web&#10;    name: labendicion-backend&#10;    env: docker&#10;    rootDir: backend&#10;    dockerfile: Dockerfile&#10;    dockerContext: .&#10;    region: oregon&#10;    plan: free&#10;    healthCheckPath: /actuator/health&#10;    healthCheckTimeout: 300&#10;    envVars:&#10;      - key: SPRING_PROFILES_ACTIVE&#10;        value: supabase&#10;      - key: PORT&#10;        value: 8080&#10;      - key: CORS_ALLOWED_ORIGINS&#10;        value: 'https://labendicion.vercel.app'&#10;      - key: SWAGGER_ENABLED&#10;        value: 'true'&#10;&#10;&#10;&#10;" />
             </PendingDiffInfo>
           </value>
         </entry>
