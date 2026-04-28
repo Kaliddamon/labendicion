@@ -1,14 +1,18 @@
 services:
   - type: web
     name: labendicion-backend
-    runtime: docker
-    buildCommand: docker build -t labendicion .
-    startCommand: ''
+    env: docker
+    repo: https://github.com/yourusername/labendicion
+    branch: main
     dockerfile: ./Dockerfile
     dockerContext: .
+    region: oregon
+    plan: free
     healthCheckPath: /actuator/health
     healthCheckTimeout: 300
     envVars:
       - key: SPRING_PROFILES_ACTIVE
         value: prod
+
+
 
