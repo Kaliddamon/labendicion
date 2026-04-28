@@ -101,14 +101,6 @@
             </PendingDiffInfo>
           </value>
         </entry>
-        <entry key="$PROJECT_DIR$/frontend/src/app/components/SupabaseExample.tsx">
-          <value>
-            <PendingDiffInfo>
-              <option name="filePath" value="$PROJECT_DIR$/frontend/src/app/components/SupabaseExample.tsx" />
-              <option name="updatedContent" value="import { useState, useEffect } from 'react'&#10;import { supabase } from '../utils/supabase'&#10;&#10;interface Todo {&#10;  id: number&#10;  name: string&#10;}&#10;&#10;export default function SupabaseExample() {&#10;  const [todos, setTodos] = useState&lt;Todo[]&gt;([])&#10;  const [loading, setLoading] = useState(true)&#10;  const [error, setError] = useState&lt;string | null&gt;(null)&#10;&#10;  useEffect(() =&gt; {&#10;    async function getTodos() {&#10;      try {&#10;        setLoading(true)&#10;        const { data: todos, error } = await supabase&#10;          .from('todos')&#10;          .select('*')&#10;&#10;        if (error) throw error&#10;        if (todos) setTodos(todos)&#10;      } catch (err) {&#10;        setError(err instanceof Error ? err.message : 'Unknown error')&#10;      } finally {&#10;        setLoading(false)&#10;      }&#10;    }&#10;&#10;    getTodos()&#10;  }, [])&#10;&#10;  if (loading) return &lt;div&gt;Cargando...&lt;/div&gt;&#10;  if (error) return &lt;div&gt;Error: {error}&lt;/div&gt;&#10;&#10;  return (&#10;    &lt;div&gt;&#10;      &lt;h2&gt;Todos desde Supabase&lt;/h2&gt;&#10;      &lt;ul&gt;&#10;        {todos.map((todo) =&gt; (&#10;          &lt;li key={todo.id}&gt;{todo.name}&lt;/li&gt;&#10;        ))}&#10;      &lt;/ul&gt;&#10;    &lt;/div&gt;&#10;  )&#10;}&#10;" />
-            </PendingDiffInfo>
-          </value>
-        </entry>
         <entry key="$PROJECT_DIR$/frontend/src/utils/supabase.ts">
           <value>
             <PendingDiffInfo>
