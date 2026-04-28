@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: labendicion-backend
+    runtime: docker
+    buildCommand: docker build -t labendicion .
+    startCommand: ''
+    dockerfile: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /actuator/health
+    healthCheckTimeout: 300
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+
