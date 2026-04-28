@@ -1,0 +1,17 @@
+.git
+.gitignore
+.idea
+target
+*.jar
+*.log
+.DS_Store
+node_modules
+.env
+.env.local
+.env.*.local
+*.swp
+*.swo
+*~
+.vscode
+.mvn/wrapper/maven-wrapper.jar
+
