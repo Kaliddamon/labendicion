@@ -4,8 +4,7 @@
     "builder": "NIXPACKS"
   },
   "deploy": {
-    "buildCommand": "mvn clean package -DskipTests",
-    "startCommand": "java -Dspring.profiles.active=${SPRING_PROFILES_ACTIVE:-prod} -jar target/labendicion-0.0.1-SNAPSHOT.jar",
+    "startCommand": "java -Dspring.profiles.active=prod -jar target/labendicion-0.0.1-SNAPSHOT.jar",
     "healthcheckPath": "/actuator/health",
     "healthcheckTimeout": 300
   }
