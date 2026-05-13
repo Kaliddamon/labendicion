@@ -10,117 +10,155 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
+import dev.kali.labendicion.domain.entity.*;
+import dev.kali.labendicion.repository.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
 @RestController
 @RequestMapping("/api/frontend")
 public class FrontendSyncController {
 
-    private final Map<String, ProductoPayload> productos = new ConcurrentHashMap<>();
-    private final Map<String, EmpleadoPayload> empleados = new ConcurrentHashMap<>();
-    private final Map<String, RegistroPayload> registros = new ConcurrentHashMap<>();
-    private final Map<String, TareaAseoPayload> tareasAseo = new ConcurrentHashMap<>();
+    @Autowired
+    private ProductoSyncRepository productoRepo;
+
+    @Autowired
+    private EmpleadoSyncRepository empleadoRepo;
+
+    @Autowired
+    private RegistroSyncRepository registroRepo;
+
+    @Autowired
+    private TareaAseoSyncRepository tareaAseoRepo;
 
     @GetMapping("/bootstrap")
     public ResponseEntity<BootstrapResponse> bootstrap() {
-        return ResponseEntity.ok(new BootstrapResponse(
-            sortProductosByNombre(productos.values().stream().toList()),
-            sortEmpleadosByNombre(empleados.values().stream().toList()),
-            sortByFechaDesc(registros.values().stream().toList()),
-            sortByCompletada(tareasAseo.values().stream().toList())
-        ));
+        List<ProductoSync> productos = productoRepo.findAll()
+                .stream()
+                .sorted((a, b) -> a.getNombre().compareTo(b.getNombre()))
+                .collect(Collectors.toList());
+
+        List<EmpleadoSync> empleados = empleadoRepo.findAll()
+                .stream()
+                .sorted((a, b) -> a.getNombre().compareTo(b.getNombre()))
+                .collect(Collectors.toList());
+
+        List<RegistroSync> registros = registroRepo.findByOrderByFechaDesc();
+
+        List<TareaAseoSync> tareasAseo = tareaAseoRepo.findByOrderByCompletada();
+
+        return ResponseEntity.ok(new BootstrapResponse(productos, empleados, registros, tareasAseo));
     }
 
     @PostMapping("/productos")
-    public ResponseEntity<ProductoPayload> crearProducto(@RequestBody ProductoPayload payload) {
-        String id = generateId();
-        ProductoPayload nuevo = payload.withId(id);
-        productos.put(id, nuevo);
-        return ResponseEntity.ok(nuevo);
+    public ResponseEntity<ProductoSync> crearProducto(@RequestBody ProductoSync producto) {
+        if (producto.getId() == null) {
+            producto.setId(generateId());
+        }
+        ProductoSync guardado = productoRepo.save(producto);
+        return ResponseEntity.ok(guardado);
     }
 
     @PutMapping("/productos/{id}")
-    public ResponseEntity<ProductoPayload> actualizarProducto(@PathVariable String id, @RequestBody ProductoPayload payload) {
-        if (!productos.containsKey(id)) return ResponseEntity.notFound().build();
-        ProductoPayload actualizado = payload.withId(id);
-        productos.put(id, actualizado);
-        return ResponseEntity.ok(actualizado);
+    public ResponseEntity<ProductoSync> actualizarProducto(@PathVariable String id, @RequestBody ProductoSync producto) {
+        if (!productoRepo.existsById(id)) {
+            return ResponseEntity.notFound().build();
+        }
+        producto.setId(id);
+        ProductoSync guardado = productoRepo.save(producto);
+        return ResponseEntity.ok(guardado);
     }
 
     @DeleteMapping("/productos/{id}")
     public ResponseEntity<Void> eliminarProducto(@PathVariable String id) {
-        productos.remove(id);
-        registros.values().forEach(reg -> {
-            if (reg.producciones != null) {
-                reg.producciones.removeIf(p -> id.equals(p.productoId));
-            }
-        });
+        productoRepo.deleteById(id);
+        registroRepo.deleteAll(registroRepo.findAll().stream()
+                .filter(r -> r.getProducciones() != null && r.getProducciones()
+                        .stream().anyMatch(p -> id.equals(p.getProductoId())))
+                .collect(Collectors.toList()));
         return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/empleados")
-    public ResponseEntity<EmpleadoPayload> crearEmpleado(@RequestBody EmpleadoPayload payload) {
-        String id = generateId();
-        EmpleadoPayload nuevo = payload.withId(id);
-        empleados.put(id, nuevo);
-        return ResponseEntity.ok(nuevo);
+    public ResponseEntity<EmpleadoSync> crearEmpleado(@RequestBody EmpleadoSync empleado) {
+        if (empleado.getId() == null) {
+            empleado.setId(generateId());
+        }
+        EmpleadoSync guardado = empleadoRepo.save(empleado);
+        return ResponseEntity.ok(guardado);
     }
 
     @PutMapping("/empleados/{id}")
-    public ResponseEntity<EmpleadoPayload> actualizarEmpleado(@PathVariable String id, @RequestBody EmpleadoPayload payload) {
-        if (!empleados.containsKey(id)) return ResponseEntity.notFound().build();
-        EmpleadoPayload actualizado = payload.withId(id);
-        empleados.put(id, actualizado);
-        return ResponseEntity.ok(actualizado);
+    public ResponseEntity<EmpleadoSync> actualizarEmpleado(@PathVariable String id, @RequestBody EmpleadoSync empleado) {
+        if (!empleadoRepo.existsById(id)) {
+            return ResponseEntity.notFound().build();
+        }
+        empleado.setId(id);
+        EmpleadoSync guardado = empleadoRepo.save(empleado);
+        return ResponseEntity.ok(guardado);
     }
 
     @DeleteMapping("/empleados/{id}")
     public ResponseEntity<Void> eliminarEmpleado(@PathVariable String id) {
-        empleados.remove(id);
-        registros.entrySet().removeIf(entry -> id.equals(entry.getValue().empleadoId));
+        empleadoRepo.deleteById(id);
+        registroRepo.deleteAll(registroRepo.findAll().stream()
+                .filter(r -> id.equals(r.getEmpleadoId()))
+                .collect(Collectors.toList()));
         return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/registros")
-    public ResponseEntity<RegistroPayload> crearRegistro(@RequestBody RegistroPayload payload) {
-        String id = generateId();
-        RegistroPayload nuevo = payload.withId(id);
-        registros.put(id, nuevo);
-        return ResponseEntity.ok(nuevo);
+    public ResponseEntity<RegistroSync> crearRegistro(@RequestBody RegistroSync registro) {
+        if (registro.getId() == null) {
+            registro.setId(generateId());
+        }
+        RegistroSync guardado = registroRepo.save(registro);
+        return ResponseEntity.ok(guardado);
     }
 
     @DeleteMapping("/registros/{id}")
     public ResponseEntity<Void> eliminarRegistro(@PathVariable String id) {
-        registros.remove(id);
+        registroRepo.deleteById(id);
         return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/tareas-aseo")
-    public ResponseEntity<TareaAseoPayload> crearTarea(@RequestBody TareaAseoPayload payload) {
-        String id = generateId();
-        TareaAseoPayload nueva = payload.withId(id);
-        tareasAseo.put(id, nueva);
-        return ResponseEntity.ok(nueva);
+    public ResponseEntity<TareaAseoSync> crearTarea(@RequestBody TareaAseoSync tarea) {
+        if (tarea.getId() == null) {
+            tarea.setId(generateId());
+        }
+        TareaAseoSync guardada = tareaAseoRepo.save(tarea);
+        return ResponseEntity.ok(guardada);
     }
 
     @PutMapping("/tareas-aseo/{id}")
-    public ResponseEntity<TareaAseoPayload> actualizarTarea(@PathVariable String id, @RequestBody TareaAseoPayload payload) {
-        if (!tareasAseo.containsKey(id)) return ResponseEntity.notFound().build();
-        TareaAseoPayload actualizada = payload.withId(id);
-        tareasAseo.put(id, actualizada);
-        return ResponseEntity.ok(actualizada);
+    public ResponseEntity<TareaAseoSync> actualizarTarea(@PathVariable String id, @RequestBody TareaAseoSync tarea) {
+        if (!tareaAseoRepo.existsById(id)) {
+            return ResponseEntity.notFound().build();
+        }
+        tarea.setId(id);
+        TareaAseoSync guardada = tareaAseoRepo.save(tarea);
+        return ResponseEntity.ok(guardada);
     }
 
     @PatchMapping("/tareas-aseo/{id}/toggle")
-    public ResponseEntity<TareaAseoPayload> toggleTarea(@PathVariable String id) {
-        TareaAseoPayload actual = tareasAseo.get(id);
-        if (actual == null) return ResponseEntity.notFound().build();
-        TareaAseoPayload toggled = new TareaAseoPayload(actual.id, actual.accion, actual.area, actual.encargado, !actual.completada);
-        tareasAseo.put(id, toggled);
-        return ResponseEntity.ok(toggled);
+    public ResponseEntity<TareaAseoSync> toggleTarea(@PathVariable String id) {
+        return tareaAseoRepo.findById(id)
+                .map(tarea -> {
+                    tarea.setCompletada(!tarea.isCompletada());
+                    TareaAseoSync guardada = tareaAseoRepo.save(tarea);
+                    return ResponseEntity.ok(guardada);
+                })
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @DeleteMapping("/tareas-aseo/{id}")
     public ResponseEntity<Void> eliminarTarea(@PathVariable String id) {
-        tareasAseo.remove(id);
+        tareaAseoRepo.deleteById(id);
         return ResponseEntity.noContent().build();
     }
 
@@ -128,109 +166,10 @@ public class FrontendSyncController {
         return UUID.randomUUID().toString().replace("-", "").substring(0, 12);
     }
 
-    private static List<ProductoPayload> sortProductosByNombre(List<ProductoPayload> data) {
-        List<ProductoPayload> list = new ArrayList<>(data);
-        list.sort(Comparator.comparing(a -> safe(a.nombre)));
-        return list;
-    }
-
-    private static List<EmpleadoPayload> sortEmpleadosByNombre(List<EmpleadoPayload> data) {
-        List<EmpleadoPayload> list = new ArrayList<>(data);
-        list.sort(Comparator.comparing(a -> safe(a.nombre)));
-        return list;
-    }
-
-    private static List<RegistroPayload> sortByFechaDesc(List<RegistroPayload> data) {
-        List<RegistroPayload> list = new ArrayList<>(data);
-        list.sort((a, b) -> safe(b.fecha).compareTo(safe(a.fecha)));
-        return list;
-    }
-
-    private static List<TareaAseoPayload> sortByCompletada(List<TareaAseoPayload> data) {
-        List<TareaAseoPayload> list = new ArrayList<>(data);
-        list.sort(Comparator.comparing(t -> t.completada));
-        return list;
-    }
-
-    private static String safe(String value) {
-        return value == null ? "" : value;
-    }
-
     public record BootstrapResponse(
-        List<ProductoPayload> productos,
-        List<EmpleadoPayload> empleados,
-        List<RegistroPayload> registros,
-        List<TareaAseoPayload> tareasAseo
+            List<ProductoSync> productos,
+            List<EmpleadoSync> empleados,
+            List<RegistroSync> registros,
+            List<TareaAseoSync> tareasAseo
     ) {}
-
-    public record ProductoPayload(
-        String id,
-        String nombre,
-        Integer cantidad,
-        String empresa,
-        Integer ganancia,
-        String fechaAsignacion,
-        String fechaTerminacion,
-        String estado
-    ) {
-        public ProductoPayload withId(String newId) {
-            return new ProductoPayload(newId, nombre, cantidad, empresa, ganancia, fechaAsignacion, fechaTerminacion, estado);
-        }
-    }
-
-    public record EmpleadoPayload(
-        String id,
-        String nombre,
-        String cargo,
-        String documento,
-        String telefono,
-        String fechaIngreso,
-        String estado
-    ) {
-        public EmpleadoPayload withId(String newId) {
-            return new EmpleadoPayload(newId, nombre, cargo, documento, telefono, fechaIngreso, estado);
-        }
-    }
-
-    public static class RegistroPayload {
-        public String id;
-        public String empleadoId;
-        public String fecha;
-        public String horaEntrada;
-        public String horaSalida;
-        public Integer unidadesTotales;
-        public Integer unidadesBuenas;
-        public List<ProduccionRegistroPayload> producciones = new ArrayList<>();
-
-        public RegistroPayload withId(String newId) {
-            RegistroPayload copy = new RegistroPayload();
-            copy.id = newId;
-            copy.empleadoId = this.empleadoId;
-            copy.fecha = this.fecha;
-            copy.horaEntrada = this.horaEntrada;
-            copy.horaSalida = this.horaSalida;
-            copy.unidadesTotales = this.unidadesTotales;
-            copy.unidadesBuenas = this.unidadesBuenas;
-            copy.producciones = this.producciones == null ? new ArrayList<>() : new ArrayList<>(this.producciones);
-            return copy;
-        }
-    }
-
-    public static class ProduccionRegistroPayload {
-        public String productoId;
-        public Integer unidadesTotales;
-        public Integer unidadesBuenas;
-    }
-
-    public record TareaAseoPayload(
-        String id,
-        String accion,
-        String area,
-        String encargado,
-        boolean completada
-    ) {
-        public TareaAseoPayload withId(String newId) {
-            return new TareaAseoPayload(newId, accion, area, encargado, completada);
-        }
-    }
 }

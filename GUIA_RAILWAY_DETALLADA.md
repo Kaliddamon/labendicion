@@ -1,4 +1,4 @@
-# 🛤️ GUÍA DETALLADA: DESPLIEGUE EN RAILWAY
+# ️ GUÍA DETALLADA: DESPLIEGUE EN RAILWAY
 
 ## Índice Rápido
 - [Estructura de Railway](#estructura-de-railway)
@@ -116,7 +116,7 @@ Proyecto: labendicion-backend
 │ What do you want to add?                         │
 │                                                  │
 │ ┌──────────────┐  ┌──────────────┐               │
-│ │ 🗄️  Database │  │ 🔧 Plugin    │               │
+│ │ ️  Database │  │  Plugin    │               │
 │ │              │  │              │               │
 │ │ PostgreSQL   │  │              │               │
 │ │ MySQL        │  │              │               │
@@ -125,7 +125,7 @@ Proyecto: labendicion-backend
 │ └──────────────┘  └──────────────┘               │
 │                                                  │
 │ ┌──────────────┐  ┌──────────────┐               │
-│ │ 🔗 GitHub    │  │ 📦 Other     │               │
+│ │  GitHub    │  │  Other     │               │
 │ │              │  │              │               │
 │ │ Repo         │  │ (coming soon)│               │
 │ └──────────────┘  └──────────────┘               │
@@ -149,7 +149,7 @@ Proyecto: labendicion-backend
 │ [ + New ]                                        │
 │                                                  │
 │ ┌─────────────────────────────────────────────┐  │
-│ │ 🐘 postgres                                 │  │
+│ │  postgres                                 │  │
 │ │                                             │  │
 │ │ Status: ✅ Initializing (espera 1-2 min)   │  │
 │ │ Deploy: -                                   │  │
@@ -269,7 +269,7 @@ Tienes dos opciones:
 ├──────────────────────────────────────────────────┤
 │                                                  │
 │ [Running] deployment iniciado a las 14:32       │
-│ Building...     🔄                               │
+│ Building...                                    │
 │ Status: Queued → Building → Deploying            │
 │                                                  │
 │ Logs (en tiempo real):                           │
@@ -302,12 +302,12 @@ Una vez que el Build esté completo:
 ├──────────────────────────────────────────────────┤
 │                                                  │
 │ ┌─────────────────────────────────────────────┐  │
-│ │ 🐘 postgres                                 │  │
+│ │  postgres                                 │  │
 │ │ Status: ✅ Running                          │  │
 │ └─────────────────────────────────────────────┘  │
 │                                                  │
 │ ┌─────────────────────────────────────────────┐  │
-│ │ 🍃 labendicion (tu app Spring Boot)         │  │
+│ │  labendicion (tu app Spring Boot)         │  │
 │ │ Status: ✅ Running                          │  │
 │ │ URL: https://labendicion-prod.up.railway... │  │
 │ │ Deployment: Latest #1 deployed 2 min ago    │  │
@@ -451,7 +451,7 @@ Si ves esto ✅, tu backend está funcionando desde Railway.
 
 **En la card del servicio, verás:**
 ```
-🔗 URL: https://labendicion-prod.up.railway.app
+ URL: https://labendicion-prod.up.railway.app
 
 (Puedes hacer clic para copiar)
 ```
@@ -634,7 +634,6 @@ railway variables list
 
 ---
 
-**¡Tu backend está en Railway!** 🚀
+**¡Tu backend está en Railway!** 
 
 Siguiente paso: Vercel para el Frontend (ver otra guía)
-

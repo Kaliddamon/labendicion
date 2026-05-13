@@ -1,4 +1,4 @@
-# 📋 REPORTE DE PREPARACIÓN PARA DESPLIEGUE (2026-04-27)
+#  REPORTE DE PREPARACIÓN PARA DESPLIEGUE (2026-04-27)
 
 ## ✅ ESTADO GENERAL: PARCIALMENTE LISTO CON ADVERTENCIAS
 
@@ -6,7 +6,7 @@ El proyecto **tiene problemas de seguridad críticos** que deben resolverse ante
 
 ---
 
-## 🔍 ANÁLISIS DETALLADO
+##  ANÁLISIS DETALLADO
 
 ### 1. BACKEND (Spring Boot)
 
@@ -58,7 +58,7 @@ El proyecto **tiene problemas de seguridad críticos** que deben resolverse ante
 - ✅ Tailwind CSS 4.1.12
 - ✅ Sin CVEs detectadas
 
-**🚨 PROBLEMA CRÍTICO: Vite 6.3.5 tiene CVEs conocidas**
+** PROBLEMA CRÍTICO: Vite 6.3.5 tiene CVEs conocidas**
 
 ```
 Dependencia: vite@6.3.5
@@ -80,7 +80,7 @@ Solución: Actualizar a vite@8.0.5 o superior
 
 ---
 
-## 📋 DEPENDENCIAS AUDITADAS
+##  DEPENDENCIAS AUDITADAS
 
 ### Backend Maven
 
@@ -106,7 +106,7 @@ Solución: Actualizar a vite@8.0.5 o superior
 
 ---
 
-## 🔐 VULNERABILIDADES ENCONTRADAS
+##  VULNERABILIDADES ENCONTRADAS
 
 ### CVE-2026-39363 (ALTA PRIORIDAD)
 
@@ -156,7 +156,7 @@ Solución: Actualizar a vite@8.0.5 o superior
 
 ---
 
-## 🚀 ESTADO POR PLATAFORMA
+##  ESTADO POR PLATAFORMA
 
 ### Railway (Backend)
 
@@ -215,7 +215,7 @@ VITE_API_URL=https://tu-backend.up.railway.app
 
 ---
 
-## 🛑 PASOS CRÍTICOS INMEDIATOS
+##  PASOS CRÍTICOS INMEDIATOS
 
 ### 1️⃣ Resolver Vulnerabilidades de Vite (URGENTE)
 
@@ -264,7 +264,7 @@ npm run build
 
 ---
 
-## 📊 CUMPLIMIENTO POR ASPECTO
+##  CUMPLIMIENTO POR ASPECTO
 
 | Aspecto | Estado | Comentario |
 |---------|--------|-----------|
@@ -281,7 +281,7 @@ npm run build
 
 ---
 
-## 📝 CONCLUSIÓN
+##  CONCLUSIÓN
 
 ### ¿ESTÁ LISTO PARA DESPLEGAR?
 
@@ -304,7 +304,7 @@ npm run build
 
 ---
 
-## 🎯 RECOMENDACIONES
+##  RECOMENDACIONES
 
 1. **INMEDIATO:** Actualizar vite a 8.0.5+
 2. **INMEDIATO:** Re-compilar y validar build del frontend
@@ -319,4 +319,3 @@ npm run build
 **Reporte generado:** 2026-04-27  
 **Próxima revisión:** Después de actualizar vite y confirmar plataformas  
 **Responsable:** DevOps/DevSecOps Team
-

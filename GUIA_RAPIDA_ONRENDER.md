@@ -1,6 +1,6 @@
 # ⚡ GUÍA RÁPIDA OnRender - Variables de Entorno
 
-## 🚨 IMPORTANTE - Lee Esto Primero
+##  IMPORTANTE - Lee Esto Primero
 
 El error que tuviste en OnRender:
 ```
@@ -13,7 +13,7 @@ El backend ahora **automáticamente convierte** `postgresql://` a `jdbc:postgres
 
 ---
 
-## 📋 Variables a Configurar en OnRender
+##  Variables a Configurar en OnRender
 
 ### Paso 1: Obtener Credenciales de Supabase
 
@@ -90,7 +90,7 @@ DESPUÉS DE PRESIONAR DEPLOY:
 
 ---
 
-## 🧪 Probar que Funciona
+##  Probar que Funciona
 
 ### Test 1: Health Check
 ```
@@ -122,7 +122,7 @@ Si algo falla, verifica los logs:
 
 ---
 
-## 🔴 Si Ves Error "Connection refused"
+##  Si Ves Error "Connection refused"
 
 **Causa:** La BD de Supabase no está lista o las credenciales son incorrectas
 
@@ -140,7 +140,7 @@ Si algo falla, verifica los logs:
 
 ---
 
-## 🟢 Una Vez Que Esté UP
+##  Una Vez Que Esté UP
 
 ### Próximo Paso: Vercel
 
@@ -154,7 +154,7 @@ Si algo falla, verifica los logs:
 
 ---
 
-## 📞 URLs Recordar
+##  URLs Recordar
 
 ```
 OnRender Backend:
@@ -172,7 +172,7 @@ https://app.supabase.com/project/[PROJECT_ID]/settings/database
 
 ---
 
-## 🎯 TL;DR (Lo Esencial)
+##  TL;DR (Lo Esencial)
 
 1. Copia `postgresql://postgres:PASSWORD@db.XXX.supabase.co:5432/postgres` de Supabase
 2. Pégalo en OnRender como `DATABASE_URL`
@@ -185,6 +185,5 @@ https://app.supabase.com/project/[PROJECT_ID]/settings/database
 
 ---
 
-**El error está resuelto. Adelante con el despliegue.** 🚀
-
+**El error está resuelto. Adelante con el despliegue.** 
 

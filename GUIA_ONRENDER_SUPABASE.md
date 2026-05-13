@@ -1,4 +1,4 @@
-# 🚀 GUÍA DESPLIEGUE OnRender + Supabase + Vercel
+#  GUÍA DESPLIEGUE OnRender + Supabase + Vercel
 
 ## Tabla de Contenidos
 1. [Requisitos](#requisitos)
@@ -399,21 +399,21 @@ Una vez todo desplegado:
 │ PROYECTO EN PRODUCCIÓN                                  │
 ├─────────────────────────────────────────────────────────┤
 │                                                         │
-│ 🌐 Frontend:                                            │
+│  Frontend:                                            │
 │    https://labendicion-frontend.vercel.app              │
 │                                                         │
-│ 🔌 Backend API:                                         │
+│  Backend API:                                         │
 │    https://labendicion-backend.onrender.com             │
 │                                                         │
-│ 📚 Swagger (Docs):                                      │
+│  Swagger (Docs):                                      │
 │    https://labendicion-backend.onrender.com/            │
 │    swagger-ui.html                                      │
 │                                                         │
-│ 💚 Health Check:                                        │
+│  Health Check:                                        │
 │    https://labendicion-backend.onrender.com/            │
 │    actuator/health                                      │
 │                                                         │
-│ 🗄️ Supabase:                                            │
+│ ️ Supabase:                                            │
 │    https://app.supabase.com                             │
 │                                                         │
 └─────────────────────────────────────────────────────────┘
@@ -452,6 +452,5 @@ Una vez todo desplegado:
 
 ---
 
-**¡Tu aplicación está en producción!** 🎉
-
+**¡Tu aplicación está en producción!** 
 

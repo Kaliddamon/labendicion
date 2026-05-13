@@ -1,4 +1,4 @@
-# 🚀 INTEGRACIÓN SUPABASE - LABENDICIÓN
+#  INTEGRACIÓN SUPABASE - LABENDICIÓN
 
 ## Estado: ✅ COMPLETADO
 
@@ -264,7 +264,6 @@ Abre la consola del navegador (F12) y no deberías ver errores.
 
 ---
 
-**¡Supabase está integrado!** 🎉
+**¡Supabase está integrado!** 
 
 Próximo paso: Implementar en tus páginas o testear con el componente SupabaseExample.
-

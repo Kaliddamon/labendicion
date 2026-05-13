@@ -1,6 +1,6 @@
 # ✅ RESUMEN DE CAMBIOS - OnRender + Supabase
 
-## 🔧 Problemas Resueltos
+##  Problemas Resueltos
 
 ### Problema 1: Error de conexión PostgreSQL en OnRender
 ```
@@ -36,7 +36,7 @@ option is 'es2020', 'es2022', 'esnext', 'system', 'node16', 'node18', 'node20', 
 
 ---
 
-## 📁 Archivos Creados/Modificados
+##  Archivos Creados/Modificados
 
 ### 1. Java Config (Backend)
 **Archivo:** `backend/src/main/java/dev/kali/config/DataSourceConfig.java` ✨ **NUEVO**
@@ -49,7 +49,7 @@ option is 'es2020', 'es2022', 'esnext', 'system', 'node16', 'node18', 'node20', 
 ```
 
 ### 2. Properties (Backend)
-**Archivo:** `backend/src/main/resources/application-supabase.properties` 📝 **ACTUALIZADO**
+**Archivo:** `backend/src/main/resources/application-supabase.properties`  **ACTUALIZADO**
 
 ```ini
 # Cambios:
@@ -60,7 +60,7 @@ option is 'es2020', 'es2022', 'esnext', 'system', 'node16', 'node18', 'node20', 
 ```
 
 ### 3. OnRender Config
-**Archivo:** `render.yaml` 📝 **ACTUALIZADO**
+**Archivo:** `render.yaml`  **ACTUALIZADO**
 
 ```yaml
 # Cambios:
@@ -90,7 +90,7 @@ option is 'es2020', 'es2022', 'esnext', 'system', 'node16', 'node18', 'node20', 
 
 ---
 
-## 🚀 Lo Que Funciona Ahora
+##  Lo Que Funciona Ahora
 
 | Componente | Estado | Notas |
 |-----------|--------|-------|
@@ -103,7 +103,7 @@ option is 'es2020', 'es2022', 'esnext', 'system', 'node16', 'node18', 'node20', 
 
 ---
 
-## 📋 Configuración OnRender (CRÍTICO)
+##  Configuración OnRender (CRÍTICO)
 
 Cuando depliegues en OnRender, **DEBES** agregar estas variables:
 
@@ -120,7 +120,7 @@ SWAGGER_ENABLED = true
 
 ---
 
-## 🔄 Flujo de Despliegue
+##  Flujo de Despliegue
 
 ```
 ┌─────────────────────┐
@@ -147,7 +147,7 @@ SWAGGER_ENABLED = true
       │ Running: ✅ OK  │
       └────┬────────────┘
            │
-      🌐 Backend Live
+       Backend Live
       https://labendicion-backend.onrender.com
 ```
 
@@ -184,7 +184,7 @@ spring.datasource.url=jdbc:${DATABASE_URL}  # jdbc:postgresql:// ✅
 
 ---
 
-## 🧪 Testing Local
+##  Testing Local
 
 Para probar localmente antes de desplegar:
 
@@ -209,7 +209,7 @@ java -jar target/labendicion-0.0.1-SNAPSHOT.jar
 
 ---
 
-## 📊 Comparativa: Railway vs OnRender vs Supabase
+##  Comparativa: Railway vs OnRender vs Supabase
 
 | Aspecto | Railway | OnRender | Supabase |
 |--------|---------|----------|----------|
@@ -223,7 +223,7 @@ java -jar target/labendicion-0.0.1-SNAPSHOT.jar
 
 ---
 
-## 🎯 Próximos Pasos
+##  Próximos Pasos
 
 1. **Pushear cambios:**
    ```bash
@@ -249,7 +249,7 @@ java -jar target/labendicion-0.0.1-SNAPSHOT.jar
 
 ---
 
-## 🐛 Si Algo Falla
+##  Si Algo Falla
 
 ### Revisar:
 1. OnRender Logs → pestaña "Logs"
@@ -263,7 +263,7 @@ Si todo falla, siempre puedes volver a Railway sin cambios extras.
 
 ---
 
-## 📞 Resumen para Recordar
+##  Resumen para Recordar
 
 - ✅ Backend compila OK
 - ✅ Supabase integrado
@@ -273,5 +273,4 @@ Si todo falla, siempre puedes volver a Railway sin cambios extras.
 - ✅ ERROR RESUELTO
 
 **El error de OnRender ha sido completamente arreglado.**
-
 

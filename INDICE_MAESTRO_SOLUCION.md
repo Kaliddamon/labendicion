@@ -1,6 +1,6 @@
-# 📚 ÍNDICE MAESTRO: Documentos de Solución OnRender + Supabase
+#  ÍNDICE MAESTRO: Documentos de Solución OnRender + Supabase
 
-## 🎯 LO QUE SUCEDIÓ
+##  LO QUE SUCEDIÓ
 
 Tu backend estaba fallando en OnRender con el error:
 ```
@@ -14,9 +14,9 @@ Creé 5 documentos que te guían paso a paso para resolver el problema.
 
 ---
 
-## 📖 DOCUMENTOS CREADOS (En orden de lectura recomendado)
+##  DOCUMENTOS CREADOS (En orden de lectura recomendado)
 
-### 1. 🚀 **SOLUCION_EXPRESS_20MIN.md** ⭐ COMIENZA AQUÍ
+### 1.  **SOLUCION_EXPRESS_20MIN.md** ⭐ COMIENZA AQUÍ
 **Tiempo de lectura:** 3 minutos
 
 Para resolver el error en 20 minutos.
@@ -31,7 +31,7 @@ Para resolver el error en 20 minutos.
 
 ---
 
-### 2. 📋 **ACCION_INMEDIATA_ERRORCONEXION.md**
+### 2.  **ACCION_INMEDIATA_ERRORCONEXION.md**
 **Tiempo de lectura:** 5 minutos
 
 Guía paso a paso con 3 causas posibles y soluciones para cada una.
@@ -46,7 +46,7 @@ Guía paso a paso con 3 causas posibles y soluciones para cada una.
 
 ---
 
-### 3. 🔍 **DIAGNOSTICO_CONNECTION_FAILED.md**
+### 3.  **DIAGNOSTICO_CONNECTION_FAILED.md**
 **Tiempo de lectura:** 8 minutos
 
 Diagnóstico interactivo para identificar exactamente qué está mal.
@@ -61,7 +61,7 @@ Diagnóstico interactivo para identificar exactamente qué está mal.
 
 ---
 
-### 4. 🛠️ **TROUBLESHOOTING_CONNECTION_ERROR.md**
+### 4. ️ **TROUBLESHOOTING_CONNECTION_ERROR.md**
 **Tiempo de lectura:** 10 minutos
 
 Troubleshooting avanzado para cuando algo sigue fallando.
@@ -76,7 +76,7 @@ Troubleshooting avanzado para cuando algo sigue fallando.
 
 ---
 
-### 5. 💡 **MEJORA_DATASOURCE_CONFIG.md**
+### 5.  **MEJORA_DATASOURCE_CONFIG.md**
 **Tiempo de lectura:** 7 minutos
 
 Explicación técnica de los cambios hechos en el código.
@@ -91,7 +91,7 @@ Explicación técnica de los cambios hechos en el código.
 
 ---
 
-## 🗂️ DOCUMENTOS EXISTENTES (Referencia)
+## ️ DOCUMENTOS EXISTENTES (Referencia)
 
 ### Pre-existentes (creados antes):
 - **GUIA_ONRENDER_SUPABASE.md** - Guía completa OnRender + Supabase + Vercel
@@ -104,7 +104,7 @@ Explicación técnica de los cambios hechos en el código.
 
 ---
 
-## 🚦 FLUJO RECOMENDADO
+##  FLUJO RECOMENDADO
 
 ```
 ¿Necesitas resolver AHORA?
@@ -130,7 +130,7 @@ Explicación técnica de los cambios hechos en el código.
 
 ---
 
-## 📊 MATRIZ DE SELECCIÓN
+##  MATRIZ DE SELECCIÓN
 
 | Situación | Documento | Tiempo |
 |-----------|-----------|--------|
@@ -142,7 +142,7 @@ Explicación técnica de los cambios hechos en el código.
 
 ---
 
-## 💻 CÓDIGO MEJORADO
+##  CÓDIGO MEJORADO
 
 La clase principal que se mejoró:
 
@@ -159,7 +159,7 @@ La clase principal que se mejoró:
 
 ---
 
-## 🎯 OBJETIVO FINAL
+##  OBJETIVO FINAL
 
 Después de leer los documentos apropiados:
 
@@ -170,7 +170,7 @@ Después de leer los documentos apropiados:
 
 ---
 
-## 🔗 RUTA RÁPIDA
+##  RUTA RÁPIDA
 
 ### Si estás en OnRender y ves el error:
 
@@ -188,7 +188,7 @@ Paso 4: Busca en logs "✓ DataSource"
 
 ---
 
-## 📞 PREGUNTAS COMUNES
+##  PREGUNTAS COMUNES
 
 **P: ¿Cuál documento leo primero?**
 R: SOLUCION_EXPRESS_20MIN.md
@@ -229,7 +229,7 @@ R: Sí, ✅ BUILD SUCCESS. El problema es pura configuración.
 
 ---
 
-## 📍 UBICACIÓN DE DOCUMENTOS
+##  UBICACIÓN DE DOCUMENTOS
 
 Todos los documentos están en la **raíz del proyecto**:
 
@@ -247,7 +247,7 @@ C:\Users\CRIST\Desktop\labendicion\
 
 ---
 
-## 🚀 PRÓXIMO PASO
+##  PRÓXIMO PASO
 
 1. Abre: **SOLUCION_EXPRESS_20MIN.md**
 2. Sigue los 5 pasos
@@ -256,7 +256,7 @@ C:\Users\CRIST\Desktop\labendicion\
 
 ---
 
-## 📊 STATUS PROYECTO
+##  STATUS PROYECTO
 
 ```
 ┌─────────────────────────────────────┐
@@ -281,7 +281,7 @@ C:\Users\CRIST\Desktop\labendicion\
 
 ---
 
-## 🎯 CONCLUSIÓN
+##  CONCLUSIÓN
 
 He creado 5 documentos específicos para resolver tu error de conexión en OnRender.
 
@@ -289,6 +289,5 @@ He creado 5 documentos específicos para resolver tu error de conexión en OnRen
 
 **Comienza con SOLUCION_EXPRESS_20MIN.md** si necesitas resolver ahora.
 
-**En 20 minutos tu backend estará UP.** 🚀
-
+**En 20 minutos tu backend estará UP.** 
 

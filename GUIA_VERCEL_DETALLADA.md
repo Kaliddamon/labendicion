@@ -1,4 +1,4 @@
-# 🚀 GUÍA DETALLADA: DESPLIEGUE EN VERCEL
+#  GUÍA DETALLADA: DESPLIEGUE EN VERCEL
 
 ## Índice Rápido
 - [Estructura de Vercel](#estructura-de-vercel)
@@ -24,7 +24,7 @@ Ejecuta: npm install + npm run build
          ↓
 Sube dist/ a CDN Global
          ↓
-Tu site está disponible en 🌍
+Tu site está disponible en 
 ```
 
 ---
@@ -73,10 +73,10 @@ https://vercel.com
 │                                                  │
 │ Selecciona tu opción:                            │
 │                                                  │
-│ [ 🐙 Continue with GitHub ]  ← RECOMENDADO     │
-│ [ 🔵 Continue with GitLab ]                      │
-│ [ 🟤 Continue with Bitbucket ]                   │
-│ [ 📧 Email ]                                     │
+│ [  Continue with GitHub ]  ← RECOMENDADO     │
+│ [  Continue with GitLab ]                      │
+│ [  Continue with Bitbucket ]                   │
+│ [  Email ]                                     │
 │                                                  │
 │ Already have an account? [ Log In ]              │
 │                                                  │
@@ -84,7 +84,7 @@ https://vercel.com
 ```
 
 **Tu Acción:**
-1. Haz clic en [ 🐙 Continue with GitHub ]
+1. Haz clic en [  Continue with GitHub ]
 2. GitHub te pedirá autorizar - haz clic [ Authorize Vercel ]
 3. Verifica tu email (Vercel te enviará un link)
 
@@ -152,7 +152,7 @@ https://vercel.com
 │ Import Git Repository                            │
 │                                                  │
 │ Search your repositories...                      │
-│ [📝 labendicion        ]  ← tu repo si aparece  │
+│ [ labendicion        ]  ← tu repo si aparece  │
 │                                                  │
 │ Recent repositories:                             │
 │ ───────────────────────────────────────────────  │
@@ -160,7 +160,7 @@ https://vercel.com
 │ ○ otro-proyecto                                  │
 │                                                  │
 │ O:                                               │
-│ [ 🔗 Import Third-Party Git Repo ]               │
+│ [  Import Third-Party Git Repo ]               │
 │   (si tienes URL de GitLab, Bitbucket, etc)     │
 │                                                  │
 └──────────────────────────────────────────────────┘
@@ -322,7 +322,7 @@ https://vercel.com
 │ Deploying... labendicion                         │
 ├──────────────────────────────────────────────────┤
 │                                                  │
-│ 🔄 Building Project... (1/3)                     │
+│  Building Project... (1/3)                     │
 │    Cloning repository                            │
 │    Installing dependencies                       │
 │    Building application                          │
@@ -351,7 +351,7 @@ https://vercel.com
 
 ```
 ┌──────────────────────────────────────────────────┐
-│ 🎉 Congratulations!                              │
+│  Congratulations!                              │
 ├──────────────────────────────────────────────────┤
 │                                                  │
 │ Your project has been successfully deployed     │
@@ -365,14 +365,14 @@ https://vercel.com
 │    Deployed by: [Tu nombre]                      │
 │                                                  │
 │ NEXT STEPS:                                      │
-│ [ 👀 View Project ]  [ 📊 Analytics ]             │
-│ [ 🔧 Settings ]      [ 📖 Docs ]                 │
+│ [  View Project ]  [  Analytics ]             │
+│ [  Settings ]      [  Docs ]                 │
 │                                                  │
 └──────────────────────────────────────────────────┘
 ```
 
 **Tu Acción:**
-1. Haz clic en [ 👀 View Project ] para ver tu site
+1. Haz clic en [  View Project ] para ver tu site
 2. O simplemente abre en el navegador:
    ```
    https://labendicion.vercel.app
@@ -712,7 +712,6 @@ import.meta.glob('./components/*.jsx')
 
 ---
 
-**¡Tu frontend está en Vercel!** 🎉
+**¡Tu frontend está en Vercel!** 
 
 Próximo paso: Integración y testing (ver guía principal)
-

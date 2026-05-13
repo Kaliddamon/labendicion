@@ -1,18 +1,18 @@
-# 📚 ÍNDICE MAESTRO DE GUÍAS DE DESPLIEGUE
+#  ÍNDICE MAESTRO DE GUÍAS DE DESPLIEGUE
 
 Bienvenido. Aquí encontrarás todas las guías para desplegar **labendicion** en producción.
 
 ---
 
-## 🎯 ¿Por Dónde Empezar?
+##  ¿Por Dónde Empezar?
 
 ### Opción 1: Tengo prisa ⏱️
 → Lee **QUICKSTART_DESPLIEGUE.md** (10 minutos)
 
-### Opción 2: Quiero entender todo 📖
+### Opción 2: Quiero entender todo 
 → Lee **GUIA_DESPLIEGUE_RAILWAY_VERCEL.md** (30 minutos)
 
-### Opción 3: Necesito detalles visuales 👁️
+### Opción 3: Necesito detalles visuales ️
 → Lee **GUIA_RAILWAY_DETALLADA.md** o **GUIA_VERCEL_DETALLADA.md**
 
 ### Opción 4: Quiero verificar estado del proyecto
@@ -20,7 +20,7 @@ Bienvenido. Aquí encontrarás todas las guías para desplegar **labendicion** e
 
 ---
 
-## 📑 GUÍAS DISPONIBLES
+##  GUÍAS DISPONIBLES
 
 ### 1. QUICKSTART_DESPLIEGUE.md
 **Tiempo:** 10 minutos  
@@ -32,7 +32,7 @@ Bienvenido. Aquí encontrarás todas las guías para desplegar **labendicion** e
 - ✅ Verificaciones rápidas
 - ✅ Troubleshooting básico
 
-**👉 Ideal si:** Ya tienes experiencia y quieres ir rápido
+** Ideal si:** Ya tienes experiencia y quieres ir rápido
 
 ---
 
@@ -51,7 +51,7 @@ Bienvenido. Aquí encontrarás todas las guías para desplegar **labendicion** e
 - ✅ URLs importantes
 - ✅ Dashboards de monitoreo
 
-**👉 Ideal si:** Quieres una visión completa y detallada
+** Ideal si:** Quieres una visión completa y detallada
 
 ---
 
@@ -76,7 +76,7 @@ Bienvenido. Aquí encontrarás todas las guías para desplegar **labendicion** e
 - ✅ Redeploy / Actualizaciones
 - ✅ Railway CLI (opcional)
 
-**👉 Ideal si:** Nunca has usado Railway o necesitas ver exactamente qué hacer en cada pantalla
+** Ideal si:** Nunca has usado Railway o necesitas ver exactamente qué hacer en cada pantalla
 
 ---
 
@@ -102,7 +102,7 @@ Bienvenido. Aquí encontrarás todas las guías para desplegar **labendicion** e
 - ✅ Dominios personalizados (opcional)
 - ✅ Security tips
 
-**👉 Ideal si:** Nunca has usado Vercel o necesitas ver exactamente qué hacer en cada pantalla
+** Ideal si:** Nunca has usado Vercel o necesitas ver exactamente qué hacer en cada pantalla
 
 ---
 
@@ -118,7 +118,7 @@ Bienvenido. Aquí encontrarás todas las guías para desplegar **labendicion** e
 - ✅ URLs importantes
 - ✅ Matriz de decisión
 
-**👉 Ideal si:** Quieres confirmar que todo está listo
+** Ideal si:** Quieres confirmar que todo está listo
 
 ---
 
@@ -135,11 +135,11 @@ Bienvenido. Aquí encontrarás todas las guías para desplegar **labendicion** e
 - ✅ Comandos rápidos de referencia
 - ✅ Tiempos estimados
 
-**👉 Ideal si:** No estás seguro cuál leer y quieres todo en un documento
+** Ideal si:** No estás seguro cuál leer y quieres todo en un documento
 
 ---
 
-## 🗺️ DECISIÓN ÁRBOL
+## ️ DECISIÓN ÁRBOL
 
 ```
 ┌─ ¿Tienes prisa? (máx 15 min)
@@ -155,7 +155,7 @@ Bienvenido. Aquí encontrarás todas las guías para desplegar **labendicion** e
 
 ---
 
-## 📊 COMPARATIVA
+##  COMPARATIVA
 
 | Documento | Duración | Visual | Railway | Vercel | Completo |
 |-----------|----------|--------|---------|--------|----------|
@@ -167,20 +167,20 @@ Bienvenido. Aquí encontrarás todas las guías para desplegar **labendicion** e
 
 ---
 
-## 🎓 MI RECOMENDACIÓN
+##  MI RECOMENDACIÓN
 
-### Primer despliegue: 👶
+### Primer despliegue: 
 1. Lee **QUICKSTART_DESPLIEGUE.md** (10 min)
 2. Sigue paso a paso
 3. Si atascas en algo:
    - Railway → lee **GUIA_RAILWAY_DETALLADA.md**
    - Vercel → lee **GUIA_VERCEL_DETALLADA.md**
 
-### Si es tu 2do+ despliegue: 🚀
+### Si es tu 2do+ despliegue: 
 1. Solo **QUICKSTART_DESPLIEGUE.md**
 2. Tarda ~30 min de punta a punta
 
-### Si necesitas ser un experto: 📖
+### Si necesitas ser un experto: 
 Léetelas todas en orden:
 1. QUICKSTART_DESPLIEGUE.md
 2. GUIA_RAILWAY_DETALLADA.md
@@ -189,7 +189,7 @@ Léetelas todas en orden:
 
 ---
 
-## 📱 ACCESO RÁPIDO
+##  ACCESO RÁPIDO
 
 **En este proyecto tienes acceso a:**
 
@@ -197,12 +197,12 @@ Léetelas todas en orden:
 C:\Users\CRIST\Desktop\labendicion\
 │
 ├── QUICKSTART_DESPLIEGUE.md              ⚡ Corre en 10 min
-├── GUIA_DESPLIEGUE_RAILWAY_VERCEL.md     📖 Guía principal (30 min)
-├── GUIA_RAILWAY_DETALLADA.md             🛤️ Railway con pics (25 min)
-├── GUIA_VERCEL_DETALLADA.md              🚀 Vercel con pics (25 min)
+├── GUIA_DESPLIEGUE_RAILWAY_VERCEL.md      Guía principal (30 min)
+├── GUIA_RAILWAY_DETALLADA.md             ️ Railway con pics (25 min)
+├── GUIA_VERCEL_DETALLADA.md               Vercel con pics (25 min)
 ├── DEPLOYMENT_READY_FINAL.md             ✅ Estado del proyecto
-├── DEPLOYMENT_READINESS_REPORT.md        📋 Análisis inicial
-├── RESUMEN_ESTADO_DESPLIEGUE.md          📊 Resumen ejecutivo
+├── DEPLOYMENT_READINESS_REPORT.md         Análisis inicial
+├── RESUMEN_ESTADO_DESPLIEGUE.md           Resumen ejecutivo
 │
 ├── backend/
 │   ├── pom.xml
@@ -252,7 +252,7 @@ URLS IMPORTANTES (guardar después)
 
 ---
 
-## 🚨 ERRORES MÁS COMUNES
+##  ERRORES MÁS COMUNES
 
 | Error | Documentación |
 |-------|---------------|
@@ -265,11 +265,11 @@ URLS IMPORTANTES (guardar después)
 
 ---
 
-## 💬 FORMATO DE LOS DOCUMENTOS
+##  FORMATO DE LOS DOCUMENTOS
 
 Todos los documentos usan:
 
-- **🎯 Secciones claras** con viñetas
+- ** Secciones claras** con viñetas
 - **```código```** en bloques de código
 - **Pantalla N:** Descripción visual ASCII (en las detalladas)
 - **Tablas** para comparativos
@@ -279,7 +279,7 @@ Todos los documentos usan:
 
 ---
 
-## 🎁 BONIFICACIÓN: Próximos Pasos
+##  BONIFICACIÓN: Próximos Pasos
 
 Después de desplegar:
 
@@ -291,7 +291,7 @@ Después de desplegar:
 
 ---
 
-## 🤝 ¿PREGUNTAS?
+##  ¿PREGUNTAS?
 
 Si algo no está claro:
 
@@ -303,7 +303,7 @@ Si algo no está claro:
 
 ---
 
-## 📊 ESTADÍSTICAS
+##  ESTADÍSTICAS
 
 | Métrica | Cantidad |
 |---------|----------|
@@ -317,19 +317,18 @@ Si algo no está claro:
 
 ---
 
-## 🎉 ¡LISTO!
+##  ¡LISTO!
 
 Elige tu documento y comienza el despliegue.
 
 **Tiempo estimado de despliegue:** 30-60 minutos (tu primer vez)
 
-**Resultado:** 🟢 Aplicación en producción
+**Resultado:**  Aplicación en producción
 
-Buena suerte. 🚀
+Buena suerte. 
 
 ---
 
 **Última actualización:** 27 de Abril de 2026  
 **Estado:** ✅ Todos los documentos listos para usar  
 **Versión del Proyecto:** 0.0.1-SNAPSHOT
-

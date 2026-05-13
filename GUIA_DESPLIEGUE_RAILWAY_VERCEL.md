@@ -1,4 +1,4 @@
-# 🚀 GUÍA COMPLETA DE DESPLIEGUE - Railway + Vercel
+#  GUÍA COMPLETA DE DESPLIEGUE - Railway + Vercel
 
 ## Tabla de Contenidos
 1. [Requisitos Previos](#requisitos-previos)
@@ -524,21 +524,21 @@ Una vez desplegado, guarda estas URLs:
 │ URLS DEL PROYECTO EN PRODUCCIÓN                         │
 ├─────────────────────────────────────────────────────────┤
 │                                                         │
-│ 🌐 Frontend:                                            │
+│  Frontend:                                            │
 │    https://labendicion.vercel.app                       │
 │                                                         │
-│ 🔌 Backend API:                                         │
+│  Backend API:                                         │
 │    https://labendicion-production.up.railway.app        │
 │                                                         │
-│ 📚 Swagger (Documentación API):                         │
+│  Swagger (Documentación API):                         │
 │    https://labendicion-production.up.railway.app/       │
 │    swagger-ui.html                                      │
 │                                                         │
-│ 💚 Health Check:                                        │
+│  Health Check:                                        │
 │    https://labendicion-production.up.railway.app/       │
 │    actuator/health                                      │
 │                                                         │
-│ 📊 API Docs (JSON):                                     │
+│  API Docs (JSON):                                     │
 │    https://labendicion-production.up.railway.app/       │
 │    api-docs                                             │
 │                                                         │
@@ -595,7 +595,6 @@ railway logs
 
 ---
 
-**¡Listo! Tu proyecto está en producción.** 🎉
+**¡Listo! Tu proyecto está en producción.** 
 
 ¿Tienes dudas de algún paso? Revisa la sección de Troubleshooting.
-

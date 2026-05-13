@@ -134,13 +134,13 @@ Deberías ver: API documentation
 
 ---
 
-# LISTO! 🎉
+# LISTO! 
 
 | Componente | URL | Status |
 |-----------|-----|--------|
-| Frontend | https://labendicion.vercel.app | 🟢 Live |
-| Backend | https://labendicion-xxx.up.railway.app | 🟢 Live |
-| DB | PostgreSQL en Railway | 🟢 Live |
+| Frontend | https://labendicion.vercel.app |  Live |
+| Backend | https://labendicion-xxx.up.railway.app |  Live |
+| DB | PostgreSQL en Railway |  Live |
 
 ---
 
@@ -175,4 +175,3 @@ Ver archivos detallados:
 - GUIA_DESPLIEGUE_RAILWAY_VERCEL.md (paso a paso completo)
 - GUIA_RAILWAY_DETALLADA.md (Railway con screenshots)
 - GUIA_VERCEL_DETALLADA.md (Vercel con screenshots)
-

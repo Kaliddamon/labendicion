@@ -1,4 +1,4 @@
-# 🔧 TROUBLESHOOTING: "Unable to open JDBC Connection" Error
+#  TROUBLESHOOTING: "Unable to open JDBC Connection" Error
 
 ## Síntoma
 
@@ -156,7 +156,7 @@ Entonces hay un problema con las credenciales o la BD.
 
 ---
 
-## 🔍 DEBUGGING AVANZADO
+##  DEBUGGING AVANZADO
 
 ### Si sigue fallando, copia estos logs de OnRender:
 
@@ -178,7 +178,7 @@ Entonces hay un problema con las credenciales o la BD.
 
 ---
 
-## 🧪 TEST LOCAL (Antes de desplegar)
+##  TEST LOCAL (Antes de desplegar)
 
 Para probar en tu PC antes de OnRender:
 
@@ -217,7 +217,7 @@ curl http://localhost:8080/actuator/health
 
 ---
 
-## 📋 VALORES DE EJEMPLO
+##  VALORES DE EJEMPLO
 
 ```
 Si tu proyecto Supabase es:
@@ -236,7 +236,7 @@ MySecurePass123
 
 ---
 
-## 🆘 CONTACTO / SOPORTE
+##  CONTACTO / SOPORTE
 
 Si aún no funciona:
 
@@ -247,7 +247,7 @@ Si aún no funciona:
 
 ---
 
-## 📊 TABLA DE DIAGNOSTICO
+##  TABLA DE DIAGNOSTICO
 
 | Síntoma | Causa Probable | Solución |
 |---------|---|---|
@@ -262,5 +262,4 @@ Si aún no funciona:
 **La clase `DataSourceConfig.java` ha sido mejorada con logging detallado.**
 
 **Cuando despliegues, verás exactamente qué variable falta y por qué falla.**
-
 

@@ -1,6 +1,6 @@
-# 🎯 ACCIÓN INMEDIATA: Error "Unable to open JDBC Connection"
+#  ACCIÓN INMEDIATA: Error "Unable to open JDBC Connection"
 
-## 🔴 El Error que Estás Viendo
+##  El Error que Estás Viendo
 
 ```
 Unable to open JDBC Connection for DDL execution
@@ -11,7 +11,7 @@ Unable to open JDBC Connection for DDL execution
 
 La URL de la base de datos fue convertida correctamente (`database:// → jdbc:postgresql://`), **pero no puede conectar a Supabase**.
 
-## 🚨 CAUSA PROBABLE #1: Variables No Configuradas
+##  CAUSA PROBABLE #1: Variables No Configuradas
 
 En OnRender, probablemente no configuraste las variables de entorno.
 
@@ -54,7 +54,7 @@ En OnRender, probablemente no configuraste las variables de entorno.
 
 ---
 
-## 🚨 CAUSA PROBABLE #2: Supabase No Está Lista
+##  CAUSA PROBABLE #2: Supabase No Está Lista
 
 Supabase **tarda 5-10 minutos** en crear un proyecto.
 
@@ -68,7 +68,7 @@ Supabase **tarda 5-10 minutos** en crear un proyecto.
 
 ---
 
-## 🚨 CAUSA PROBABLE #3: Credenciales Incorrectas
+##  CAUSA PROBABLE #3: Credenciales Incorrectas
 
 La contraseña en OnRender no coincide con la de Supabase.
 
@@ -86,7 +86,7 @@ La contraseña en OnRender no coincide con la de Supabase.
 
 ---
 
-## 🧪 CÓMO VERIFICAR
+##  CÓMO VERIFICAR
 
 Después de presionar Deploy, busca los logs:
 
@@ -115,7 +115,7 @@ Después de presionar Deploy, busca los logs:
 
 ---
 
-## 📋 CHECKLIST RÁPIDO
+##  CHECKLIST RÁPIDO
 
 ```
 ANTES DE DESPLEGAR:
@@ -157,7 +157,7 @@ SI AÚN FALLA:
 
 ---
 
-## 📞 PASO A PASO VISUAL
+##  PASO A PASO VISUAL
 
 ### Paso 1: OnRender Dashboard
 ```
@@ -238,7 +238,7 @@ Minuto 45: Verifica logs nuevamente
 
 ---
 
-## 🎯 RESUMEN
+##  RESUMEN
 
 **Tienes 2 opciones:**
 
@@ -261,7 +261,7 @@ Minuto 45: Verifica logs nuevamente
 
 ---
 
-## 💡 RECUERDA
+##  RECUERDA
 
 - **No es bug**, es configuración
 - Todas las variables son **REQUERIDAS**
@@ -271,6 +271,5 @@ Minuto 45: Verifica logs nuevamente
 
 ---
 
-**Hazlo ahora. El error desaparecerá.** 🚀
-
+**Hazlo ahora. El error desaparecerá.** 
 

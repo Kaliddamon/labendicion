@@ -1,6 +1,6 @@
 # ⚡ SOLUCIÓN RÁPIDA: Tu Error en OnRender
 
-## 🎯 SÍNTOMA
+##  SÍNTOMA
 
 ```
 The connection attempt failed.
@@ -15,7 +15,7 @@ Unable to open JDBC Connection for DDL execution
 
 ---
 
-## 🚀 SOLUCIÓN (5 MINUTOS)
+##  SOLUCIÓN (5 MINUTOS)
 
 ### PASO 1: Abre OnRender
 
@@ -87,7 +87,7 @@ Entonces: ✅ ERROR RESUELTO
 
 ---
 
-## 📍 CÓMO OBTENER Variables Correctas
+##  CÓMO OBTENER Variables Correctas
 
 ### DATABASE_URL y PGPASSWORD:
 
@@ -121,7 +121,7 @@ Entonces: ✅ ERROR RESUELTO
 
 ---
 
-## 🧪 VERIFICACIÓN RÁPIDA
+##  VERIFICACIÓN RÁPIDA
 
 Después de presionar Deploy, espera 15 minutos y:
 
@@ -132,7 +132,7 @@ Después de presionar Deploy, espera 15 minutos y:
 
 ---
 
-## 📊 STATUS DESPUÉS DE LA ACCIÓN
+##  STATUS DESPUÉS DE LA ACCIÓN
 
 ```
 AHORA:                     DESPUÉS DE CONFIGURAR:
@@ -151,7 +151,7 @@ AHORA:                     DESPUÉS DE CONFIGURAR:
 
 ---
 
-## 🎯 RESUMEN EJECUTIVO
+##  RESUMEN EJECUTIVO
 
 **Problema:** Falta configurar variables de entorno en OnRender
 
@@ -163,7 +163,7 @@ AHORA:                     DESPUÉS DE CONFIGURAR:
 
 ---
 
-## 💡 SI TIENES DUDAS
+##  SI TIENES DUDAS
 
 Lee en este orden:
 1. **ACCION_INMEDIATA_ERRORCONEXION.md** → Si necesitas pasos bien explicados
@@ -177,5 +177,4 @@ Lee en este orden:
 El error se resuelve en 20 minutos.
 
 Configurar las variables y presionar Deploy. **Eso es todo.**
-
 

@@ -1,4 +1,4 @@
-# 🔍 DIAGNÓSTICO: Connection Failed en OnRender
+#  DIAGNÓSTICO: Connection Failed en OnRender
 
 ## El Error Exacto que Ves
 
@@ -24,7 +24,7 @@ Probablemente porque:
 
 ---
 
-## 🧪 DIAGNÓSTICO PASO 1: ¿Ves logs de DATASOURCE?
+##  DIAGNÓSTICO PASO 1: ¿Ves logs de DATASOURCE?
 
 En OnRender, ve a tu servicio y busca en **Logs**:
 
@@ -116,7 +116,7 @@ PGPASSWORD = PASSWORD
 
 ---
 
-## 📋 CHECKLIST: ¿Configuré todo en OnRender?
+##  CHECKLIST: ¿Configuré todo en OnRender?
 
 Ve a OnRender → Tu servicio → **Environment**:
 
@@ -142,7 +142,7 @@ Si falta CUALQUIERA de estas 4, **ES EL PROBLEMA**.
 
 ---
 
-## 🔐 VERIFICACIÓN: ¿Las credenciales son correctas?
+##  VERIFICACIÓN: ¿Las credenciales son correctas?
 
 ### Cómo verificar:
 
@@ -197,7 +197,7 @@ Minuto 15:
 
 ---
 
-## 🆘 SI TIENES DUDAS
+##  SI TIENES DUDAS
 
 Responde ESTAS 3 preguntas y podré ayudarte:
 
@@ -224,7 +224,7 @@ Respuesta: [tu respuesta]
 
 ---
 
-## 💡 RECUENTO RÁPIDO
+##  RECUENTO RÁPIDO
 
 | Síntoma | Causa | Solución |
 |---------|-------|----------|
@@ -236,7 +236,7 @@ Respuesta: [tu respuesta]
 
 ---
 
-## 📞 ÚLTIMA OPCIÓN: Debug Local
+##  ÚLTIMA OPCIÓN: Debug Local
 
 Si quieres ver exactamente qué está pasando ANTES de desplegar en OnRender:
 
@@ -275,5 +275,4 @@ El error que ves es **100% problema de configuración**.
 Solución: **Agregar 4 variables en OnRender y Deploy.**
 
 Tiempo total: **5 minutos de acción + 15 minutos de espera.**
-
 

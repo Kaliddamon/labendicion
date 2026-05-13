@@ -1,4 +1,4 @@
-# 🛠️ MEJORA: DataSourceConfig con Debugging Detallado
+# ️ MEJORA: DataSourceConfig con Debugging Detallado
 
 ## Cambio Implementado
 
@@ -71,7 +71,7 @@ Si DATABASE_URL falla, intenta con variables individuales.
 
 ---
 
-## 📊 Comparativa
+##  Comparativa
 
 ### Antes:
 ```java
@@ -155,7 +155,7 @@ public DataSource dataSource() {
 
 ---
 
-## 🔍 Qué Verás en Los Logs
+##  Qué Verás en Los Logs
 
 ### Caso 1: Todo Correcto
 ```
@@ -216,7 +216,7 @@ Environment Variables Found:
 
 ---
 
-## 🎯 Beneficios
+##  Beneficios
 
 1. **Debugging Claro**
    - Sabes exactamente qué está fallando
@@ -237,7 +237,7 @@ Environment Variables Found:
 
 ---
 
-## 📦 Archivo Modificado
+##  Archivo Modificado
 
 **Ubicación:** `backend/src/main/java/dev/kali/config/DataSourceConfig.java`
 
@@ -251,7 +251,7 @@ Environment Variables Found:
 
 ---
 
-## 🚀 Cómo Usar
+##  Cómo Usar
 
 Cuando despliegues en OnRender:
 
@@ -280,5 +280,4 @@ Cuando despliegues en OnRender:
 La mejora hace que cuando algo falla, **puedas ver exactamente por qué** en los logs de OnRender.
 
 No más adivinanzas. Solo datos claros y accionables.
-
 
