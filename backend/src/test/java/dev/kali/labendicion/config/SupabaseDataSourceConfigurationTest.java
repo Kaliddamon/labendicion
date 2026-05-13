@@ -8,33 +8,54 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class SupabaseDataSourceConfigurationTest {
 
     @Test
-    void toJdbcUrl_postgresqlPrefix() {
-        assertThat(SupabaseDataSourceConfiguration.toJdbcUrl("postgresql://u:p@host:5432/db"))
-            .isEqualTo("jdbc:postgresql://u:p@host:5432/db");
+    void parse_standardUri() {
+        var pg = SupabaseDataSourceConfiguration.ParsedPostgres.parse(
+            "postgresql://myuser:mypass@aws.example.com:5432/postgres"
+        );
+        assertThat(pg.jdbcUrlWithoutUser()).isEqualTo("jdbc:postgresql://aws.example.com:5432/postgres");
+        assertThat(pg.username()).isEqualTo("myuser");
+        assertThat(pg.password()).isEqualTo("mypass");
     }
 
     @Test
-    void toJdbcUrl_postgresPrefix() {
-        assertThat(SupabaseDataSourceConfiguration.toJdbcUrl("postgres://u:p@host:5432/db"))
-            .isEqualTo("jdbc:postgresql://u:p@host:5432/db");
+    void parse_percentEncodedPassword() {
+        var pg = SupabaseDataSourceConfiguration.ParsedPostgres.parse(
+            "postgresql://postgres:%40secret%21@host.supabase.co:5432/postgres"
+        );
+        assertThat(pg.username()).isEqualTo("postgres");
+        assertThat(pg.password()).isEqualTo("@secret!");
     }
 
     @Test
-    void toJdbcUrl_alreadyJdbc() {
-        assertThat(SupabaseDataSourceConfiguration.toJdbcUrl("jdbc:postgresql://host/db"))
-            .isEqualTo("jdbc:postgresql://host/db");
+    void parse_supabase_projectUser() {
+        var pg = SupabaseDataSourceConfiguration.ParsedPostgres.parse(
+            "postgresql://postgres.abcproj:pwd@db.abc.supabase.co:6543/postgres"
+        );
+        assertThat(pg.username()).isEqualTo("postgres.abcproj");
+        assertThat(pg.password()).isEqualTo("pwd");
+        assertThat(pg.jdbcUrlWithoutUser()).isEqualTo("jdbc:postgresql://db.abc.supabase.co:6543/postgres");
     }
 
     @Test
-    void toJdbcUrl_invalid() {
-        assertThatThrownBy(() -> SupabaseDataSourceConfiguration.toJdbcUrl("mysql://x"))
+    void parse_defaultsPortAndDb() {
+        var pg = SupabaseDataSourceConfiguration.ParsedPostgres.parse(
+            "postgresql://u:p@onlyhost"
+        );
+        assertThat(pg.port()).isEqualTo(5432);
+        assertThat(pg.jdbcUrlWithoutUser()).contains("/postgres");
+    }
+
+    @Test
+    void parse_invalidPrefix() {
+        assertThatThrownBy(() -> SupabaseDataSourceConfiguration.ParsedPostgres.parse("mysql://h"))
             .isInstanceOf(IllegalStateException.class);
     }
 
     @Test
     void ensureSsl_appendsForRemote() {
-        assertThat(SupabaseDataSourceConfiguration.ensureSslModeForRemote("jdbc:postgresql://db.supabase.co:5432/postgres"))
-            .contains("sslmode=require");
+        assertThat(SupabaseDataSourceConfiguration.ensureSslModeForRemote(
+            "jdbc:postgresql://db.supabase.co:5432/postgres"
+        )).contains("sslmode=require");
     }
 
     @Test

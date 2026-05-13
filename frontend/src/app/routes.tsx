@@ -5,6 +5,7 @@ import { Produccion } from "./pages/Produccion";
 import { Empleados } from "./pages/Empleados";
 import { Aseo } from "./pages/Aseo";
 import { Rendimiento } from "./pages/Rendimiento";
+import SupabaseExample from "./components/SupabaseExample";
 
 export const router = createBrowserRouter([
   {
@@ -16,6 +17,7 @@ export const router = createBrowserRouter([
       { path: "empleados", Component: Empleados },
       { path: "aseo", Component: Aseo },
       { path: "rendimiento", Component: Rendimiento },
+      { path: "supabase", Component: SupabaseExample },
     ],
   },
 ]);

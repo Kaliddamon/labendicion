@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router';
-import { Scissors, Users, Sparkles, TrendingUp } from 'lucide-react';
+import { Scissors, Users, Sparkles, TrendingUp, Database } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
 
 export const Home = () => {
@@ -44,6 +44,14 @@ export const Home = () => {
       icon: TrendingUp,
       color: 'bg-purple-500',
       lightColor: 'bg-purple-50 text-purple-700'
+    },
+    {
+      path: '/supabase',
+      title: 'Todos (Supabase)',
+      desc: 'Demo: tabla todos en tu proyecto Supabase',
+      icon: Database,
+      color: 'bg-cyan-600',
+      lightColor: 'bg-cyan-50 text-cyan-800'
     },
   ];
 
