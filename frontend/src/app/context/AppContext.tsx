@@ -86,7 +86,9 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api/frontend';
+/** En dev, Vite reenvía /api → backend (vite.config). En prod, define VITE_API_BASE_URL al desplegar el API. */
+const fromEnv = import.meta.env.VITE_API_BASE_URL as string | undefined;
+const API_BASE = fromEnv && fromEnv.trim() !== '' ? fromEnv.trim() : '/api/frontend';
 
 const request = async <T,>(path: string, options?: RequestInit): Promise<T> => {
   const res = await fetch(`${API_BASE}${path}`, {

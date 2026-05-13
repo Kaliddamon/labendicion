@@ -26,8 +26,8 @@ El perfil `prod` usa:
 
 Railway detecta el proyecto con `railway.json`:
 
-- build: Nixpacks
-- start: `java -Dspring.profiles.active=prod -jar target/*.jar`
+- build: imagen desde `Dockerfile` en la raíz del servicio (carpeta `backend`)
+- healthcheck: `GET /actuator/health`
 
 ## 4) Verificacion
 
