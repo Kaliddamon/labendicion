@@ -91,12 +91,16 @@ const fromEnv = import.meta.env.VITE_API_BASE_URL as string | undefined;
 const API_BASE = fromEnv && fromEnv.trim() !== '' ? fromEnv.trim() : '/api/frontend';
 
 const request = async <T,>(path: string, options?: RequestInit): Promise<T> => {
+  console.log('API_BASE:', API_BASE);
+  console.log('Full URL:', `${API_BASE}${path}`);
   const res = await fetch(`${API_BASE}${path}`, {
     headers: { 'Content-Type': 'application/json' },
     ...options,
   });
+  console.log('Response status:', res.status);
   if (!res.ok) {
     const text = await res.text();
+    console.error(`API ${res.status}: ${text || 'Error desconocido'}`);
     throw new Error(`API ${res.status}: ${text || 'Error desconocido'}`);
   }
   if (res.status === 204) return undefined as T;
