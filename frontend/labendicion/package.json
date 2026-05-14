@@ -9,6 +9,7 @@
     "lint": "eslint .",
     "preview": "vite preview"
   },
+  "vercel-build": "npm ci && npm run build",
   "dependencies": {
     "react": "^19.2.5",
     "react-dom": "^19.2.5"
