@@ -80,13 +80,10 @@
     "autoprefixer": "^10.4.0",
     "jsdom": "^27.0.1",
     "tailwindcss": "4.3.0",
-    "vite": "^8.0.5",
+    "vite": "^7.3.3",
     "vitest": "^3.2.4"
   },
-  "peerDependencies": {
-  },
-  "peerDependenciesMeta": {
-  },
+  "peerDependenciesMeta": {},
   "pnpm": {
     "overrides": {
       "vite": "^8.0.5"
