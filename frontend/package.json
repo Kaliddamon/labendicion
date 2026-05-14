@@ -86,7 +86,7 @@
   "peerDependenciesMeta": {},
   "pnpm": {
     "overrides": {
-      "vite": "^8.0.5"
+      "vite": "^7.3.3"
     }
   }
 }
