@@ -81,6 +81,15 @@
             </PendingDiffInfo>
           </value>
         </entry>
+        <entry key="$PROJECT_DIR$/frontend/src/app/routes.tsx">
+          <value>
+            <PendingDiffInfo>
+              <option name="filePath" value="$PROJECT_DIR$/frontend/src/app/routes.tsx" />
+              <option name="originalContent" value="import { createBrowserRouter } from &quot;react-router&quot;;&#10;import { Layout } from &quot;./components/Layout&quot;;&#10;import { Home } from &quot;./pages/Home&quot;;&#10;import { Produccion } from &quot;./pages/Produccion&quot;;&#10;import { Empleados } from &quot;./pages/Empleados&quot;;&#10;import { Aseo } from &quot;./pages/Aseo&quot;;&#10;import { Rendimiento } from &quot;./pages/Rendimiento&quot;;&#10;import SupabaseExample from &quot;./components/SupabaseExample&quot;;&#10;&#10;export const router = createBrowserRouter([&#10;  {&#10;    path: &quot;/&quot;,&#10;    Component: Layout,&#10;    children: [&#10;      { index: true, Component: Home },&#10;      { path: &quot;produccion&quot;, Component: Produccion },&#10;      { path: &quot;empleados&quot;, Component: Empleados },&#10;      { path: &quot;aseo&quot;, Component: Aseo },&#10;      { path: &quot;rendimiento&quot;, Component: Rendimiento },&#10;      { path: &quot;supabase&quot;, Component: SupabaseExample },&#10;    ],&#10;  },&#10;]);&#10;" />
+              <option name="updatedContent" value="import { createBrowserRouter } from &quot;react-router&quot;;&#10;import { Layout } from &quot;./components/Layout&quot;;&#10;import { Home } from &quot;./pages/Home&quot;;&#10;import { Produccion } from &quot;./pages/Produccion&quot;;&#10;import { Empleados } from &quot;./pages/Empleados&quot;;&#10;import { Aseo } from &quot;./pages/Aseo&quot;;&#10;import { Rendimiento } from &quot;./pages/Rendimiento&quot;;&#10;&#10;export const router = createBrowserRouter([&#10;  {&#10;    path: &quot;/&quot;,&#10;    Component: Layout,&#10;    children: [&#10;      { index: true, Component: Home },&#10;      { path: &quot;produccion&quot;, Component: Produccion },&#10;      { path: &quot;empleados&quot;, Component: Empleados },&#10;      { path: &quot;aseo&quot;, Component: Aseo },&#10;      { path: &quot;rendimiento&quot;, Component: Rendimiento },&#10;    ],&#10;  },&#10;]);&#10;" />
+            </PendingDiffInfo>
+          </value>
+        </entry>
         <entry key="$PROJECT_DIR$/frontend/src/styles/tailwind.css">
           <value>
             <PendingDiffInfo>
