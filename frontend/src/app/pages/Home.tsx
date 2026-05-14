@@ -45,14 +45,6 @@ export const Home = () => {
       color: 'bg-purple-500',
       lightColor: 'bg-purple-50 text-purple-700'
     },
-    {
-      path: '/supabase',
-      title: 'Todos (Supabase)',
-      desc: 'Demo: tabla todos en tu proyecto Supabase',
-      icon: Database,
-      color: 'bg-cyan-600',
-      lightColor: 'bg-cyan-50 text-cyan-800'
-    },
   ];
 
   return (
