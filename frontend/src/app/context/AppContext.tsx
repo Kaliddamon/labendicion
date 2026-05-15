@@ -91,14 +91,9 @@ const fromEnv = import.meta.env.VITE_API_BASE_URL as string | undefined;
 const API_BASE = fromEnv && fromEnv.trim() !== '' ? `${fromEnv.trim()}/api/frontend` : '/api/frontend';
 
 const request = async <T,>(path: string, options?: RequestInit): Promise<T> => {
-  const token = localStorage.getItem('authToken');
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
-    ...((options?.headers || {}) as HeadersInit),
   };
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
   const res = await fetch(`${API_BASE}${path}`, {
     ...options,
     headers,
