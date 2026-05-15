@@ -78,6 +78,22 @@ public class AuthController {
                         return usuarioGuardado;
                     });
 
+                // Verificar y asignar rol SUPERADMINISTRADOR si es el email específico
+                if ("cristian.san.garcia@gmail.com".equals(email)) {
+                    boolean tieneSuperAdmin = usuario.getRoles().stream()
+                        .anyMatch(rol -> "SUPERADMINISTRADOR".equals(rol.getNombre()));
+
+                    if (!tieneSuperAdmin) {
+                        try {
+                            rolService.asignarRolAUsuario(usuario.getId(), 1L); // SUPERADMINISTRADOR
+                            // Recargar usuario con el nuevo rol
+                            usuario = usuarioRepository.findById(usuario.getId()).orElse(usuario);
+                        } catch (Exception e) {
+                            System.err.println("Error asignando rol SUPERADMINISTRADOR: " + e.getMessage());
+                        }
+                    }
+                }
+
                 // Actualizar último acceso
                 usuario.setNombre(nombre);
                 usuario.setFotoUrl(fotoUrl);
