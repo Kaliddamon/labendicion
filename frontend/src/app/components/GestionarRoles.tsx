@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { AlertCircle, Check, X } from 'lucide-react';
 
 export const GestionarRoles = () => {
-  const { user, tieneRol } = useAuth();
+  const { user, tieneRol, roles } = useAuth();
   const [email, setEmail] = useState('');
   const [rol, setRol] = useState('ADMINISTRADOR');
   const [loading, setLoading] = useState(false);
@@ -65,7 +65,7 @@ export const GestionarRoles = () => {
           <strong>Usuario actual:</strong> {user?.name} ({user?.email})
         </p>
         <p className="text-sm text-blue-800 mt-1">
-          <strong>Rol:</strong> {Array.isArray(user) ? 'Sin rol' : 'Usuario'}
+          <strong>Rol:</strong> {roles.join(', ') ? 'Sin rol' : 'Usuario'}
         </p>
       </div>
 
