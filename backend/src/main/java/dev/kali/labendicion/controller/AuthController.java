@@ -69,10 +69,14 @@ public class AuthController {
                         Usuario usuarioGuardado = usuarioRepository.save(nuevoUsuario);
 
                         // Asignar rol por defecto según el email
-                        if ("cristian.san.garcia@gmail.com".equals(email)) {
-                            rolService.asignarRolAUsuario(usuarioGuardado.getId(), 1L); // SUPERADMINISTRADOR
-                        } else {
-                            rolService.asignarRolAUsuario(usuarioGuardado.getId(), 4L); // USUARIO por defecto
+                        try {
+                            if ("cristian.san.garcia@gmail.com".equals(email)) {
+                                rolService.asignarRolAUsuarioPorEmail(email, "SUPERADMINISTRADOR");
+                            } else {
+                                rolService.asignarRolAUsuarioPorEmail(email, "USUARIO");
+                            }
+                        } catch (Exception e) {
+                            System.err.println("Error asignando rol inicial: " + e.getMessage());
                         }
 
                         return usuarioGuardado;
@@ -85,7 +89,7 @@ public class AuthController {
 
                     if (!tieneSuperAdmin) {
                         try {
-                            rolService.asignarRolAUsuario(usuario.getId(), 1L); // SUPERADMINISTRADOR
+                            rolService.asignarRolAUsuarioPorEmail(email, "SUPERADMINISTRADOR");
                             // Recargar usuario con el nuevo rol
                             usuario = usuarioRepository.findById(usuario.getId()).orElse(usuario);
                         } catch (Exception e) {
