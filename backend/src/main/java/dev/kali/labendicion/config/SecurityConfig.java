@@ -40,7 +40,8 @@ public class SecurityConfig {
             "http://localhost:5173",
             "http://localhost:5174",
             "http://127.0.0.1:5173",
-            "https://labendicion.vercel.app"
+            "https://labendicion.vercel.app",
+            "https://labendicion-beta.vercel.app"
         ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
