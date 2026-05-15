@@ -64,9 +64,6 @@ export const GestionarRoles = () => {
         <p className="text-sm text-blue-800">
           <strong>Usuario actual:</strong> {user?.name} ({user?.email})
         </p>
-        <p className="text-sm text-blue-800 mt-1">
-          <strong>Rol:</strong> {user?.roles?.length ? user.roles.join(', ') : 'Sin rol'}
-        </p>
       </div>
 
       <form onSubmit={handleAsignarRol} className="space-y-4">
