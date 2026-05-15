@@ -26,10 +26,11 @@ export const Login = () => {
 
       const data = await response.json();
       login(credentialResponse.credential as string, {
+        id: data.id,
         email: data.email,
         name: data.name,
         picture: data.picture,
-      });
+      }, data.roles || []);
       navigate('/');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error de autenticación');

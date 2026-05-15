@@ -4,12 +4,16 @@ interface AuthContextType {
   isAuthenticated: boolean;
   user: AuthUser | null;
   token: string | null;
-  login: (googleToken: string, user: AuthUser) => void;
+  roles: string[];
+  login: (googleToken: string, user: AuthUser, roles: string[]) => void;
   logout: () => void;
   setToken: (token: string) => void;
+  tieneRol: (nombreRol: string) => boolean;
+  tienePermiso: (nombrePermiso: string) => boolean;
 }
 
 export interface AuthUser {
+  id?: number;
   email: string;
   name: string;
   picture: string;
@@ -31,19 +35,28 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return localStorage.getItem('authToken');
   });
 
-  const login = (googleToken: string, authUser: AuthUser) => {
+  const [roles, setRoles] = useState<string[]>(() => {
+    const storedRoles = localStorage.getItem('authRoles');
+    return storedRoles ? JSON.parse(storedRoles) : [];
+  });
+
+  const login = (googleToken: string, authUser: AuthUser, userRoles: string[] = []) => {
     localStorage.setItem('authToken', googleToken);
     localStorage.setItem('authUser', JSON.stringify(authUser));
+    localStorage.setItem('authRoles', JSON.stringify(userRoles));
     setTokenState(googleToken);
     setUser(authUser);
+    setRoles(userRoles);
     setIsAuthenticated(true);
   };
 
   const logout = () => {
     localStorage.removeItem('authToken');
     localStorage.removeItem('authUser');
+    localStorage.removeItem('authRoles');
     setTokenState(null);
     setUser(null);
+    setRoles([]);
     setIsAuthenticated(false);
   };
 
@@ -52,8 +65,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setTokenState(newToken);
   };
 
+  const tieneRol = (nombreRol: string): boolean => {
+    return roles.includes(nombreRol);
+  };
+
+  const tienePermiso = (nombrePermiso: string): boolean => {
+    // Por ahora, implementaremos esto en el backend
+    // En el frontend solo verificamos roles
+    return true; // Implementar lógica de permisos si es necesario
+  };
+
   return (
-    <AuthContext.Provider value={{ isAuthenticated, user, token, login, logout, setToken }}>
+    <AuthContext.Provider value={{ isAuthenticated, user, token, roles, login, logout, setToken, tieneRol, tienePermiso }}>
       {children}
     </AuthContext.Provider>
   );
