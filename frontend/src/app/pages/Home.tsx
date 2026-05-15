@@ -71,14 +71,6 @@ export const Home = () => {
           </button>
         ))}
       </div>
-
-      <div className="mt-10 p-6 bg-white rounded-3xl shadow-sm border border-slate-100">
-        <h3 className="text-lg font-bold text-slate-800 mb-4">Aviso sobre los datos 💡</h3>
-        <p className="text-slate-600 text-sm leading-relaxed">
-          Ya he reemplazado la sección de Facturación por "Empleados". Ahora puedes llevar el registro 
-          de cada persona y evaluar su desempeño. También se ha mejorado la Producción con las fechas y ganancias que pediste.
-        </p>
-      </div>
     </div>
   );
 };

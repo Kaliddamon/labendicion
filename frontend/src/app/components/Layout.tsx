@@ -1,8 +1,17 @@
 import React from 'react';
-import { Outlet, NavLink } from 'react-router';
-import { Home, Scissors, Users, Sparkles, TrendingUp } from 'lucide-react';
+import { Outlet, NavLink, useNavigate } from 'react-router';
+import { Home, Scissors, Users, Sparkles, TrendingUp, LogOut } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 export const Layout = () => {
+  const navigate = useNavigate();
+  const { logout, user } = useAuth();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
+
   const navItems = [
     { path: '/', icon: Home, label: 'Inicio' },
     { path: '/produccion', icon: Scissors, label: 'Producción' },
@@ -57,6 +66,25 @@ export const Layout = () => {
             </NavLink>
           ))}
         </nav>
+
+        <div className="hidden md:flex md:flex-col md:items-center md:gap-2 md:border-t md:border-slate-200 md:pt-3 md:mt-auto">
+          {user && (
+            <div className="text-center">
+              {user.picture && (
+                <img src={user.picture} alt={user.name} className="w-10 h-10 rounded-full mx-auto mb-2" />
+              )}
+              <p className="text-xs font-medium text-slate-600 truncate px-2">{user.name}</p>
+            </div>
+          )}
+          <button
+            onClick={handleLogout}
+            className="flex flex-col items-center justify-center rounded-xl transition-all duration-200 h-[4.25rem] w-full max-w-[4.5rem] mx-auto text-slate-500 hover:bg-red-50 hover:text-red-600"
+            title="Cerrar sesión"
+          >
+            <LogOut size={24} strokeWidth={2} className="mb-0.5" />
+            <span className="text-[9px] font-semibold tracking-wide">Salir</span>
+          </button>
+        </div>
       </aside>
     </div>
   );
