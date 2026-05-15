@@ -17,6 +17,7 @@ export interface AuthUser {
   email: string;
   name: string;
   picture: string;
+  roles?: string[];
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -87,4 +88,3 @@ export const useAuth = () => {
   if (!context) throw new Error('useAuth debe usarse dentro de un AuthProvider');
   return context;
 };
-
