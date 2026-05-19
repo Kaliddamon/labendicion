@@ -8,4 +8,7 @@ import java.util.List;
 @Repository
 public interface ProductoSyncRepository extends JpaRepository<ProductoSync, String> {
     List<ProductoSync> findAll();
+
+    @org.springframework.data.jpa.repository.Query("select distinct p from ProductoSync p left join fetch p.pasos order by p.nombre")
+    List<ProductoSync> findAllWithPasosOrderByNombre();
 }

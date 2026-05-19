@@ -41,21 +41,10 @@ public class FrontendSyncController {
     private PasoProduccionSyncRepository pasoRepo;
 
     @GetMapping("/bootstrap")
-    public ResponseEntity<BootstrapResponse> bootstrap() {
-        List<ProductoSync> productos = productoRepo.findAll()
-                .stream()
-                .peek(p -> {
-                    // Forzar la carga de pasos si existen
-                    if (p.getPasos() == null) {
-                        List<PasoProduccionSync> pasos = pasoRepo.findByProductoSyncId(p.getId());
-                        p.setPasos(pasos);
-                        System.out.println("Producto: " + p.getNombre() + ", Pasos cargados: " + pasos.size());
-                    } else {
-                        System.out.println("Producto: " + p.getNombre() + ", Pasos ya cargados: " + p.getPasos().size());
-                    }
-                })
-                .sorted((a, b) -> a.getNombre().compareTo(b.getNombre()))
-                .collect(Collectors.toList());
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
+    public ResponseEntity<Object> bootstrap() {
+        // Cargar productos con pasos en una sola consulta para evitar lazy init
+        List<ProductoSync> productos = productoRepo.findAllWithPasosOrderByNombre();
 
         List<EmpresaSync> empresas = empresaRepo.findAll()
                 .stream()
@@ -67,15 +56,81 @@ public class FrontendSyncController {
                 .sorted((a, b) -> a.getNombre().compareTo(b.getNombre()))
                 .collect(Collectors.toList());
 
-        List<RegistroSync> registros = registroRepo.findByOrderByFechaDesc();
-        // Forzar carga de producciones para evitar LazyInitializationException durante serialización
-        registros.forEach(r -> {
-            if (r.getProducciones() != null) r.getProducciones().size();
-        });
+        // Cargar registros con producciones usando fetch join
+        List<RegistroSync> registros = registroRepo.findAllWithProduccionesOrderByFechaDesc();
 
         List<TareaAseoSync> tareasAseo = tareaAseoRepo.findByOrderByCompletada();
 
-        return ResponseEntity.ok(new BootstrapResponse(productos, empleados, registros, tareasAseo, empresas));
+        // Transformar a DTOs planos mientras la sesión está abierta para evitar LazyInitializationException
+        var productosDto = productos.stream().map(p -> {
+            var pasosDto = p.getPasos() == null ? List.<Object>of() : p.getPasos().stream().map(ps -> {
+                var map = new java.util.HashMap<String, Object>();
+                map.put("id", ps.getId());
+                map.put("descripcion", ps.getDescripcion());
+                map.put("orden", ps.getOrden());
+                map.put("completado", ps.getCompletado());
+                return map;
+            }).collect(Collectors.toList());
+            var map = new java.util.HashMap<String, Object>();
+            map.put("id", p.getId());
+            map.put("nombre", p.getNombre());
+            map.put("cantidad", p.getCantidad());
+            map.put("empresa", p.getEmpresa());
+            map.put("ganancia", p.getGanancia());
+            map.put("fechaAsignacion", p.getFechaAsignacion());
+            map.put("fechaTerminacion", p.getFechaTerminacion());
+            map.put("estado", p.getEstado());
+            map.put("pasos", pasosDto);
+            return map;
+        }).collect(Collectors.toList());
+
+        var registrosDto = registros.stream().map(r -> {
+            var prodDto = (r.getProducciones() == null) ? List.<Object>of() : r.getProducciones().stream().map(pr -> {
+                var m = new java.util.HashMap<String, Object>();
+                m.put("productoId", pr.getProductoId());
+                m.put("unidadesTotales", pr.getUnidadesTotales());
+                m.put("unidadesBuenas", pr.getUnidadesBuenas());
+                return m;
+            }).collect(Collectors.toList());
+            var m2 = new java.util.HashMap<String, Object>();
+            m2.put("id", r.getId());
+            m2.put("empleadoId", r.getEmpleadoId());
+            m2.put("fecha", r.getFecha());
+            m2.put("horaEntrada", r.getHoraEntrada());
+            m2.put("horaSalida", r.getHoraSalida());
+            m2.put("unidadesTotales", r.getUnidadesTotales());
+            m2.put("unidadesBuenas", r.getUnidadesBuenas());
+            m2.put("producciones", prodDto);
+            return m2;
+        }).collect(Collectors.toList());
+
+        // Empleados, tareas y empresas: serializables simples
+        var empleadosDto = empleados.stream().map(e -> {
+            var m = new java.util.HashMap<String, Object>();
+            m.put("id", e.getId()); m.put("nombre", e.getNombre()); m.put("cargo", e.getCargo()); m.put("documento", e.getDocumento()); m.put("telefono", e.getTelefono()); m.put("fechaIngreso", e.getFechaIngreso()); m.put("estado", e.getEstado());
+            return m;
+        }).collect(Collectors.toList());
+
+        var tareasDto = tareasAseo.stream().map(t -> {
+            var m = new java.util.HashMap<String, Object>();
+            m.put("id", t.getId()); m.put("accion", t.getAccion()); m.put("area", t.getArea()); m.put("encargado", t.getEncargado()); m.put("completada", t.isCompletada());
+            return m;
+        }).collect(Collectors.toList());
+
+        var empresasDto = empresas.stream().map(emp -> {
+            var m = new java.util.HashMap<String, Object>();
+            m.put("id", emp.getId()); m.put("razonSocial", emp.getRazonSocial()); m.put("telefono", emp.getTelefono()); m.put("correo", emp.getCorreo()); m.put("direccion", emp.getDireccion()); m.put("estado", emp.getEstado());
+            return m;
+        }).collect(Collectors.toList());
+
+        var response = new java.util.HashMap<String, Object>();
+        response.put("productos", productosDto);
+        response.put("empleados", empleadosDto);
+        response.put("registros", registrosDto);
+        response.put("tareasAseo", tareasDto);
+        response.put("empresas", empresasDto);
+
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/productos")
