@@ -35,11 +35,22 @@ public class FrontendSyncController {
     @Autowired
     private TareaAseoSyncRepository tareaAseoRepo;
 
+    @Autowired
+    private EmpresaSyncRepository empresaRepo;
+
+    @Autowired
+    private PasoProduccionSyncRepository pasoRepo;
+
     @GetMapping("/bootstrap")
     public ResponseEntity<BootstrapResponse> bootstrap() {
         List<ProductoSync> productos = productoRepo.findAll()
                 .stream()
                 .sorted((a, b) -> a.getNombre().compareTo(b.getNombre()))
+                .collect(Collectors.toList());
+
+        List<EmpresaSync> empresas = empresaRepo.findAll()
+                .stream()
+                .sorted((a, b) -> a.getRazonSocial().compareTo(b.getRazonSocial()))
                 .collect(Collectors.toList());
 
         List<EmpleadoSync> empleados = empleadoRepo.findAll()
@@ -51,26 +62,114 @@ public class FrontendSyncController {
 
         List<TareaAseoSync> tareasAseo = tareaAseoRepo.findByOrderByCompletada();
 
-        return ResponseEntity.ok(new BootstrapResponse(productos, empleados, registros, tareasAseo));
+        return ResponseEntity.ok(new BootstrapResponse(productos, empleados, registros, tareasAseo, empresas));
     }
 
     @PostMapping("/productos")
-    public ResponseEntity<ProductoSync> crearProducto(@RequestBody ProductoSync producto) {
-        if (producto.getId() == null) {
-            producto.setId(generateId());
+    public ResponseEntity<ProductoSync> crearProducto(@RequestBody java.util.Map<String, Object> body) {
+        try {
+            ProductoSync producto = new ProductoSync();
+            producto.setId(body.getOrDefault("id", generateId()).toString());
+            producto.setNombre((String) body.getOrDefault("nombre", ""));
+            producto.setCantidad(body.get("cantidad") == null ? null : Integer.parseInt(body.get("cantidad").toString()));
+            producto.setEmpresa((String) body.getOrDefault("empresa", ""));
+            producto.setGanancia(body.get("ganancia") == null ? null : Integer.parseInt(body.get("ganancia").toString()));
+            producto.setFechaAsignacion((String) body.getOrDefault("fechaAsignacion", ""));
+            producto.setFechaTerminacion((String) body.getOrDefault("fechaTerminacion", ""));
+            producto.setEstado((String) body.getOrDefault("estado", "Pendiente"));
+
+            ProductoSync guardado = productoRepo.save(producto);
+
+            // Procesar pasos como entidades relacionales
+            Object pasosObj = body.get("pasos");
+            if (pasosObj != null && pasosObj instanceof java.util.List) {
+                java.util.List<?> pasosList = (java.util.List<?>) pasosObj;
+                for (Object paso : pasosList) {
+                    if (paso instanceof java.util.Map) {
+                        java.util.Map<String, Object> pasoMap = (java.util.Map<String, Object>) paso;
+                        PasoProduccionSync nuevoPaso = new PasoProduccionSync();
+                        nuevoPaso.setId(generateId());
+                        nuevoPaso.setProductoSync(guardado);
+                        nuevoPaso.setDescripcion((String) pasoMap.getOrDefault("descripcion", ""));
+                        nuevoPaso.setOrden(pasoMap.get("orden") == null ? 0 : Integer.parseInt(pasoMap.get("orden").toString()));
+                        nuevoPaso.setCompletado((Boolean) pasoMap.getOrDefault("completado", false));
+                        pasoRepo.save(nuevoPaso);
+                    }
+                }
+                // Recargar producto con pasos
+                guardado = productoRepo.findById(guardado.getId()).orElse(guardado);
+            }
+
+            // Actualizar estado de empresa asociada si existe
+            if (producto.getEmpresa() != null && !producto.getEmpresa().isBlank()) {
+                empresaRepo.findByRazonSocial(producto.getEmpresa()).ifPresent(emp -> {
+                    emp.setEstado("Ordenes pendientes");
+                    empresaRepo.save(emp);
+                });
+            }
+
+            return ResponseEntity.ok(guardado);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).build();
         }
-        ProductoSync guardado = productoRepo.save(producto);
-        return ResponseEntity.ok(guardado);
     }
 
     @PutMapping("/productos/{id}")
-    public ResponseEntity<ProductoSync> actualizarProducto(@PathVariable String id, @RequestBody ProductoSync producto) {
+    public ResponseEntity<ProductoSync> actualizarProducto(@PathVariable String id, @RequestBody java.util.Map<String, Object> body) {
         if (!productoRepo.existsById(id)) {
             return ResponseEntity.notFound().build();
         }
-        producto.setId(id);
-        ProductoSync guardado = productoRepo.save(producto);
-        return ResponseEntity.ok(guardado);
+        try {
+            ProductoSync actual = productoRepo.findById(id).orElseThrow();
+            actual.setNombre((String) body.getOrDefault("nombre", actual.getNombre()));
+            if (body.containsKey("cantidad")) actual.setCantidad(body.get("cantidad") == null ? null : Integer.parseInt(body.get("cantidad").toString()));
+            if (body.containsKey("empresa")) actual.setEmpresa((String) body.get("empresa"));
+            if (body.containsKey("ganancia")) actual.setGanancia(body.get("ganancia") == null ? null : Integer.parseInt(body.get("ganancia").toString()));
+            actual.setFechaAsignacion((String) body.getOrDefault("fechaAsignacion", actual.getFechaAsignacion()));
+            actual.setFechaTerminacion((String) body.getOrDefault("fechaTerminacion", actual.getFechaTerminacion()));
+            actual.setEstado((String) body.getOrDefault("estado", actual.getEstado()));
+
+            // Eliminar pasos previos si existen
+            if (actual.getPasos() != null) {
+                pasoRepo.deleteAll(actual.getPasos());
+            }
+
+            ProductoSync guardado = productoRepo.save(actual);
+
+            // Procesar nuevos pasos
+            Object pasosObj = body.get("pasos");
+            if (pasosObj != null && pasosObj instanceof java.util.List) {
+                java.util.List<?> pasosList = (java.util.List<?>) pasosObj;
+                for (Object paso : pasosList) {
+                    if (paso instanceof java.util.Map) {
+                        java.util.Map<String, Object> pasoMap = (java.util.Map<String, Object>) paso;
+                        PasoProduccionSync nuevoPaso = new PasoProduccionSync();
+                        nuevoPaso.setId(generateId());
+                        nuevoPaso.setProductoSync(guardado);
+                        nuevoPaso.setDescripcion((String) pasoMap.getOrDefault("descripcion", ""));
+                        nuevoPaso.setOrden(pasoMap.get("orden") == null ? 0 : Integer.parseInt(pasoMap.get("orden").toString()));
+                        nuevoPaso.setCompletado((Boolean) pasoMap.getOrDefault("completado", false));
+                        pasoRepo.save(nuevoPaso);
+                    }
+                }
+                // Recargar producto con pasos actualizados
+                guardado = productoRepo.findById(guardado.getId()).orElse(guardado);
+            }
+
+            // Actualizar estado de empresa asociada (si se cambió empresa)
+            if (actual.getEmpresa() != null && !actual.getEmpresa().isBlank()) {
+                empresaRepo.findByRazonSocial(actual.getEmpresa()).ifPresent(emp -> {
+                    emp.setEstado("Ordenes pendientes");
+                    empresaRepo.save(emp);
+                });
+            }
+
+            return ResponseEntity.ok(guardado);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).build();
+        }
     }
 
     @DeleteMapping("/productos/{id}")
@@ -80,6 +179,47 @@ public class FrontendSyncController {
                 .filter(r -> r.getProducciones() != null && r.getProducciones()
                         .stream().anyMatch(p -> id.equals(p.getProductoId())))
                 .collect(Collectors.toList()));
+        // Actualizar estado de empresa asociada si ya no tiene órdenes
+        // Intentamos recuperar info del producto eliminado basándonos en registros previos
+        // (si no se puede, este paso se vuelve noop)
+        try {
+            // Buscar empresas que ahora no tengan productos
+            List<EmpresaSync> todas = empresaRepo.findAll();
+            for (EmpresaSync emp : todas) {
+                boolean tiene = productoRepo.findAll().stream().anyMatch(p -> emp.getRazonSocial().equals(p.getEmpresa()));
+                if (!tiene) {
+                    emp.setEstado("Sin ordenes");
+                    empresaRepo.save(emp);
+                }
+            }
+        } catch (Exception ignored) {}
+        return ResponseEntity.noContent().build();
+    }
+
+    // Empresas CRUD
+    @GetMapping("/empresas")
+    public ResponseEntity<List<EmpresaSync>> listarEmpresas() {
+        return ResponseEntity.ok(empresaRepo.findAll());
+    }
+
+    @PostMapping("/empresas")
+    public ResponseEntity<EmpresaSync> crearEmpresa(@RequestBody EmpresaSync empresa) {
+        if (empresa.getId() == null) empresa.setId(generateId());
+        EmpresaSync saved = empresaRepo.save(empresa);
+        return ResponseEntity.ok(saved);
+    }
+
+    @PutMapping("/empresas/{id}")
+    public ResponseEntity<EmpresaSync> actualizarEmpresa(@PathVariable String id, @RequestBody EmpresaSync empresa) {
+        if (!empresaRepo.existsById(id)) return ResponseEntity.notFound().build();
+        empresa.setId(id);
+        EmpresaSync saved = empresaRepo.save(empresa);
+        return ResponseEntity.ok(saved);
+    }
+
+    @DeleteMapping("/empresas/{id}")
+    public ResponseEntity<Void> eliminarEmpresa(@PathVariable String id) {
+        empresaRepo.deleteById(id);
         return ResponseEntity.noContent().build();
     }
 
@@ -162,6 +302,61 @@ public class FrontendSyncController {
         return ResponseEntity.noContent().build();
     }
 
+    // Pasos de Producción CRUD
+    @GetMapping("/productos/{productoId}/pasos")
+    public ResponseEntity<List<PasoProduccionSync>> listarPasos(@PathVariable String productoId) {
+        return ResponseEntity.ok(pasoRepo.findByProductoSyncId(productoId));
+    }
+
+    @PostMapping("/productos/{productoId}/pasos")
+    public ResponseEntity<PasoProduccionSync> crearPaso(@PathVariable String productoId, @RequestBody java.util.Map<String, Object> body) {
+        try {
+            ProductoSync producto = productoRepo.findById(productoId).orElseThrow();
+            PasoProduccionSync paso = new PasoProduccionSync();
+            paso.setId(generateId());
+            paso.setProductoSync(producto);
+            paso.setDescripcion((String) body.getOrDefault("descripcion", ""));
+            paso.setOrden(body.get("orden") == null ? 0 : Integer.parseInt(body.get("orden").toString()));
+            paso.setCompletado((Boolean) body.getOrDefault("completado", false));
+            PasoProduccionSync guardado = pasoRepo.save(paso);
+            return ResponseEntity.ok(guardado);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).build();
+        }
+    }
+
+    @PutMapping("/pasos/{pasoId}")
+    public ResponseEntity<PasoProduccionSync> actualizarPaso(@PathVariable String pasoId, @RequestBody java.util.Map<String, Object> body) {
+        try {
+            PasoProduccionSync paso = pasoRepo.findById(pasoId).orElseThrow();
+            if (body.containsKey("descripcion")) paso.setDescripcion((String) body.get("descripcion"));
+            if (body.containsKey("orden")) paso.setOrden(Integer.parseInt(body.get("orden").toString()));
+            if (body.containsKey("completado")) paso.setCompletado((Boolean) body.get("completado"));
+            PasoProduccionSync guardado = pasoRepo.save(paso);
+            return ResponseEntity.ok(guardado);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).build();
+        }
+    }
+
+    @PatchMapping("/pasos/{pasoId}/toggle")
+    public ResponseEntity<PasoProduccionSync> togglePaso(@PathVariable String pasoId) {
+        try {
+            PasoProduccionSync paso = pasoRepo.findById(pasoId).orElseThrow();
+            paso.setCompletado(!paso.getCompletado());
+            PasoProduccionSync guardado = pasoRepo.save(paso);
+            return ResponseEntity.ok(guardado);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).build();
+        }
+    }
+
+    @DeleteMapping("/pasos/{pasoId}")
+    public ResponseEntity<Void> eliminarPaso(@PathVariable String pasoId) {
+        pasoRepo.deleteById(pasoId);
+        return ResponseEntity.noContent().build();
+    }
+
     private static String generateId() {
         return UUID.randomUUID().toString().replace("-", "").substring(0, 12);
     }
@@ -170,6 +365,7 @@ public class FrontendSyncController {
             List<ProductoSync> productos,
             List<EmpleadoSync> empleados,
             List<RegistroSync> registros,
-            List<TareaAseoSync> tareasAseo
+            List<TareaAseoSync> tareasAseo,
+            List<EmpresaSync> empresas
     ) {}
 }

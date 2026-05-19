@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -23,4 +24,7 @@ public class ProductoSync {
     private String fechaAsignacion;
     private String fechaTerminacion;
     private String estado;
+
+    @OneToMany(mappedBy = "productoSync", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    private List<PasoProduccionSync> pasos;
 }
