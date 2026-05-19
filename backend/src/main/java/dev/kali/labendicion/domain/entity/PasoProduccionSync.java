@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import com.fasterxml.jackson.annotation.JsonBackReference;
 
 @Data
 @NoArgsConstructor
@@ -18,10 +19,12 @@ public class PasoProduccionSync {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "producto_sync_id", nullable = false)
+    @JsonBackReference
     private ProductoSync productoSync;
 
     private String descripcion;
     private Integer orden;
     private Boolean completado;
 }
+
 

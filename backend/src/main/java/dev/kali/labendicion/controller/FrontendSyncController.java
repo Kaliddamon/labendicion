@@ -44,6 +44,16 @@ public class FrontendSyncController {
     public ResponseEntity<BootstrapResponse> bootstrap() {
         List<ProductoSync> productos = productoRepo.findAll()
                 .stream()
+                .peek(p -> {
+                    // Forzar la carga de pasos si existen
+                    if (p.getPasos() == null) {
+                        List<PasoProduccionSync> pasos = pasoRepo.findByProductoSyncId(p.getId());
+                        p.setPasos(pasos);
+                        System.out.println("Producto: " + p.getNombre() + ", Pasos cargados: " + pasos.size());
+                    } else {
+                        System.out.println("Producto: " + p.getNombre() + ", Pasos ya cargados: " + p.getPasos().size());
+                    }
+                })
                 .sorted((a, b) -> a.getNombre().compareTo(b.getNombre()))
                 .collect(Collectors.toList());
 

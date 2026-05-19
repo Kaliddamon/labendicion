@@ -5,6 +5,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+import java.util.ArrayList;
 import java.util.List;
 
 @Data
@@ -26,5 +28,7 @@ public class ProductoSync {
     private String estado;
 
     @OneToMany(mappedBy = "productoSync", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
-    private List<PasoProduccionSync> pasos;
+    @JsonManagedReference
+    @Builder.Default
+    private List<PasoProduccionSync> pasos = new ArrayList<>();
 }

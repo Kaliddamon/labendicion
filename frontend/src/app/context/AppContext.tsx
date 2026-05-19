@@ -137,26 +137,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
      request<BootstrapResponse>('/bootstrap')
        .then((data) => {
          if (!mounted) return;
-         // Cargar pasos para cada producto
-         const productosWithPasos = (data.productos ?? []).map((prod) =>
-           request<any[]>(`/productos/${prod.id}/pasos`)
-             .then((pasos) => {
-               prod.pasos = pasos;
-               return prod;
-             })
-             .catch(() => prod)
-         );
-
-         Promise.all(productosWithPasos)
-           .then((productosConPasos) => {
-             if (mounted) {
-               setProductos(productosConPasos);
-               setEmpleados(data.empleados ?? []);
-               setRegistros(data.registros ?? []);
-               setTareasAseo(data.tareasAseo ?? []);
-               setEmpresas((data as any).empresas ?? []);
-             }
-           });
+         setProductos(data.productos ?? []);
+         setEmpleados(data.empleados ?? []);
+         setRegistros(data.registros ?? []);
+         setTareasAseo(data.tareasAseo ?? []);
+         setEmpresas((data as any).empresas ?? []);
+         console.log('Bootstrap cargado:', data.productos);
        })
        .catch((err) => {
          console.warn('No se pudo cargar bootstrap del backend:', err);
