@@ -284,7 +284,7 @@ export const Produccion = () => {
                   </div>
                   {((prod as any).pasos) && (
                     <div className="text-sm text-slate-600 mt-3">
-                      <strong>Pasos:</strong> {Array.isArray((prod as any).pasos) ? ((prod as any).pasos as any[]).map((p: any) => p.descripcion).join(', ') : (typeof (prod as any).pasos === 'string' ? (()=>{ try { return JSON.parse((prod as any).pasos).map((p: any) => p.descripcion).join(', '); } catch(e) { return ''; } })() : '')}
+                      <strong>Pasos:</strong> {Array.isArray((prod as any).pasos) ? ((prod as any).pasos as any[]).map((p: any) => p.descripcion || p).join(', ') : ''}
                     </div>
                   )}
                 </div>

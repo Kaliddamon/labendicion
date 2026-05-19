@@ -132,38 +132,61 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [tareasAseo, setTareasAseo] = useState<TareaAseo[]>([]);
   const [empresas, setEmpresas] = useState<Empresa[]>([]);
 
-  useEffect(() => {
-    let mounted = true;
-    request<BootstrapResponse>('/bootstrap')
-      .then((data) => {
-        if (!mounted) return;
-        setProductos(data.productos ?? []);
-        setEmpleados(data.empleados ?? []);
-        setRegistros(data.registros ?? []);
-        setTareasAseo(data.tareasAseo ?? []);
-        setEmpresas((data as any).empresas ?? []);
-      })
-      .catch((err) => {
-        console.warn('No se pudo cargar bootstrap del backend:', err);
-      });
-    return () => {
-      mounted = false;
-    };
-  }, []);
+   useEffect(() => {
+     let mounted = true;
+     request<BootstrapResponse>('/bootstrap')
+       .then((data) => {
+         if (!mounted) return;
+         // Cargar pasos para cada producto
+         const productosWithPasos = (data.productos ?? []).map((prod) =>
+           request<any[]>(`/productos/${prod.id}/pasos`)
+             .then((pasos) => {
+               prod.pasos = pasos;
+               return prod;
+             })
+             .catch(() => prod)
+         );
+
+         Promise.all(productosWithPasos)
+           .then((productosConPasos) => {
+             if (mounted) {
+               setProductos(productosConPasos);
+               setEmpleados(data.empleados ?? []);
+               setRegistros(data.registros ?? []);
+               setTareasAseo(data.tareasAseo ?? []);
+               setEmpresas((data as any).empresas ?? []);
+             }
+           });
+       })
+       .catch((err) => {
+         console.warn('No se pudo cargar bootstrap del backend:', err);
+       });
+     return () => {
+       mounted = false;
+     };
+   }, []);
 
   // === FUNCIONES CRUD ===
 
   // Producción
-  const agregarProducto = (prod: Omit<Producto, 'id'>) => {
-    request<Producto>('/productos', {
-      method: 'POST',
-      body: JSON.stringify(prod),
-    })
-      .then((nuevo) => {
-        setProductos((prev) => [nuevo, ...prev]);
-      })
-      .catch((err) => console.error('Error creando producto:', err));
-  };
+   const agregarProducto = (prod: Omit<Producto, 'id'>) => {
+     request<Producto>('/productos', {
+       method: 'POST',
+       body: JSON.stringify(prod),
+     })
+       .then((nuevo) => {
+         // Cargar pasos del producto después de crear
+         if (nuevo.id) {
+           return request<any[]>(`/productos/${nuevo.id}/pasos`)
+             .then((pasos) => {
+               nuevo.pasos = pasos;
+               setProductos((prev) => [nuevo, ...prev]);
+             });
+         }
+         setProductos((prev) => [nuevo, ...prev]);
+       })
+       .catch((err) => console.error('Error creando producto:', err));
+   };
   const editarProducto = (id: string, prod: Partial<Producto>) => {
     const actual = productos.find((p) => p.id === id);
     if (!actual) return;
