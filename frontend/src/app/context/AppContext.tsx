@@ -11,6 +11,7 @@ export interface Producto {
   fechaAsignacion: string;
   fechaTerminacion: string;
   estado: 'Pendiente' | 'En proceso' | 'Terminado';
+  pasos?: { descripcion: string; orden: number; completado?: boolean }[];
 }
 
 export interface Empleado {
@@ -21,6 +22,15 @@ export interface Empleado {
   telefono: string;
   fechaIngreso: string;
   estado: 'Activo' | 'Inactivo';
+}
+
+export interface Empresa {
+  id: string;
+  razonSocial: string;
+  telefono?: string;
+  correo?: string;
+  direccion?: string;
+  estado?: string; // Sin ordenes, Ordenes pendientes, Inactiva
 }
 
 export interface RegistroDiario {
@@ -82,6 +92,12 @@ interface AppContextType {
   editarTareaAseo: (id: string, tarea: Partial<TareaAseo>) => void;
   toggleTareaAseo: (id: string) => void;
   eliminarTareaAseo: (id: string) => void;
+
+  // Empresas
+  empresas: Empresa[];
+  agregarEmpresa: (emp: Omit<Empresa, 'id'>) => void;
+  editarEmpresa: (id: string, emp: Partial<Empresa>) => void;
+  eliminarEmpresa: (id: string) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -114,6 +130,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [empleados, setEmpleados] = useState<Empleado[]>([]);
   const [registros, setRegistros] = useState<RegistroDiario[]>([]);
   const [tareasAseo, setTareasAseo] = useState<TareaAseo[]>([]);
+  const [empresas, setEmpresas] = useState<Empresa[]>([]);
 
   useEffect(() => {
     let mounted = true;
@@ -124,6 +141,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         setEmpleados(data.empleados ?? []);
         setRegistros(data.registros ?? []);
         setTareasAseo(data.tareasAseo ?? []);
+        setEmpresas((data as any).empresas ?? []);
       })
       .catch((err) => {
         console.warn('No se pudo cargar bootstrap del backend:', err);
@@ -266,12 +284,38 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       .catch((err) => console.error('Error eliminando tarea de aseo:', err));
   };
 
+  // Empresas
+  const agregarEmpresa = (emp: Omit<Empresa, 'id'>) => {
+    request<Empresa>('/empresas', {
+      method: 'POST',
+      body: JSON.stringify(emp),
+    })
+      .then((nuevo) => setEmpresas((prev) => [nuevo, ...prev]))
+      .catch((err) => console.error('Error creando empresa:', err));
+  };
+
+  const editarEmpresa = (id: string, emp: Partial<Empresa>) => {
+    const actual = empresas.find((e) => e.id === id);
+    if (!actual) return;
+    const payload = { ...actual, ...emp };
+    request<Empresa>(`/empresas/${id}`, { method: 'PUT', body: JSON.stringify(payload) })
+      .then((actualizado) => setEmpresas((prev) => prev.map((e) => (e.id === id ? actualizado : e))))
+      .catch((err) => console.error('Error editando empresa:', err));
+  };
+
+  const eliminarEmpresa = (id: string) => {
+    request<void>(`/empresas/${id}`, { method: 'DELETE' })
+      .then(() => setEmpresas((prev) => prev.filter((e) => e.id !== id)))
+      .catch((err) => console.error('Error eliminando empresa:', err));
+  };
+
   return (
     <AppContext.Provider value={{
       productos, agregarProducto, editarProducto, eliminarProducto,
       empleados, agregarEmpleado, editarEmpleado, eliminarEmpleado,
       registros, agregarRegistro, eliminarRegistro,
-      tareasAseo, agregarTareaAseo, editarTareaAseo, toggleTareaAseo, eliminarTareaAseo
+      tareasAseo, agregarTareaAseo, editarTareaAseo, toggleTareaAseo, eliminarTareaAseo,
+      empresas, agregarEmpresa, editarEmpresa, eliminarEmpresa
     }}>
       {children}
     </AppContext.Provider>

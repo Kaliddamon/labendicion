@@ -1,9 +1,37 @@
 import React, { useState } from 'react';
 import { useAppContext, Producto } from '../context/AppContext';
+import { useAuth } from '../context/AuthContext';
 import { Search, Plus, Package, Edit2, Trash2 } from 'lucide-react';
+
+const EmpresaForm = ({ onCreate }: { onCreate: (emp: { razonSocial: string; telefono?: string; correo?: string; direccion?: string; estado?: string }) => void }) => {
+  const [razonSocial, setRazonSocial] = useState('');
+  const [telefono, setTelefono] = useState('');
+  const [correo, setCorreo] = useState('');
+  const [direccion, setDireccion] = useState('');
+  const [estado, setEstado] = useState('Sin ordenes');
+
+  return (
+    <form onSubmit={(e) => { e.preventDefault(); if (!razonSocial) return alert('Razon social requerida'); onCreate({ razonSocial, telefono, correo, direccion, estado }); setRazonSocial(''); setTelefono(''); setCorreo(''); setDireccion(''); setEstado('Sin ordenes'); }} className="space-y-2">
+      <input className="w-full bg-slate-50 border rounded-xl px-3 py-2" placeholder="Razon social" value={razonSocial} onChange={e=>setRazonSocial(e.target.value)} />
+      <input className="w-full bg-slate-50 border rounded-xl px-3 py-2" placeholder="Teléfono" value={telefono} onChange={e=>setTelefono(e.target.value)} />
+      <input className="w-full bg-slate-50 border rounded-xl px-3 py-2" placeholder="Correo" value={correo} onChange={e=>setCorreo(e.target.value)} />
+      <input className="w-full bg-slate-50 border rounded-xl px-3 py-2" placeholder="Dirección" value={direccion} onChange={e=>setDireccion(e.target.value)} />
+      <div className="flex gap-2">
+        <select className="flex-1 bg-slate-50 border rounded-xl px-3 py-2" value={estado} onChange={e=>setEstado(e.target.value)}>
+          <option>Sin ordenes</option>
+          <option>Ordenes pendientes</option>
+          <option>Inactiva</option>
+        </select>
+        <button type="submit" className="bg-teal-600 text-white px-4 py-2 rounded-xl">Crear</button>
+      </div>
+    </form>
+  );
+};
 
 export const Produccion = () => {
   const { productos, agregarProducto, editarProducto, eliminarProducto } = useAppContext();
+  const { empresas, agregarEmpresa, editarEmpresa, eliminarEmpresa } = useAppContext();
+  const { tieneRol } = useAuth();
   const [busqueda, setBusqueda] = useState('');
   
   // Estado para el formulario (Crear/Editar)
@@ -15,6 +43,9 @@ export const Produccion = () => {
   const [cantidad, setCantidad] = useState('');
   const [empresa, setEmpresa] = useState('');
   const [ganancia, setGanancia] = useState('');
+  const [mostrarModalEmpresas, setMostrarModalEmpresas] = useState(false);
+  const [pasos, setPasos] = useState<{ descripcion: string; orden: number }[]>([]);
+  const [nuevoPaso, setNuevoPaso] = useState('');
   const [fechaAsignacion, setFechaAsignacion] = useState(new Date().toISOString().split('T')[0]);
   const [fechaTerminacion, setFechaTerminacion] = useState('');
   const [estado, setEstado] = useState<Producto['estado']>('Pendiente');
@@ -25,7 +56,21 @@ export const Produccion = () => {
   );
 
   const formatMonto = (num: number) => {
-    return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(num);
+    // Formato simple con apostrofe como separador de miles (ej. 1'000'000)
+    if (num == null) return '';
+    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, "'");
+  };
+
+  const formatInputNumber = (value: string) => {
+    // Elimina todo excepto dígitos
+    const onlyDigits = value.replace(/[^0-9]/g, '');
+    if (!onlyDigits) return '';
+    return onlyDigits.replace(/\B(?=(\d{3})+(?!\d))/g, "'");
+  };
+
+  const parseFormattedNumber = (value: string) => {
+    if (!value) return 0;
+    return Number(value.replace(/[^0-9\-]/g, ''));
   };
 
   const resetForm = () => {
@@ -36,8 +81,26 @@ export const Produccion = () => {
   };
 
   const iniciarEdicion = (prod: Producto) => {
-    setNombre(prod.nombre); setCantidad(prod.cantidad.toString());
-    setEmpresa(prod.empresa); setGanancia(prod.ganancia.toString());
+    setNombre(prod.nombre); setCantidad(formatInputNumber(prod.cantidad.toString()));
+    setEmpresa(prod.empresa); setGanancia(formatInputNumber(prod.ganancia.toString()));
+    try {
+      const obj = (prod as any).pasos;
+      if (Array.isArray(obj)) {
+        setPasos(obj.map((p: any, i: number) => ({
+          descripcion: p.descripcion ?? p?.descripcion ?? '',
+          orden: p.orden ?? i + 1
+        })));
+      } else if (typeof obj === 'string' && obj.trim() !== '') {
+        setPasos(JSON.parse(obj).map((p: any, i: number) => ({
+          descripcion: p.descripcion ?? '',
+          orden: p.orden ?? i + 1
+        })));
+      } else {
+        setPasos([]);
+      }
+    } catch (e) {
+      setPasos([]);
+    }
     setFechaAsignacion(prod.fechaAsignacion); setFechaTerminacion(prod.fechaTerminacion);
     setEstado(prod.estado); setProductoEditando(prod.id); setMostrarForm(true);
   };
@@ -45,10 +108,16 @@ export const Produccion = () => {
   const handleGuardar = (e: React.FormEvent) => {
     e.preventDefault();
     if (!nombre || !cantidad || !empresa || !ganancia) return alert('Llene los campos obligatorios');
-    
+
     const prodData = {
-      nombre, cantidad: Number(cantidad), empresa, ganancia: Number(ganancia),
-      fechaAsignacion, fechaTerminacion, estado
+      nombre,
+      cantidad: parseFormattedNumber(cantidad),
+      empresa,
+      ganancia: parseFormattedNumber(ganancia),
+      fechaAsignacion,
+      fechaTerminacion,
+      estado,
+      pasos,
     };
 
     if (productoEditando) {
@@ -98,17 +167,27 @@ export const Produccion = () => {
             
             <div>
               <label className="block text-sm font-semibold text-slate-600 mb-2">Cantidad</label>
-              <input type="number" placeholder="Ej. 50" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-lg" value={cantidad} onChange={e=>setCantidad(e.target.value)} required />
+              <input type="text" inputMode="numeric" placeholder="Ej. 50" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-lg" value={cantidad} onChange={e=>setCantidad(formatInputNumber(e.target.value))} required />
             </div>
             
             <div>
               <label className="block text-sm font-semibold text-slate-600 mb-2">Empresa / Cliente</label>
-              <input type="text" placeholder="Ej. Hotel El Sol" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-lg" value={empresa} onChange={e=>setEmpresa(e.target.value)} required />
+              <div className="flex gap-2">
+                <select className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-lg" value={empresa} onChange={e=>setEmpresa(e.target.value)} required>
+                  <option value="">Seleccione una empresa...</option>
+                  {empresas.map(emp => (
+                    <option key={emp.id} value={emp.razonSocial}>{emp.razonSocial}</option>
+                  ))}
+                </select>
+                {tieneRol('SUPERADMINISTRADOR') && (
+                  <button type="button" onClick={()=>setMostrarModalEmpresas(true)} className="bg-slate-100 px-3 rounded-lg">Empresas</button>
+                )}
+              </div>
             </div>
 
             <div>
               <label className="block text-sm font-semibold text-slate-600 mb-2">Ganancia por este trabajo</label>
-              <input type="number" placeholder="Ej. 150000" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-lg" value={ganancia} onChange={e=>setGanancia(e.target.value)} required />
+              <input type="text" inputMode="numeric" placeholder="Ej. 150000" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-lg" value={ganancia} onChange={e=>setGanancia(formatInputNumber(e.target.value))} required />
             </div>
 
             <div>
@@ -130,7 +209,31 @@ export const Produccion = () => {
               <input type="date" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-lg" value={fechaTerminacion} onChange={e=>setFechaTerminacion(e.target.value)} />
             </div>
           </div>
-          
+
+          <div className="mb-4">
+            <label className="block text-sm font-semibold text-slate-600 mb-2">Acciones / Pasos</label>
+            <div className="flex gap-2 mb-2">
+              <input type="text" className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2" placeholder="Nueva acción" value={nuevoPaso} onChange={e=>setNuevoPaso(e.target.value)} />
+              <button type="button" onClick={()=>{
+                if (!nuevoPaso.trim()) return;
+                setPasos(prev => [...prev, { descripcion: nuevoPaso.trim(), orden: prev.length + 1 }]);
+                setNuevoPaso('');
+              }} className="bg-teal-600 text-white px-4 py-2 rounded-xl">Agregar</button>
+            </div>
+            <ul className="space-y-2">
+              {pasos.map((p, idx) => (
+                <li key={idx} className="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-xl px-4 py-2">
+                  <div className="flex-1">{p.orden}. {p.descripcion}</div>
+                  <div className="flex gap-2">
+                    <button type="button" onClick={()=>{
+                      setPasos(prev => prev.filter((_, i) => i !== idx).map((x, i)=> ({...x, orden: i+1})));
+                    }} className="text-red-600">Eliminar</button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+
           <button type="submit" className="w-full md:w-auto bg-amber-500 hover:bg-amber-600 text-white px-8 py-4 rounded-xl font-bold text-lg shadow-md active:scale-95 transition-transform">
             Guardar Orden
           </button>
@@ -161,7 +264,7 @@ export const Produccion = () => {
               <div className="flex items-start md:items-center gap-4">
                 <div className="bg-blue-50 text-blue-600 w-16 h-16 rounded-2xl flex flex-col items-center justify-center font-extrabold text-xl shadow-inner shrink-0">
                   <span className="text-sm font-semibold opacity-70 leading-none mb-1">Cant.</span>
-                  {prod.cantidad}
+                   {formatMonto(prod.cantidad)}
                 </div>
                 <div>
                   <h3 className="font-extrabold text-slate-800 text-xl">{prod.nombre}</h3>
@@ -179,6 +282,11 @@ export const Produccion = () => {
                   <div className="text-xs text-slate-400 mt-3 font-semibold">
                     Asignado: {prod.fechaAsignacion} {prod.fechaTerminacion ? `| Terminado: ${prod.fechaTerminacion}` : ''}
                   </div>
+                  {((prod as any).pasos) && (
+                    <div className="text-sm text-slate-600 mt-3">
+                      <strong>Pasos:</strong> {Array.isArray((prod as any).pasos) ? ((prod as any).pasos as any[]).map((p: any) => p.descripcion).join(', ') : (typeof (prod as any).pasos === 'string' ? (()=>{ try { return JSON.parse((prod as any).pasos).map((p: any) => p.descripcion).join(', '); } catch(e) { return ''; } })() : '')}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -195,6 +303,44 @@ export const Produccion = () => {
           ))
         )}
       </div>
+      {mostrarModalEmpresas && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-2xl">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold">Administrar Empresas</h3>
+              <button onClick={()=>setMostrarModalEmpresas(false)} className="text-slate-600">Cerrar</button>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <h4 className="font-semibold mb-2">Crear nueva empresa</h4>
+                <EmpresaForm onCreate={(emp)=>{
+                  agregarEmpresa(emp);
+                }} />
+              </div>
+
+              <div>
+                <h4 className="font-semibold mb-2">Empresas existentes</h4>
+                <ul className="space-y-2 max-h-72 overflow-auto">
+                  {empresas.map(e => (
+                    <li key={e.id} className="border rounded-xl p-3 flex items-center justify-between">
+                      <div>
+                        <div className="font-semibold">{e.razonSocial}</div>
+                        <div className="text-xs text-slate-500">{e.telefono} • {e.correo}</div>
+                        <div className="text-xs text-slate-400">{e.estado}</div>
+                      </div>
+                      <div className="flex gap-2">
+                        <button onClick={()=>{ const nuevo = { ...e, estado: e.estado === 'Inactiva' ? 'Sin ordenes' : 'Inactiva' }; editarEmpresa(e.id, nuevo); }} className="text-sm bg-slate-100 px-3 rounded">Toggle</button>
+                        <button onClick={()=>{ if(window.confirm('Eliminar empresa?')) eliminarEmpresa(e.id); }} className="text-sm text-red-600">Eliminar</button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
