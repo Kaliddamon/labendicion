@@ -68,6 +68,10 @@ public class FrontendSyncController {
                 .collect(Collectors.toList());
 
         List<RegistroSync> registros = registroRepo.findByOrderByFechaDesc();
+        // Forzar carga de producciones para evitar LazyInitializationException durante serialización
+        registros.forEach(r -> {
+            if (r.getProducciones() != null) r.getProducciones().size();
+        });
 
         List<TareaAseoSync> tareasAseo = tareaAseoRepo.findByOrderByCompletada();
 
@@ -112,10 +116,11 @@ public class FrontendSyncController {
 
             // Actualizar estado de empresa asociada si existe
             if (producto.getEmpresa() != null && !producto.getEmpresa().isBlank()) {
-                empresaRepo.findByRazonSocial(producto.getEmpresa()).ifPresent(emp -> {
+                List<EmpresaSync> matches = empresaRepo.findByRazonSocial(producto.getEmpresa());
+                for (EmpresaSync emp : matches) {
                     emp.setEstado("Ordenes pendientes");
                     empresaRepo.save(emp);
-                });
+                }
             }
 
             return ResponseEntity.ok(guardado);
@@ -171,10 +176,11 @@ public class FrontendSyncController {
 
             // Actualizar estado de empresa asociada (si se cambió empresa)
             if (actual.getEmpresa() != null && !actual.getEmpresa().isBlank()) {
-                empresaRepo.findByRazonSocial(actual.getEmpresa()).ifPresent(emp -> {
+                List<EmpresaSync> matches = empresaRepo.findByRazonSocial(actual.getEmpresa());
+                for (EmpresaSync emp : matches) {
                     emp.setEstado("Ordenes pendientes");
                     empresaRepo.save(emp);
-                });
+                }
             }
 
             return ResponseEntity.ok(guardado);
