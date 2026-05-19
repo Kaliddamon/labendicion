@@ -11,10 +11,10 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class RolInitializer {
-
+    
     @Autowired
     private RolService rolService;
-
+    
     @EventListener(ContextRefreshedEvent.class)
     public void onApplicationReady() {
         try {
@@ -25,4 +25,3 @@ public class RolInitializer {
         }
     }
 }
-

@@ -16,16 +16,16 @@ import java.util.Set;
 @Entity
 @Table(name = "rol")
 public class Rol {
-
+    
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
+    
     @Column(unique = true, nullable = false)
     private String nombre;
-
+    
     private String descripcion;
-
+    
     @ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.DETACH)
     @JoinTable(
         name = "rol_permiso",
@@ -33,18 +33,17 @@ public class Rol {
         inverseJoinColumns = @JoinColumn(name = "permiso_id")
     )
     private Set<Permiso> permisos = new HashSet<>();
-
+    
     public void agregarPermiso(Permiso permiso) {
         permisos.add(permiso);
     }
-
+    
     public void removerPermiso(Permiso permiso) {
         permisos.remove(permiso);
     }
-
+    
     public boolean tienePermiso(String nombrePermiso) {
         return permisos.stream()
             .anyMatch(permiso -> permiso.getNombre().equals(nombrePermiso));
     }
 }
-

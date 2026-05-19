@@ -2,6 +2,8 @@ package dev.kali.labendicion.controller;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.interceptor.TransactionAspectSupport;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -9,14 +11,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.time.OffsetDateTime;
 
 import dev.kali.labendicion.domain.entity.*;
 import dev.kali.labendicion.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-import java.util.List;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 @RestController
@@ -66,7 +65,8 @@ public class FrontendSyncController {
     }
 
     @PostMapping("/productos")
-    public ResponseEntity<ProductoSync> crearProducto(@RequestBody java.util.Map<String, Object> body) {
+    @Transactional
+    public ResponseEntity<?> crearProducto(@RequestBody java.util.Map<String, Object> body) {
         try {
             ProductoSync producto = new ProductoSync();
             producto.setId(body.getOrDefault("id", generateId()).toString());
@@ -111,12 +111,14 @@ public class FrontendSyncController {
             return ResponseEntity.ok(guardado);
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.status(500).build();
+            try { TransactionAspectSupport.currentTransactionStatus().setRollbackOnly(); } catch (Exception ignore) {}
+            return serverError(e, "/api/frontend/productos");
         }
     }
 
     @PutMapping("/productos/{id}")
-    public ResponseEntity<ProductoSync> actualizarProducto(@PathVariable String id, @RequestBody java.util.Map<String, Object> body) {
+    @Transactional
+    public ResponseEntity<?> actualizarProducto(@PathVariable String id, @RequestBody java.util.Map<String, Object> body) {
         if (!productoRepo.existsById(id)) {
             return ResponseEntity.notFound().build();
         }
@@ -168,22 +170,21 @@ public class FrontendSyncController {
             return ResponseEntity.ok(guardado);
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.status(500).build();
+            try { TransactionAspectSupport.currentTransactionStatus().setRollbackOnly(); } catch (Exception ignore) {}
+            return serverError(e, "/api/frontend/productos/" + id);
         }
     }
 
     @DeleteMapping("/productos/{id}")
-    public ResponseEntity<Void> eliminarProducto(@PathVariable String id) {
-        productoRepo.deleteById(id);
-        registroRepo.deleteAll(registroRepo.findAll().stream()
-                .filter(r -> r.getProducciones() != null && r.getProducciones()
-                        .stream().anyMatch(p -> id.equals(p.getProductoId())))
-                .collect(Collectors.toList()));
-        // Actualizar estado de empresa asociada si ya no tiene órdenes
-        // Intentamos recuperar info del producto eliminado basándonos en registros previos
-        // (si no se puede, este paso se vuelve noop)
+    @Transactional
+    public ResponseEntity<?> eliminarProducto(@PathVariable String id) {
         try {
-            // Buscar empresas que ahora no tengan productos
+            productoRepo.deleteById(id);
+            registroRepo.deleteAll(registroRepo.findAll().stream()
+                    .filter(r -> r.getProducciones() != null && r.getProducciones()
+                            .stream().anyMatch(p -> id.equals(p.getProductoId())))
+                    .collect(Collectors.toList()));
+            // Actualizar estado de empresa asociada si ya no tiene órdenes
             List<EmpresaSync> todas = empresaRepo.findAll();
             for (EmpresaSync emp : todas) {
                 boolean tiene = productoRepo.findAll().stream().anyMatch(p -> emp.getRazonSocial().equals(p.getEmpresa()));
@@ -192,8 +193,12 @@ public class FrontendSyncController {
                     empresaRepo.save(emp);
                 }
             }
-        } catch (Exception ignored) {}
-        return ResponseEntity.noContent().build();
+            return ResponseEntity.noContent().build();
+        } catch (Exception e) {
+            e.printStackTrace();
+            try { TransactionAspectSupport.currentTransactionStatus().setRollbackOnly(); } catch (Exception ignore) {}
+            return serverError(e, "/api/frontend/productos/" + id);
+        }
     }
 
     // Empresas CRUD
@@ -309,7 +314,8 @@ public class FrontendSyncController {
     }
 
     @PostMapping("/productos/{productoId}/pasos")
-    public ResponseEntity<PasoProduccionSync> crearPaso(@PathVariable String productoId, @RequestBody java.util.Map<String, Object> body) {
+    @Transactional
+    public ResponseEntity<?> crearPaso(@PathVariable String productoId, @RequestBody java.util.Map<String, Object> body) {
         try {
             ProductoSync producto = productoRepo.findById(productoId).orElseThrow();
             PasoProduccionSync paso = new PasoProduccionSync();
@@ -321,12 +327,15 @@ public class FrontendSyncController {
             PasoProduccionSync guardado = pasoRepo.save(paso);
             return ResponseEntity.ok(guardado);
         } catch (Exception e) {
-            return ResponseEntity.status(500).build();
+            e.printStackTrace();
+            try { TransactionAspectSupport.currentTransactionStatus().setRollbackOnly(); } catch (Exception ignore) {}
+            return serverError(e, "/api/frontend/productos/" + productoId + "/pasos");
         }
     }
 
     @PutMapping("/pasos/{pasoId}")
-    public ResponseEntity<PasoProduccionSync> actualizarPaso(@PathVariable String pasoId, @RequestBody java.util.Map<String, Object> body) {
+    @Transactional
+    public ResponseEntity<?> actualizarPaso(@PathVariable String pasoId, @RequestBody java.util.Map<String, Object> body) {
         try {
             PasoProduccionSync paso = pasoRepo.findById(pasoId).orElseThrow();
             if (body.containsKey("descripcion")) paso.setDescripcion((String) body.get("descripcion"));
@@ -335,19 +344,24 @@ public class FrontendSyncController {
             PasoProduccionSync guardado = pasoRepo.save(paso);
             return ResponseEntity.ok(guardado);
         } catch (Exception e) {
-            return ResponseEntity.status(500).build();
+            e.printStackTrace();
+            try { TransactionAspectSupport.currentTransactionStatus().setRollbackOnly(); } catch (Exception ignore) {}
+            return serverError(e, "/api/frontend/pasos/" + pasoId);
         }
     }
 
     @PatchMapping("/pasos/{pasoId}/toggle")
-    public ResponseEntity<PasoProduccionSync> togglePaso(@PathVariable String pasoId) {
+    @Transactional
+    public ResponseEntity<?> togglePaso(@PathVariable String pasoId) {
         try {
             PasoProduccionSync paso = pasoRepo.findById(pasoId).orElseThrow();
             paso.setCompletado(!paso.getCompletado());
             PasoProduccionSync guardado = pasoRepo.save(paso);
             return ResponseEntity.ok(guardado);
         } catch (Exception e) {
-            return ResponseEntity.status(500).build();
+            e.printStackTrace();
+            try { TransactionAspectSupport.currentTransactionStatus().setRollbackOnly(); } catch (Exception ignore) {}
+            return serverError(e, "/api/frontend/pasos/" + pasoId + "/toggle");
         }
     }
 
@@ -359,6 +373,16 @@ public class FrontendSyncController {
 
     private static String generateId() {
         return UUID.randomUUID().toString().replace("-", "").substring(0, 12);
+    }
+
+    private ResponseEntity<Object> serverError(Exception e, String ruta) {
+        Map<String, Object> body = new java.util.HashMap<>();
+        body.put("estado", 500);
+        body.put("ruta", ruta);
+        body.put("mensaje", e.getMessage());
+        body.put("error", "Error interno del servidor");
+        body.put("timestamp", OffsetDateTime.now().toString());
+        return ResponseEntity.status(500).body(body);
     }
 
     public record BootstrapResponse(

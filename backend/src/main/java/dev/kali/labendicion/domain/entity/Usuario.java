@@ -18,28 +18,28 @@ import java.util.Set;
 @Entity
 @Table(name = "usuario")
 public class Usuario {
-
+    
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
+    
     @Column(unique = true, nullable = false)
     @Email
     private String email;
-
+    
     private String nombre;
     private String fotoUrl;
-
+    
     @Column(unique = true)
     private String googleId;
-
+    
     private Boolean activo = true;
-
+    
     @Column(nullable = false, columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
     private LocalDateTime fechaRegistro;
-
+    
     private LocalDateTime ultimoAcceso;
-
+    
     @ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.DETACH)
     @JoinTable(
         name = "usuario_rol",
@@ -47,7 +47,7 @@ public class Usuario {
         inverseJoinColumns = @JoinColumn(name = "rol_id")
     )
     private Set<Rol> roles = new HashSet<>();
-
+    
     @PrePersist
     protected void onCreate() {
         if (fechaRegistro == null) {
@@ -57,23 +57,22 @@ public class Usuario {
             activo = true;
         }
     }
-
+    
     @PreUpdate
     protected void onUpdate() {
         ultimoAcceso = LocalDateTime.now();
     }
-
+    
     public void agregarRol(Rol rol) {
         roles.add(rol);
     }
-
+    
     public void removerRol(Rol rol) {
         roles.remove(rol);
     }
-
+    
     public boolean tieneRol(String nombreRol) {
         return roles.stream()
             .anyMatch(rol -> rol.getNombre().equals(nombreRol));
     }
 }
-

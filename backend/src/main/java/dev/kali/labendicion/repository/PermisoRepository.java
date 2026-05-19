@@ -11,4 +11,3 @@ public interface PermisoRepository extends JpaRepository<Permiso, Long> {
     Optional<Permiso> findByNombre(String nombre);
     boolean existsByNombre(String nombre);
 }
-
