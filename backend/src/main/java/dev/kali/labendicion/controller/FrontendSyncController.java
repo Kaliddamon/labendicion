@@ -211,14 +211,14 @@ public class FrontendSyncController {
             actual.setFechaTerminacion((String) body.getOrDefault("fechaTerminacion", actual.getFechaTerminacion()));
             actual.setEstado((String) body.getOrDefault("estado", actual.getEstado()));
 
-            // Eliminar pasos previos si existen
+            // Eliminar pasos previos: solo limpiar la lista en-memory.
+            // Con orphanRemoval=true en ProductoSync, Hibernate eliminará automáticamente
+            // los pasos que se remuevan de la lista al hacer save().
             if (actual.getPasos() != null) {
-                pasoRepo.deleteAll(actual.getPasos());
+                actual.getPasos().clear();
             }
 
-            ProductoSync guardado = productoRepo.save(actual);
-
-            // Procesar nuevos pasos
+            // Procesar nuevos pasos desde el request y agregarlos a la lista
             Object pasosObj = body.get("pasos");
             if (pasosObj != null && pasosObj instanceof java.util.List) {
                 java.util.List<?> pasosList = (java.util.List<?>) pasosObj;
@@ -227,16 +227,18 @@ public class FrontendSyncController {
                         java.util.Map<String, Object> pasoMap = (java.util.Map<String, Object>) paso;
                         PasoProduccionSync nuevoPaso = new PasoProduccionSync();
                         nuevoPaso.setId(generateId());
-                        nuevoPaso.setProductoSync(guardado);
+                        nuevoPaso.setProductoSync(actual);
                         nuevoPaso.setDescripcion((String) pasoMap.getOrDefault("descripcion", ""));
                         nuevoPaso.setOrden(pasoMap.get("orden") == null ? 0 : Integer.parseInt(pasoMap.get("orden").toString()));
                         nuevoPaso.setCompletado((Boolean) pasoMap.getOrDefault("completado", false));
-                        pasoRepo.save(nuevoPaso);
+                        // Agregar el nuevo paso a la lista del producto (en lugar de guardar directamente)
+                        actual.getPasos().add(nuevoPaso);
                     }
                 }
-                // Recargar producto con pasos actualizados
-                guardado = productoRepo.findById(guardado.getId()).orElse(guardado);
             }
+
+            // Guardar una sola vez: Hibernate manejará la cascada y eliminará/insertará pasos automaticamente
+            ProductoSync guardado = productoRepo.save(actual);
 
             // Actualizar estado de empresa asociada (si se cambió empresa)
             if (actual.getEmpresa() != null && !actual.getEmpresa().isBlank()) {
