@@ -8,7 +8,11 @@ export const Home = () => {
   const { productos, tareasAseo, empleados } = useAppContext();
 
   // Datos rápidos para el dashboard
-  const productosEnProceso = productos.filter(p => p.estado === 'En proceso').length;
+  // Hacemos la comparación de estado más tolerante (trim + lowercase) porque
+  // el backend podría devolver valores con mayúsculas/minúsculas o espacios.
+  const productosEnProceso = productos.filter(p =>
+    (p.estado ?? '').toString().trim().toLowerCase() === 'en proceso'
+  ).length;
   const tareasPendientes = tareasAseo.filter(t => !t.completada).length;
   const empleadosActivos = empleados.filter(e => e.estado === 'Activo').length;
 
