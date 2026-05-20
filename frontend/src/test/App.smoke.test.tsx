@@ -13,7 +13,7 @@ describe('App smoke test', () => {
           productos: [],
           empleados: [],
           registros: [],
-          tareasAseo: [],
+          registrosAseo: [],
         }),
       })
     );

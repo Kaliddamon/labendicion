@@ -5,7 +5,7 @@ import { useAppContext } from '../context/AppContext';
 
 export const Home = () => {
   const navigate = useNavigate();
-  const { productos, tareasAseo, empleados } = useAppContext();
+  const { productos, registrosAseo, empleados } = useAppContext();
 
   // Datos rápidos para el dashboard
   // Hacemos la comparación de estado más tolerante (trim + lowercase) porque
@@ -13,7 +13,9 @@ export const Home = () => {
   const productosEnProceso = productos.filter(p =>
     (p.estado ?? '').toString().trim().toLowerCase() === 'en proceso'
   ).length;
-  const tareasPendientes = tareasAseo.filter(t => !t.completada).length;
+  // Contar tareas pendientes en el último registro de aseo (más reciente)
+  const ultimoRegistroAseo = (registrosAseo && registrosAseo.length > 0) ? registrosAseo[0] : null;
+  const tareasPendientes = ultimoRegistroAseo ? ultimoRegistroAseo.entries.filter((e: any) => !e.completada).length : 0;
   const empleadosActivos = empleados.filter(e => e.estado === 'Activo').length;
 
   const modules = [

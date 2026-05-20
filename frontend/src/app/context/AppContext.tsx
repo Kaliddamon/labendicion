@@ -51,19 +51,26 @@ export interface ProduccionRegistro {
   unidadesBuenas: number;
 }
 
-export interface TareaAseo {
+export interface RegistroAseoEntry {
   id: string;
-  accion: string; // Ej. Barrer, Trapear...
-  area: string;   // Ej. Sala, Cocina...
-  encargado: string;
+  empleadoId: string;
+  empleadoNombre: string;
+  acciones: string[];
+  areas: string[];
   completada: boolean;
+}
+
+export interface RegistroAseo {
+  id: string;
+  fecha: string;
+  entries: RegistroAseoEntry[];
 }
 
 interface BootstrapResponse {
   productos: Producto[];
   empleados: Empleado[];
   registros: RegistroDiario[];
-  tareasAseo: TareaAseo[];
+  registrosAseo: RegistroAseo[];
 }
 
 // === TIPO DEL CONTEXTO ===
@@ -86,12 +93,11 @@ interface AppContextType {
   agregarRegistro: (reg: Omit<RegistroDiario, 'id'>) => void;
   eliminarRegistro: (id: string) => void;
 
-  // Aseo
-  tareasAseo: TareaAseo[];
-  agregarTareaAseo: (tarea: Omit<TareaAseo, 'id'>) => void;
-  editarTareaAseo: (id: string, tarea: Partial<TareaAseo>) => void;
-  toggleTareaAseo: (id: string) => void;
-  eliminarTareaAseo: (id: string) => void;
+  // Registros de Aseo
+  registrosAseo: RegistroAseo[];
+  crearRegistroAseo: (payload?: object) => void;
+  toggleRegistroAseoEntry: (registroId: string, entryId: string) => void;
+  eliminarRegistroAseo: (id: string) => void;
 
   // Empresas
   empresas: Empresa[];
@@ -129,7 +135,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [productos, setProductos] = useState<Producto[]>([]);
   const [empleados, setEmpleados] = useState<Empleado[]>([]);
   const [registros, setRegistros] = useState<RegistroDiario[]>([]);
-  const [tareasAseo, setTareasAseo] = useState<TareaAseo[]>([]);
+  const [registrosAseo, setRegistrosAseo] = useState<RegistroAseo[]>([]);
   const [empresas, setEmpresas] = useState<Empresa[]>([]);
 
    useEffect(() => {
@@ -139,8 +145,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
          if (!mounted) return;
          setProductos(data.productos ?? []);
          setEmpleados(data.empleados ?? []);
-         setRegistros(data.registros ?? []);
-         setTareasAseo(data.tareasAseo ?? []);
+          setRegistros(data.registros ?? []);
+          setRegistrosAseo((data as any).registrosAseo ?? []);
          setEmpresas((data as any).empresas ?? []);
          console.log('Bootstrap cargado:', data.productos);
        })
@@ -252,45 +258,28 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       .catch((err) => console.error('Error eliminando registro:', err));
   };
 
-  // Aseo
-  const agregarTareaAseo = (tarea: Omit<TareaAseo, 'id'>) => {
-    request<TareaAseo>('/tareas-aseo', {
+  // Registros de Aseo
+  const crearRegistroAseo = (payload?: object) => {
+    request<RegistroAseo>('/registros-aseo', {
       method: 'POST',
-      body: JSON.stringify(tarea),
+      body: JSON.stringify(payload || {}),
     })
-      .then((nueva) => {
-        setTareasAseo((prev) => [nueva, ...prev]);
-      })
-      .catch((err) => console.error('Error creando tarea de aseo:', err));
+      .then((nuevo) => setRegistrosAseo((prev) => [nuevo, ...prev]))
+      .catch((err) => console.error('Error creando registro de aseo:', err));
   };
-  const editarTareaAseo = (id: string, tarea: Partial<TareaAseo>) => {
-    const actual = tareasAseo.find((t) => t.id === id);
-    if (!actual) return;
-    const payload = { ...actual, ...tarea };
-    request<TareaAseo>(`/tareas-aseo/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(payload),
-    })
-      .then((actualizada) => {
-        setTareasAseo((prev) => prev.map((t) => (t.id === id ? actualizada : t)));
-      })
-      .catch((err) => console.error('Error editando tarea de aseo:', err));
-  };
-  const toggleTareaAseo = (id: string) => {
-    request<TareaAseo>(`/tareas-aseo/${id}/toggle`, {
+
+  const toggleRegistroAseoEntry = (registroId: string, entryId: string) => {
+    request<RegistroAseo>(`/registros-aseo/${registroId}/entries/${entryId}/toggle`, {
       method: 'PATCH',
     })
-      .then((actualizada) => {
-        setTareasAseo((prev) => prev.map((t) => (t.id === id ? actualizada : t)));
-      })
-      .catch((err) => console.error('Error cambiando estado de tarea:', err));
+      .then((actualizado) => setRegistrosAseo((prev) => prev.map((r) => (r.id === actualizado.id ? actualizado : r))))
+      .catch((err) => console.error('Error toggle registro aseo entry:', err));
   };
-  const eliminarTareaAseo = (id: string) => {
-    request<void>(`/tareas-aseo/${id}`, { method: 'DELETE' })
-      .then(() => {
-        setTareasAseo((prev) => prev.filter((t) => t.id !== id));
-      })
-      .catch((err) => console.error('Error eliminando tarea de aseo:', err));
+
+  const eliminarRegistroAseo = (id: string) => {
+    request<void>(`/registros-aseo/${id}`, { method: 'DELETE' })
+      .then(() => setRegistrosAseo((prev) => prev.filter((r) => r.id !== id)))
+      .catch((err) => console.error('Error eliminando registro de aseo:', err));
   };
 
   // Empresas
@@ -323,7 +312,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       productos, agregarProducto, editarProducto, eliminarProducto,
       empleados, agregarEmpleado, editarEmpleado, eliminarEmpleado,
       registros, agregarRegistro, eliminarRegistro,
-      tareasAseo, agregarTareaAseo, editarTareaAseo, toggleTareaAseo, eliminarTareaAseo,
+      registrosAseo, crearRegistroAseo, toggleRegistroAseoEntry, eliminarRegistroAseo,
       empresas, agregarEmpresa, editarEmpresa, eliminarEmpresa
     }}>
       {children}

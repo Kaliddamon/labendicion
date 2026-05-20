@@ -35,6 +35,9 @@ public class FrontendSyncController {
     private TareaAseoSyncRepository tareaAseoRepo;
 
     @Autowired
+    private RegistroAseoSyncRepository registroAseoRepo;
+
+    @Autowired
     private EmpresaSyncRepository empresaRepo;
 
     @Autowired
@@ -65,8 +68,8 @@ public class FrontendSyncController {
             registros = registros.stream().limit(100).collect(Collectors.toList());
         }
 
-        // Tareas: cargar todas, pero podrías limitar a no completadas si hay muchas
-        List<TareaAseoSync> tareasAseo = tareaAseoRepo.findByOrderByCompletada();
+        // Registros de aseo: cargar los registros ordenados por fecha (más recientes primero)
+        List<dev.kali.labendicion.domain.entity.RegistroAseoSync> registrosAseo = registroAseoRepo.findAllByOrderByFechaDesc();
         // Opcionalmente, si tienes miles de tareas, cargar solo las últimas 50:
         // if (tareasAseo.size() > 50) { tareasAseo = tareasAseo.stream().limit(50).collect(Collectors.toList()); }
 
@@ -120,9 +123,22 @@ public class FrontendSyncController {
             return m;
         }).collect(Collectors.toList());
 
-        var tareasDto = tareasAseo.stream().map(t -> {
+        // Convertir registros de aseo a DTOs planos
+        var tareasDto = registrosAseo.stream().map(r -> {
+            var entries = r.getEntries() == null ? List.<Object>of() : r.getEntries().stream().map(e -> {
+                var me = new java.util.HashMap<String, Object>();
+                me.put("id", e.getId());
+                me.put("empleadoId", e.getEmpleadoId());
+                me.put("empleadoNombre", e.getEmpleadoNombre());
+                me.put("acciones", e.getAccionesCsv() == null || e.getAccionesCsv().isBlank() ? List.of() : java.util.Arrays.asList(e.getAccionesCsv().split(",")));
+                me.put("areas", e.getAreasCsv() == null || e.getAreasCsv().isBlank() ? List.of() : java.util.Arrays.asList(e.getAreasCsv().split(",")));
+                me.put("completada", e.isCompletada());
+                return me;
+            }).collect(Collectors.toList());
             var m = new java.util.HashMap<String, Object>();
-            m.put("id", t.getId()); m.put("accion", t.getAccion()); m.put("area", t.getArea()); m.put("encargado", t.getEncargado()); m.put("completada", t.isCompletada());
+            m.put("id", r.getId());
+            m.put("fecha", r.getFecha());
+            m.put("entries", entries);
             return m;
         }).collect(Collectors.toList());
 
@@ -386,6 +402,101 @@ public class FrontendSyncController {
     @DeleteMapping("/tareas-aseo/{id}")
     public ResponseEntity<Void> eliminarTarea(@PathVariable String id) {
         tareaAseoRepo.deleteById(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    // Registros de Aseo: nuevo modelo que agrupa por fecha y contiene entradas por empleado
+    @GetMapping("/registros-aseo")
+    public ResponseEntity<List<dev.kali.labendicion.domain.entity.RegistroAseoSync>> listarRegistrosAseo() {
+        return ResponseEntity.ok(registroAseoRepo.findAllByOrderByFechaDesc());
+    }
+
+    @GetMapping("/registros-aseo/{id}")
+    public ResponseEntity<?> obtenerRegistroAseo(@PathVariable String id) {
+        return registroAseoRepo.findById(id)
+                .map(r -> ResponseEntity.ok(r))
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PostMapping("/registros-aseo")
+    @Transactional
+    public ResponseEntity<?> crearRegistroAseo(@RequestBody(required = false) java.util.Map<String, Object> body) {
+        try {
+            String fecha = null;
+            if (body != null && body.get("fecha") != null) fecha = body.get("fecha").toString();
+            if (fecha == null || fecha.isBlank()) {
+                fecha = java.time.LocalDate.now().toString();
+            }
+
+            // Obtener último registro para usar como prefills
+            dev.kali.labendicion.domain.entity.RegistroAseoSync ultimo = registroAseoRepo.findFirstByOrderByFechaDesc();
+
+            // Crear nuevo registro
+            dev.kali.labendicion.domain.entity.RegistroAseoSync nuevo = new dev.kali.labendicion.domain.entity.RegistroAseoSync();
+            nuevo.setId(generateId());
+            nuevo.setFecha(fecha);
+
+            List<dev.kali.labendicion.domain.entity.EmpleadoSync> empleados = empleadoRepo.findAll();
+            for (dev.kali.labendicion.domain.entity.EmpleadoSync emp : empleados) {
+                dev.kali.labendicion.domain.entity.RegistroAseoEntrySync entry = new dev.kali.labendicion.domain.entity.RegistroAseoEntrySync();
+                entry.setId(generateId());
+                entry.setRegistroAseo(nuevo);
+                entry.setEmpleadoId(emp.getId());
+                entry.setEmpleadoNombre(emp.getNombre());
+                entry.setCompletada(false);
+
+                // Prefill from ultimo registro for this empleado
+                if (ultimo != null && ultimo.getEntries() != null) {
+                    ultimo.getEntries().stream()
+                            .filter(e -> emp.getId().equals(e.getEmpleadoId()))
+                            .findFirst()
+                            .ifPresent(prev -> {
+                                entry.setAccionesCsv(prev.getAccionesCsv());
+                                entry.setAreasCsv(prev.getAreasCsv());
+                            });
+                }
+
+                nuevo.getEntries().add(entry);
+            }
+
+            RegistroAseoSync saved = registroAseoRepo.save(nuevo);
+            return ResponseEntity.ok(saved);
+        } catch (Exception e) {
+            e.printStackTrace();
+            try { TransactionAspectSupport.currentTransactionStatus().setRollbackOnly(); } catch (Exception ignore) {}
+            return serverError(e, "/api/frontend/registros-aseo");
+        }
+    }
+
+    @PatchMapping("/registros-aseo/{registroId}/entries/{entryId}/toggle")
+    @Transactional
+    public ResponseEntity<?> toggleEntryCompletada(@PathVariable String registroId, @PathVariable String entryId) {
+        try {
+            dev.kali.labendicion.domain.entity.RegistroAseoSync reg = registroAseoRepo.findById(registroId).orElseThrow();
+            boolean changed = false;
+            for (dev.kali.labendicion.domain.entity.RegistroAseoEntrySync e : reg.getEntries()) {
+                if (e.getId().equals(entryId)) {
+                    e.setCompletada(!e.isCompletada());
+                    changed = true;
+                    break;
+                }
+            }
+            if (changed) {
+                RegistroAseoSync saved = registroAseoRepo.save(reg);
+                return ResponseEntity.ok(saved);
+            }
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            e.printStackTrace();
+            try { TransactionAspectSupport.currentTransactionStatus().setRollbackOnly(); } catch (Exception ignore) {}
+            return serverError(e, "/api/frontend/registros-aseo/" + registroId + "/entries/" + entryId + "/toggle");
+        }
+    }
+
+    @DeleteMapping("/registros-aseo/{id}")
+    @Transactional
+    public ResponseEntity<Void> eliminarRegistroAseo(@PathVariable String id) {
+        registroAseoRepo.deleteById(id);
         return ResponseEntity.noContent().build();
     }
 
