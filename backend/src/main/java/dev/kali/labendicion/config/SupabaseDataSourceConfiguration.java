@@ -57,6 +57,11 @@ public class SupabaseDataSourceConfiguration {
         ds.setMaxLifetime(600_000);
         ds.setIdleTimeout(30_000);
         ds.setAutoCommit(true);
+        // Evitar prepared statements en el lado del servidor (PgBouncer en modo transaction puede causar
+        // "prepared statement \"S_n\" already exists"). Forzamos modo simple / sin prepared statements
+        // en el driver PostgreSQL para evitar colisiones de prepared statements entre conexiones reusadas.
+        ds.addDataSourceProperty("prepareThreshold", "0");
+        ds.addDataSourceProperty("preferQueryMode", "simple");
         return ds;
     }
 
