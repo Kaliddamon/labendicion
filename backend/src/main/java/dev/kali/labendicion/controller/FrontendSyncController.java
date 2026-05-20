@@ -46,20 +46,29 @@ public class FrontendSyncController {
         // Cargar productos con pasos en una sola consulta para evitar lazy init
         List<ProductoSync> productos = productoRepo.findAllWithPasosOrderByNombre();
 
+        // Empresas: cargar todas (normalmente son pocas)
         List<EmpresaSync> empresas = empresaRepo.findAll()
                 .stream()
                 .sorted((a, b) -> a.getRazonSocial().compareTo(b.getRazonSocial()))
                 .collect(Collectors.toList());
 
+        // Empleados: cargar todos (normalmente son <= 100)
         List<EmpleadoSync> empleados = empleadoRepo.findAll()
                 .stream()
                 .sorted((a, b) -> a.getNombre().compareTo(b.getNombre()))
                 .collect(Collectors.toList());
 
-        // Cargar registros con producciones usando fetch join
+        // Registros: cargar últimos 100 para evitar queries gigantescas
+        // En Render/Supabase si tienes miles de registros, esto es crucial
         List<RegistroSync> registros = registroRepo.findAllWithProduccionesOrderByFechaDesc();
+        if (registros.size() > 100) {
+            registros = registros.stream().limit(100).collect(Collectors.toList());
+        }
 
+        // Tareas: cargar todas, pero podrías limitar a no completadas si hay muchas
         List<TareaAseoSync> tareasAseo = tareaAseoRepo.findByOrderByCompletada();
+        // Opcionalmente, si tienes miles de tareas, cargar solo las últimas 50:
+        // if (tareasAseo.size() > 50) { tareasAseo = tareasAseo.stream().limit(50).collect(Collectors.toList()); }
 
         // Transformar a DTOs planos mientras la sesión está abierta para evitar LazyInitializationException
         var productosDto = productos.stream().map(p -> {
