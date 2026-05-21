@@ -408,14 +408,16 @@ public class FrontendSyncController {
 
     // Registros de Aseo: nuevo modelo que agrupa por fecha y contiene entradas por empleado
     @GetMapping("/registros-aseo")
-    public ResponseEntity<List<dev.kali.labendicion.domain.entity.RegistroAseoSync>> listarRegistrosAseo() {
-        return ResponseEntity.ok(registroAseoRepo.findAllByOrderByFechaDesc());
+    public ResponseEntity<List<Map<String, Object>>> listarRegistrosAseo() {
+        List<dev.kali.labendicion.domain.entity.RegistroAseoSync> regs = registroAseoRepo.findAllByOrderByFechaDesc();
+        List<Map<String, Object>> dto = regs.stream().map(this::mapRegistroAseoToDto).collect(Collectors.toList());
+        return ResponseEntity.ok(dto);
     }
 
     @GetMapping("/registros-aseo/{id}")
     public ResponseEntity<?> obtenerRegistroAseo(@PathVariable String id) {
         return registroAseoRepo.findById(id)
-                .map(r -> ResponseEntity.ok(r))
+                .map(r -> ResponseEntity.ok(mapRegistroAseoToDto(r)))
                 .orElse(ResponseEntity.notFound().build());
     }
 
@@ -461,7 +463,7 @@ public class FrontendSyncController {
             }
 
             RegistroAseoSync saved = registroAseoRepo.save(nuevo);
-            return ResponseEntity.ok(saved);
+            return ResponseEntity.ok(mapRegistroAseoToDto(saved));
         } catch (Exception e) {
             e.printStackTrace();
             try { TransactionAspectSupport.currentTransactionStatus().setRollbackOnly(); } catch (Exception ignore) {}
@@ -482,10 +484,10 @@ public class FrontendSyncController {
                     break;
                 }
             }
-            if (changed) {
-                RegistroAseoSync saved = registroAseoRepo.save(reg);
-                return ResponseEntity.ok(saved);
-            }
+                if (changed) {
+                    RegistroAseoSync saved = registroAseoRepo.save(reg);
+                    return ResponseEntity.ok(mapRegistroAseoToDto(saved));
+                }
             return ResponseEntity.notFound().build();
         } catch (Exception e) {
             e.printStackTrace();
@@ -577,6 +579,25 @@ public class FrontendSyncController {
         body.put("error", "Error interno del servidor");
         body.put("timestamp", OffsetDateTime.now().toString());
         return ResponseEntity.status(500).body(body);
+    }
+
+    // Convierte una entidad RegistroAseoSync a un DTO plano que el frontend espera
+    private Map<String, Object> mapRegistroAseoToDto(dev.kali.labendicion.domain.entity.RegistroAseoSync r) {
+        var dto = new java.util.HashMap<String, Object>();
+        var entries = (r.getEntries() == null) ? List.<Object>of() : r.getEntries().stream().map(e -> {
+            var me = new java.util.HashMap<String, Object>();
+            me.put("id", e.getId());
+            me.put("empleadoId", e.getEmpleadoId());
+            me.put("empleadoNombre", e.getEmpleadoNombre());
+            me.put("acciones", e.getAccionesCsv() == null || e.getAccionesCsv().isBlank() ? List.of() : java.util.Arrays.asList(e.getAccionesCsv().split(",")));
+            me.put("areas", e.getAreasCsv() == null || e.getAreasCsv().isBlank() ? List.of() : java.util.Arrays.asList(e.getAreasCsv().split(",")));
+            me.put("completada", e.isCompletada());
+            return me;
+        }).collect(Collectors.toList());
+        dto.put("id", r.getId());
+        dto.put("fecha", r.getFecha());
+        dto.put("entries", entries);
+        return dto;
     }
 
     public record BootstrapResponse(
