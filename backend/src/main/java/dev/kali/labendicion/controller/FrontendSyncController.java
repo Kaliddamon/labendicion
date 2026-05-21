@@ -496,6 +496,48 @@ public class FrontendSyncController {
         }
     }
 
+    @PatchMapping("/registros-aseo/{registroId}/entries/{entryId}")
+    @Transactional
+    public ResponseEntity<?> actualizarEntryAccionesYAreas(@PathVariable String registroId, @PathVariable String entryId,
+                                                           @RequestBody java.util.Map<String, Object> body) {
+        try {
+            dev.kali.labendicion.domain.entity.RegistroAseoSync reg = registroAseoRepo.findById(registroId).orElseThrow();
+            boolean changed = false;
+            for (dev.kali.labendicion.domain.entity.RegistroAseoEntrySync e : reg.getEntries()) {
+                if (e.getId().equals(entryId)) {
+                    if (body.containsKey("acciones")) {
+                        Object accionesObj = body.get("acciones");
+                        if (accionesObj instanceof java.util.List) {
+                            String csv = String.join(",", ((java.util.List<?>) accionesObj).stream()
+                                    .map(Object::toString).collect(Collectors.toList()));
+                            e.setAccionesCsv(csv);
+                            changed = true;
+                        }
+                    }
+                    if (body.containsKey("areas")) {
+                        Object areasObj = body.get("areas");
+                        if (areasObj instanceof java.util.List) {
+                            String csv = String.join(",", ((java.util.List<?>) areasObj).stream()
+                                    .map(Object::toString).collect(Collectors.toList()));
+                            e.setAreasCsv(csv);
+                            changed = true;
+                        }
+                    }
+                    break;
+                }
+            }
+            if (changed) {
+                RegistroAseoSync saved = registroAseoRepo.save(reg);
+                return ResponseEntity.ok(mapRegistroAseoToDto(saved));
+            }
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            e.printStackTrace();
+            try { TransactionAspectSupport.currentTransactionStatus().setRollbackOnly(); } catch (Exception ignore) {}
+            return serverError(e, "/api/frontend/registros-aseo/" + registroId + "/entries/" + entryId);
+        }
+    }
+
     @DeleteMapping("/registros-aseo/{id}")
     @Transactional
     public ResponseEntity<Void> eliminarRegistroAseo(@PathVariable String id) {

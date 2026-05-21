@@ -93,11 +93,12 @@ interface AppContextType {
   agregarRegistro: (reg: Omit<RegistroDiario, 'id'>) => void;
   eliminarRegistro: (id: string) => void;
 
-  // Registros de Aseo
-  registrosAseo: RegistroAseo[];
-  crearRegistroAseo: (payload?: object) => void;
-  toggleRegistroAseoEntry: (registroId: string, entryId: string) => void;
-  eliminarRegistroAseo: (id: string) => void;
+   // Registros de Aseo
+   registrosAseo: RegistroAseo[];
+   crearRegistroAseo: (payload?: object) => void;
+   toggleRegistroAseoEntry: (registroId: string, entryId: string) => void;
+   actualizarRegistroAseoEntry: (registroId: string, entryId: string, acciones: string[], areas: string[]) => void;
+   eliminarRegistroAseo: (id: string) => void;
 
   // Empresas
   empresas: Empresa[];
@@ -268,13 +269,22 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       .catch((err) => console.error('Error creando registro de aseo:', err));
   };
 
-  const toggleRegistroAseoEntry = (registroId: string, entryId: string) => {
-    request<RegistroAseo>(`/registros-aseo/${registroId}/entries/${entryId}/toggle`, {
-      method: 'PATCH',
-    })
-      .then((actualizado) => setRegistrosAseo((prev) => prev.map((r) => (r.id === actualizado.id ? actualizado : r))))
-      .catch((err) => console.error('Error toggle registro aseo entry:', err));
-  };
+   const toggleRegistroAseoEntry = (registroId: string, entryId: string) => {
+     request<RegistroAseo>(`/registros-aseo/${registroId}/entries/${entryId}/toggle`, {
+       method: 'PATCH',
+     })
+       .then((actualizado) => setRegistrosAseo((prev) => prev.map((r) => (r.id === actualizado.id ? actualizado : r))))
+       .catch((err) => console.error('Error toggle registro aseo entry:', err));
+   };
+
+   const actualizarRegistroAseoEntry = (registroId: string, entryId: string, acciones: string[], areas: string[]) => {
+     request<RegistroAseo>(`/registros-aseo/${registroId}/entries/${entryId}`, {
+       method: 'PATCH',
+       body: JSON.stringify({ acciones, areas }),
+     })
+       .then((actualizado) => setRegistrosAseo((prev) => prev.map((r) => (r.id === actualizado.id ? actualizado : r))))
+       .catch((err) => console.error('Error actualizando acciones/areas de entry:', err));
+   };
 
   const eliminarRegistroAseo = (id: string) => {
     request<void>(`/registros-aseo/${id}`, { method: 'DELETE' })
@@ -307,17 +317,17 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       .catch((err) => console.error('Error eliminando empresa:', err));
   };
 
-  return (
-    <AppContext.Provider value={{
-      productos, agregarProducto, editarProducto, eliminarProducto,
-      empleados, agregarEmpleado, editarEmpleado, eliminarEmpleado,
-      registros, agregarRegistro, eliminarRegistro,
-      registrosAseo, crearRegistroAseo, toggleRegistroAseoEntry, eliminarRegistroAseo,
-      empresas, agregarEmpresa, editarEmpresa, eliminarEmpresa
-    }}>
-      {children}
-    </AppContext.Provider>
-  );
+   return (
+     <AppContext.Provider value={{
+       productos, agregarProducto, editarProducto, eliminarProducto,
+       empleados, agregarEmpleado, editarEmpleado, eliminarEmpleado,
+       registros, agregarRegistro, eliminarRegistro,
+       registrosAseo, crearRegistroAseo, toggleRegistroAseoEntry, actualizarRegistroAseoEntry, eliminarRegistroAseo,
+       empresas, agregarEmpresa, editarEmpresa, eliminarEmpresa
+     }}>
+       {children}
+     </AppContext.Provider>
+   );
 };
 
 export const useAppContext = () => {

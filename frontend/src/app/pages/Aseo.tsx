@@ -38,13 +38,11 @@ export const Aseo = () => {
           onClick={() => crearNuevoRegistro()}
           className={`bg-teal-600 hover:bg-teal-700 text-white px-6 py-4 rounded-2xl font-bold flex items-center justify-center gap-2 shadow-lg transition-transform active:scale-95`}
         >
-          <><Plus size={24} /> Nuevo Registro</>
+          <Plus size={24} /> Nuevo Registro
         </button>
       </div>
 
-      {/* No hay formulario libre: los registros se crean y prefills son gestionados por el backend */}
-
-      {/* Tarjeta de progreso gigante */}
+      {/* Tarjeta de progreso */}
       <div className="bg-teal-700 rounded-3xl p-6 text-white mb-8 shadow-lg">
         <div className="flex justify-between items-end mb-4">
           <span className="text-xl font-semibold">Progreso del día</span>
@@ -59,64 +57,196 @@ export const Aseo = () => {
       </div>
 
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-slate-800">Tareas asignadas</h2>
-        <div className="flex gap-2">
-          <button
-            onClick={() => setVerHistorico(!verHistorico)}
-            className="text-teal-600 font-bold bg-teal-50 px-4 py-2 rounded-xl active:scale-95 transition-transform"
-          >
-            {verHistorico ? 'Ocultar histórico' : 'Ver histórico'}
-          </button>
-          <button
-            onClick={() => crearNuevoRegistro()}
-            className="text-white font-bold bg-amber-500 px-4 py-2 rounded-xl active:scale-95 transition-transform"
-          >
-            Crear registro (autofill)
-          </button>
-        </div>
+        <h2 className="text-2xl font-bold text-slate-800">Tareas de hoy</h2>
+        <button
+          onClick={() => setVerHistorico(!verHistorico)}
+          className="text-teal-600 font-bold bg-teal-50 px-4 py-2 rounded-xl hover:bg-teal-100 active:scale-95 transition-transform"
+        >
+          {verHistorico ? 'Ocultar histórico' : 'Ver histórico'}
+        </button>
       </div>
 
-      <div className="grid gap-4">
+      {/* Tabla de tareas */}
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
         {(!tareasMostradas || tareasMostradas.length === 0) ? (
-          <div className="text-center py-12 bg-white rounded-3xl border border-dashed border-slate-300 text-slate-500">
+          <div className="text-center py-12 text-slate-500">
             <p className="text-lg font-medium">No hay registros de aseo para hoy.</p>
           </div>
         ) : (
-          tareasMostradas.map((entry) => (
-            <div key={entry.id} className={`w-full flex flex-col md:flex-row items-start md:items-center justify-between p-5 rounded-2xl shadow-sm border transition-all gap-5 ${entry.completada ? 'bg-slate-50 border-slate-200 opacity-60' : 'bg-white border-teal-100 hover:border-teal-300'}`}>
-              <button onClick={() => toggleEntry(ultimoRegistro!.id, entry.id)} className="flex items-center gap-5 flex-1 text-left active:scale-[0.98] transition-transform w-full md:w-auto">
-                <div className={`shrink-0 ${entry.completada ? 'text-teal-500' : 'text-slate-300'}`}>
-                  {entry.completada ? <CheckCircle2 size={40} /> : <Circle size={40} />}
-                </div>
-                <div className="flex-1">
-                  <h3 className={`text-xl font-bold flex flex-wrap gap-2 items-center ${entry.completada ? 'text-slate-500 line-through' : 'text-slate-800'}`}>
-                    <span>{entry.empleadoNombre}</span>
-                    <span className="text-teal-700 bg-teal-50 px-2 py-1 rounded text-sm no-underline">{entry.acciones.join(', ')}</span>
-                    <span className="text-slate-500 bg-slate-50 px-2 py-1 rounded text-sm">{entry.areas.join(', ')}</span>
-                  </h3>
-                </div>
-              </button>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-slate-50 border-b border-slate-200">
+                <tr>
+                  <th className="px-6 py-4 text-left font-semibold text-slate-700">Estado</th>
+                  <th className="px-6 py-4 text-left font-semibold text-slate-700">Empleado</th>
+                  <th className="px-6 py-4 text-left font-semibold text-slate-700">Acciones</th>
+                  <th className="px-6 py-4 text-left font-semibold text-slate-700">Áreas</th>
+                  <th className="px-6 py-4 text-center font-semibold text-slate-700">Acciones</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-200">
+                {tareasMostradas.map((entry) => (
+                  <tr key={entry.id} className={`transition-colors ${entry.completada ? 'bg-slate-50' : 'hover:bg-slate-50'}`}>
+                    {/* Estado */}
+                    <td className="px-6 py-4">
+                      <button
+                        onClick={() => toggleRegistroAseoEntry(ultimoRegistro!.id, entry.id)}
+                        className="text-left active:scale-[0.98] transition-transform"
+                      >
+                        {entry.completada ? (
+                          <CheckCircle2 size={28} className="text-teal-500" />
+                        ) : (
+                          <Circle size={28} className="text-slate-300" />
+                        )}
+                      </button>
+                    </td>
 
-              <div className="flex items-center gap-2 justify-end w-full md:w-auto border-t md:border-t-0 pt-4 md:pt-0 mt-2 md:mt-0">
-                <button onClick={() => { if(window.confirm('¿Eliminar este registro?')) eliminarRegistroAseo(ultimoRegistro!.id); }} className="p-3 bg-red-50 text-red-600 hover:bg-red-100 rounded-xl transition-transform active:scale-95 flex-1 md:flex-none flex justify-center">
-                  <Trash2 size={24} />
-                </button>
-              </div>
-            </div>
-          ))
+                    {/* Nombre del empleado */}
+                    <td className="px-6 py-4">
+                      <span className={`font-semibold ${entry.completada ? 'text-slate-400 line-through' : 'text-slate-800'}`}>
+                        {entry.empleadoNombre}
+                      </span>
+                    </td>
+
+                    {/* Acciones o editor */}
+                    <td className="px-6 py-4">
+                      {editandoEntry === entry.id ? (
+                        <div className="flex flex-wrap gap-2">
+                          {ACCIONES_PREDEFINIDAS.map(accion => (
+                            <button
+                              key={accion}
+                              onClick={() => toggleAccion(accion)}
+                              className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
+                                editAcciones.includes(accion)
+                                  ? 'bg-teal-600 text-white'
+                                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                              }`}
+                            >
+                              {accion}
+                            </button>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="flex flex-wrap gap-2">
+                          {entry.acciones.length === 0 ? (
+                            <span className="text-slate-400 italic">Sin acciones</span>
+                          ) : (
+                            entry.acciones.map((accion, i) => (
+                              <span key={i} className="bg-teal-100 text-teal-700 px-3 py-1 rounded-full text-sm font-medium">
+                                {accion}
+                              </span>
+                            ))
+                          )}
+                        </div>
+                      )}
+                    </td>
+
+                    {/* Áreas o editor */}
+                    <td className="px-6 py-4">
+                      {editandoEntry === entry.id ? (
+                        <div className="flex flex-wrap gap-2">
+                          {AREAS_PREDEFINIDAS.map(area => (
+                            <button
+                              key={area}
+                              onClick={() => toggleArea(area)}
+                              className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
+                                editAreas.includes(area)
+                                  ? 'bg-amber-600 text-white'
+                                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                              }`}
+                            >
+                              {area}
+                            </button>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="flex flex-wrap gap-2">
+                          {entry.areas.length === 0 ? (
+                            <span className="text-slate-400 italic">Sin áreas</span>
+                          ) : (
+                            entry.areas.map((area, i) => (
+                              <span key={i} className="bg-amber-100 text-amber-700 px-3 py-1 rounded-full text-sm font-medium">
+                                {area}
+                              </span>
+                            ))
+                          )}
+                        </div>
+                      )}
+                    </td>
+
+                    {/* Botones de acción */}
+                    <td className="px-6 py-4 text-center">
+                      {editandoEntry === entry.id ? (
+                        <div className="flex justify-center gap-2">
+                          <button
+                            onClick={() => guardarEdicion(ultimoRegistro!.id, entry.id)}
+                            className="p-2 bg-teal-50 text-teal-600 hover:bg-teal-100 rounded-lg transition-colors"
+                            title="Guardar"
+                          >
+                            <Check size={20} />
+                          </button>
+                          <button
+                            onClick={cancelarEdicion}
+                            className="p-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
+                            title="Cancelar"
+                          >
+                            <X size={20} />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex justify-center gap-2">
+                          <button
+                            onClick={() => iniciarEdicion(entry)}
+                            className="p-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
+                            title="Editar"
+                          >
+                            <Edit2 size={20} />
+                          </button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
+
+      {/* Histórico */}
       {verHistorico && (
         <div className="mt-8">
           <h3 className="text-lg font-bold mb-4">Histórico de registros</h3>
-          <div className="space-y-4">
+          <div className="space-y-3">
             {registrosAseo.map(r => (
-              <div key={r.id} className="bg-white p-4 rounded-xl shadow-sm border">
-                <div className="flex justify-between items-center mb-2">
-                  <strong>{r.fecha}</strong>
-                  <span className="text-sm text-slate-500">{r.entries.length} empleados</span>
+              <div key={r.id} className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 hover:border-slate-300 transition-colors">
+                <div className="flex justify-between items-start mb-2">
+                  <strong className="text-slate-800">{r.fecha}</strong>
+                  <div className="text-right">
+                    <span className="text-sm text-slate-500">{r.entries.length} empleados</span>
+                    <button
+                      onClick={() => { if(window.confirm('¿Eliminar este registro?')) eliminarRegistroAseo(r.id); }}
+                      className="ml-4 text-red-600 hover:text-red-700 active:scale-95 transition-transform"
+                      title="Eliminar"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
                 </div>
-                <div className="text-sm text-slate-700">{r.entries.map(e => `${e.empleadoNombre}: ${e.acciones.join(', ')} [${e.areas.join(', ')}]`).join(' • ')}</div>
+                <div className="text-sm text-slate-600 space-y-1">
+                  {r.entries.length === 0 ? (
+                    <p className="italic text-slate-400">Sin entrada de datos</p>
+                  ) : (
+                    r.entries.map(e => (
+                      <div key={e.id} className="flex justify-between">
+                        <span className="font-medium">{e.empleadoNombre}</span>
+                        <span className="text-slate-500">
+                          {e.acciones.join(', ') || 'Sin acciones'} • {e.areas.join(', ') || 'Sin áreas'}
+                        </span>
+                      </div>
+                    ))
+                  )}
+                </div>
               </div>
             ))}
           </div>
