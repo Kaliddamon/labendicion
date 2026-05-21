@@ -152,7 +152,8 @@ public class FrontendSyncController {
         response.put("productos", productosDto);
         response.put("empleados", empleadosDto);
         response.put("registros", registrosDto);
-        response.put("tareasAseo", tareasDto);
+        // Antes se devolvía 'tareasAseo' (nombre histórico). El frontend espera 'registrosAseo'.
+        response.put("registrosAseo", tareasDto);
         response.put("empresas", empresasDto);
 
         return ResponseEntity.ok(response);

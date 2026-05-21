@@ -1,6 +1,7 @@
 package dev.kali.labendicion.domain.entity;
 
 import jakarta.persistence.*;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -18,6 +19,7 @@ public class RegistroAseoEntrySync {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "registro_aseo_id")
+    @JsonIgnore // Evitar serializar la referencia hacia el padre para prevenir recursión infinita al convertir a JSON
     private RegistroAseoSync registroAseo;
 
     private String empleadoId;
@@ -29,4 +31,5 @@ public class RegistroAseoEntrySync {
 
     private boolean completada;
 }
+
 
