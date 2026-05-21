@@ -8,4 +8,3 @@ public interface EmpresaSyncRepository extends JpaRepository<EmpresaSync, String
     List<EmpresaSync> findByRazonSocial(String razonSocial);
 }
 
-

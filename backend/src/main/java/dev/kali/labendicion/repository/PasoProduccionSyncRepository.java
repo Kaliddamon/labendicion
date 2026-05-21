@@ -7,4 +7,3 @@ import java.util.List;
 public interface PasoProduccionSyncRepository extends JpaRepository<PasoProduccionSync, String> {
     List<PasoProduccionSync> findByProductoSyncId(String productoSyncId);
 }
-

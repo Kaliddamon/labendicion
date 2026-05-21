@@ -229,4 +229,3 @@ Si necesitas revertir los cambios:
 - [ ] Extractar lógica de pasos a servicio dedicado (PasoProduccionService)
 - [ ] Implementar soft deletes si es necesario auditoría
 - [ ] Mejorar UI del modal de empresas (edición inline, paginación, etc.)
-

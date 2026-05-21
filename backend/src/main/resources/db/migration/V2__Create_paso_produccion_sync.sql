@@ -10,4 +10,3 @@ CREATE TABLE IF NOT EXISTS paso_produccion_sync (
 
 -- Índice para búsqueda por producto
 CREATE INDEX IF NOT EXISTS idx_paso_producto ON paso_produccion_sync(producto_sync_id);
-

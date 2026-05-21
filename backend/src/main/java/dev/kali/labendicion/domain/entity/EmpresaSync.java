@@ -25,4 +25,3 @@ public class EmpresaSync {
     /** Estado: Sin ordenes, Ordenes pendientes, Inactiva */
     private String estado;
 }
-

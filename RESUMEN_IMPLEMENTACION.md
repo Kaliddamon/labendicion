@@ -1,6 +1,6 @@
 # Resumen Final: Implementación de Producción Mejorada
 
-## 📋 Requisitos Completados
+##  Requisitos Completados
 
 ### ✅ 1. Pasos/Acciones por Orden
 - **Cambio**: Reemplacé modelo JSON simple por relación 1-N usando tabla dedicada
@@ -25,17 +25,17 @@
   - "Ordenes pendientes" → cuando hay órdenes activas
   - "Inactiva" → puede ser toggleada manualmente
 
-## 📁 Archivos Creados/Modificados
+##  Archivos Creados/Modificados
 
 ### Backend (Java)
 | Archivo | Cambio |
 |---------|--------|
 | `PasoProduccionSync.java` | ✨ NUEVO - Entidad JPA para pasos |
-| `ProductoSync.java` | 🔄 ACTUALIZADO - Agregada relación OneToMany |
+| `ProductoSync.java` |  ACTUALIZADO - Agregada relación OneToMany |
 | `PasoProduccionSyncRepository.java` | ✨ NUEVO - Repositorio JPA |
 | `EmpresaSync.java` | ✨ NUEVO - Entidad para empresas |
 | `EmpresaSyncRepository.java` | ✨ NUEVO - Repositorio para empresas |
-| `FrontendSyncController.java` | 🔄 ACTUALIZADO - Nuevos endpoints CRUD y lógica de pasos |
+| `FrontendSyncController.java` |  ACTUALIZADO - Nuevos endpoints CRUD y lógica de pasos |
 | `V1__Create_empresa_sync.sql` | ✨ NUEVO - Migración Flyway |
 | `V2__Create_paso_produccion_sync.sql` | ✨ NUEVO - Migración Flyway |
 | `V3__Drop_pasos_from_producto_sync.sql` | ✨ NUEVO - Migración Flyway |
@@ -43,10 +43,10 @@
 ### Frontend (React/TypeScript)
 | Archivo | Cambio |
 |---------|--------|
-| `AppContext.tsx` | 🔄 ACTUALIZADO - Tipos Empresa, CRUD empresas, pasos en Producto |
-| `Produccion.tsx` | 🔄 ACTUALIZADO - Selector empresa, modal admin, UI pasos, formateo números |
+| `AppContext.tsx` |  ACTUALIZADO - Tipos Empresa, CRUD empresas, pasos en Producto |
+| `Produccion.tsx` |  ACTUALIZADO - Selector empresa, modal admin, UI pasos, formateo números |
 
-## 🚀 Endpoints Nuevos/Modificados
+##  Endpoints Nuevos/Modificados
 
 ### Productos (Actualizado)
 ```
@@ -72,7 +72,7 @@ PUT    /api/frontend/empresas/{id}                 → Actualiza empresa
 DELETE /api/frontend/empresas/{id}                 → Elimina empresa
 ```
 
-## 🗄️ Estructura de BD
+## ️ Estructura de BD
 
 ### EMPRESA_SYNC
 ```
@@ -108,7 +108,7 @@ PK: id (VARCHAR 64)
 RELACIÓN: OneToMany → PASO_PRODUCCION_SYNC (pasos)
 ```
 
-## 📊 Comparativa: Antes vs Después
+##  Comparativa: Antes vs Después
 
 | Aspecto | Antes | Después |
 |---------|-------|---------|
@@ -130,7 +130,7 @@ RELACIÓN: OneToMany → PASO_PRODUCCION_SYNC (pasos)
 - [x] Bootstrap actualizado con empresas
 - [x] Endpoints CRUD implementados y compilados
 
-## 📝 Instrucciones de Despliegue
+##  Instrucciones de Despliegue
 
 ### 1. Respaldar BD (RECOMENDADO)
 ```powershell
@@ -168,7 +168,7 @@ npx vite build # Para producción
    - ⚠️ MySQL: puede requerir ajustes menores en sintaxis SQL
 5. **Roles/Seguridad**: Control de "Administrar Empresas" es solo UI-level (recomendado añadir @PreAuthorize en backend)
 
-## 🔄 Rollback (si es necesario)
+##  Rollback (si es necesario)
 
 ```powershell
 # 1. Restaurar BD desde backup
@@ -178,7 +178,7 @@ git checkout HEAD -- frontend/
 # 3. Desplegar versión anterior
 ```
 
-## 🎯 Próximos Pasos Opcionales
+##  Próximos Pasos Opcionales
 
 - [ ] Agregar validación de roles en endpoints empresas
 - [ ] Implementar soft deletes para auditoría
@@ -190,7 +190,6 @@ git checkout HEAD -- frontend/
 
 ---
 
-## 📚 Documentación Completa
+##  Documentación Completa
 
 Ver archivo: `MIGRACION_PASOS_RELACIONAL.md` para instrucciones detalladas de despliegue y pruebas.
-

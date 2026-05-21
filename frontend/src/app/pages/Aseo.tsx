@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { useAppContext, RegistroAseo, RegistroAseoEntry } from '../context/AppContext';
-import { Sparkles, CheckCircle2, Circle, Plus, Trash2 } from 'lucide-react';
+import { Sparkles, CheckCircle2, Circle, Plus, Trash2, Check, X, Edit2 } from 'lucide-react';
 
 export const Aseo = () => {
-  const { registrosAseo, crearRegistroAseo, toggleRegistroAseoEntry, eliminarRegistroAseo } = useAppContext();
+  const { registrosAseo, crearRegistroAseo, toggleRegistroAseoEntry, actualizarRegistroAseoEntry, eliminarRegistroAseo } = useAppContext();
 
   // Mostrar el registro más reciente y permitir crear un nuevo registro (se autofillará)
   const [verHistorico, setVerHistorico] = useState(false);
@@ -22,6 +22,40 @@ export const Aseo = () => {
 
   const toggleEntry = (registroId: string, entryId: string) => {
     toggleRegistroAseoEntry(registroId, entryId);
+  };
+
+  // --- Estados para edición inline de entry ---
+  const [editandoEntry, setEditandoEntry] = useState<string | null>(null);
+  const [editAcciones, setEditAcciones] = useState<string[]>([]);
+  const [editAreas, setEditAreas] = useState<string[]>([]);
+
+  const ACCIONES_PREDEFINIDAS = ['Barrer', 'Trapear', 'Organizar', 'Desechar'];
+  const AREAS_PREDEFINIDAS = ['Taller', 'Almacén', 'Oficina', 'Baño'];
+
+  const iniciarEdicion = (entry: RegistroAseoEntry) => {
+    setEditandoEntry(entry.id);
+    setEditAcciones([...entry.acciones]);
+    setEditAreas([...entry.areas]);
+  };
+
+  const cancelarEdicion = () => {
+    setEditandoEntry(null);
+    setEditAcciones([]);
+    setEditAreas([]);
+  };
+
+  const toggleAccion = (accion: string) => {
+    setEditAcciones((prev) => (prev.includes(accion) ? prev.filter(a => a !== accion) : [...prev, accion]));
+  };
+
+  const toggleArea = (area: string) => {
+    setEditAreas((prev) => (prev.includes(area) ? prev.filter(a => a !== area) : [...prev, area]));
+  };
+
+  const guardarEdicion = (registroId: string, entryId: string) => {
+    // Llamar al contexto para actualizar acciones/areas del entry
+    actualizarRegistroAseoEntry(registroId, entryId, editAcciones, editAreas);
+    cancelarEdicion();
   };
 
   return (

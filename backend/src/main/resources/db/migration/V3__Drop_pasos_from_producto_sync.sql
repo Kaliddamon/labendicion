@@ -10,4 +10,3 @@ ALTER TABLE producto_sync DROP COLUMN IF EXISTS pasos;
 -- Para MySQL (comentá si usas MySQL y reemplaza con sintaxis apropiada):
 -- ALTER TABLE producto_sync DROP COLUMN IF EXISTS pasos;
 
-

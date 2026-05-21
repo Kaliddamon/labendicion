@@ -204,7 +204,7 @@ public class FrontendSyncController {
                 }
             }
 
-            return ResponseEntity.ok(guardado);
+            return ResponseEntity.ok(mapProductoToDto(guardado));
         } catch (Exception e) {
             e.printStackTrace();
             try { TransactionAspectSupport.currentTransactionStatus().setRollbackOnly(); } catch (Exception ignore) {}
@@ -266,7 +266,7 @@ public class FrontendSyncController {
                 }
             }
 
-            return ResponseEntity.ok(guardado);
+            return ResponseEntity.ok(mapProductoToDto(guardado));
         } catch (Exception e) {
             e.printStackTrace();
             try { TransactionAspectSupport.currentTransactionStatus().setRollbackOnly(); } catch (Exception ignore) {}
@@ -611,6 +611,29 @@ public class FrontendSyncController {
 
     private static String generateId() {
         return UUID.randomUUID().toString().replace("-", "").substring(0, 12);
+    }
+
+    // Convierte una entidad ProductoSync a un DTO plano (evita serializar objetos Hibernate con referencias recursivas)
+    private Map<String, Object> mapProductoToDto(ProductoSync p) {
+        var pasosDto = (p.getPasos() == null) ? List.<Object>of() : p.getPasos().stream().map(ps -> {
+            var m = new java.util.HashMap<String, Object>();
+            m.put("id", ps.getId());
+            m.put("descripcion", ps.getDescripcion());
+            m.put("orden", ps.getOrden());
+            m.put("completado", ps.getCompletado());
+            return m;
+        }).collect(Collectors.toList());
+        var map = new java.util.HashMap<String, Object>();
+        map.put("id", p.getId());
+        map.put("nombre", p.getNombre());
+        map.put("cantidad", p.getCantidad());
+        map.put("empresa", p.getEmpresa());
+        map.put("ganancia", p.getGanancia());
+        map.put("fechaAsignacion", p.getFechaAsignacion());
+        map.put("fechaTerminacion", p.getFechaTerminacion());
+        map.put("estado", p.getEstado());
+        map.put("pasos", pasosDto);
+        return map;
     }
 
     private ResponseEntity<Object> serverError(Exception e, String ruta) {

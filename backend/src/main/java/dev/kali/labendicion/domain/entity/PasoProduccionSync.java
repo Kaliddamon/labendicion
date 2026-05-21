@@ -27,4 +27,3 @@ public class PasoProduccionSync {
     private Boolean completado;
 }
 
-

@@ -10,4 +10,3 @@ CREATE TABLE IF NOT EXISTS empresa_sync (
 
 -- Índice para búsqueda frecuente por razon_social
 CREATE INDEX IF NOT EXISTS idx_empresa_razon_social ON empresa_sync(razon_social);
-
