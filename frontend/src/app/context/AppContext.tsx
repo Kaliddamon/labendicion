@@ -163,27 +163,46 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   // Producción
    const agregarProducto = (prod: Omit<Producto, 'id'>) => {
+     // Optimistic create: insert a temporary product immediately
+     const tmpId = `tmp-prod-${Date.now()}`;
+     const tmpProd: Producto = { id: tmpId, pasos: prod.pasos ?? [], ...prod } as Producto;
+     setProductos((prev) => [tmpProd, ...prev]);
+
      request<Producto>('/productos', {
        method: 'POST',
        body: JSON.stringify(prod),
      })
        .then((nuevo) => {
-         // Cargar pasos del producto después de crear
-         if (nuevo.id) {
-           return request<any[]>(`/productos/${nuevo.id}/pasos`)
-             .then((pasos) => {
-               nuevo.pasos = pasos;
-               setProductos((prev) => [nuevo, ...prev]);
-             });
+         if (!nuevo || !nuevo.id) {
+           // Replace temp with server response (if any) or remove
+           setProductos((prev) => prev.filter((p) => p.id !== tmpId));
+           return;
          }
-         setProductos((prev) => [nuevo, ...prev]);
+         // Fetch pasos and replace tmp
+         request<any[]>(`/productos/${nuevo.id}/pasos`)
+           .then((pasos) => {
+             nuevo.pasos = pasos;
+             setProductos((prev) => prev.map((p) => (p.id === tmpId ? nuevo : p)));
+           })
+           .catch(() => {
+             // If pasos fail, still replace the tmp with producto basic
+             setProductos((prev) => prev.map((p) => (p.id === tmpId ? nuevo : p)));
+           });
        })
-       .catch((err) => console.error('Error creando producto:', err));
+       .catch((err) => {
+         console.error('Error creando producto (revirtiendo):', err);
+         setProductos((prev) => prev.filter((p) => p.id !== tmpId));
+       });
    };
   const editarProducto = (id: string, prod: Partial<Producto>) => {
     const actual = productos.find((p) => p.id === id);
     if (!actual) return;
+    const snapshot = { ...actual };
     const payload = { ...actual, ...prod };
+
+    // Optimistic apply
+    setProductos((prev) => prev.map((p) => (p.id === id ? { ...p, ...prod } : p)));
+
     request<Producto>(`/productos/${id}`, {
       method: 'PUT',
       body: JSON.stringify(payload),
@@ -191,130 +210,223 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       .then((actualizado) => {
         setProductos((prev) => prev.map((p) => (p.id === id ? actualizado : p)));
       })
-      .catch((err) => console.error('Error editando producto:', err));
+      .catch((err) => {
+        console.error('Error editando producto (revirtiendo):', err);
+        // Revert
+        setProductos((prev) => prev.map((p) => (p.id === id ? snapshot : p)));
+      });
   };
   const eliminarProducto = (id: string) => {
-    request<void>(`/productos/${id}`, { method: 'DELETE' })
-      .then(() => {
-        setProductos((prev) => prev.filter((p) => p.id !== id));
-        setRegistros((prev) =>
-          prev.map((r) => ({
-            ...r,
-            producciones: (r.producciones ?? []).filter((p) => p.productoId !== id),
-          }))
-        );
-      })
-      .catch((err) => console.error('Error eliminando producto:', err));
+    const snapshotProductos = [...productos];
+    const snapshotRegistros = [...registros];
+
+    // Optimistic removal
+    setProductos((prev) => prev.filter((p) => p.id !== id));
+    setRegistros((prev) =>
+      prev.map((r) => ({ ...r, producciones: (r.producciones ?? []).filter((p) => p.productoId !== id) }))
+    );
+
+    request<void>(`/productos/${id}`, { method: 'DELETE' }).catch((err) => {
+      console.error('Error eliminando producto (revirtiendo):', err);
+      setProductos(snapshotProductos);
+      setRegistros(snapshotRegistros);
+    });
   };
 
   // Empleados
   const agregarEmpleado = (emp: Omit<Empleado, 'id'>) => {
+    const tmpId = `tmp-emp-${Date.now()}`;
+    const tmpEmp: Empleado = { id: tmpId, fechaIngreso: new Date().toISOString(), estado: 'Activo', ...emp } as Empleado;
+    setEmpleados((prev) => [tmpEmp, ...prev]);
+
     request<Empleado>('/empleados', {
       method: 'POST',
       body: JSON.stringify(emp),
     })
       .then((nuevo) => {
-        setEmpleados((prev) => [nuevo, ...prev]);
+        setEmpleados((prev) => prev.map((e) => (e.id === tmpId ? nuevo : e)));
       })
-      .catch((err) => console.error('Error creando empleado:', err));
+      .catch((err) => {
+        console.error('Error creando empleado (revirtiendo):', err);
+        setEmpleados((prev) => prev.filter((e) => e.id !== tmpId));
+      });
   };
   const editarEmpleado = (id: string, emp: Partial<Empleado>) => {
     const actual = empleados.find((e) => e.id === id);
     if (!actual) return;
+    const snapshot = { ...actual };
     const payload = { ...actual, ...emp };
+
+    setEmpleados((prev) => prev.map((e) => (e.id === id ? { ...e, ...emp } : e)));
+
     request<Empleado>(`/empleados/${id}`, {
       method: 'PUT',
       body: JSON.stringify(payload),
     })
-      .then((actualizado) => {
-        setEmpleados((prev) => prev.map((e) => (e.id === id ? actualizado : e)));
-      })
-      .catch((err) => console.error('Error editando empleado:', err));
+      .then((actualizado) => setEmpleados((prev) => prev.map((e) => (e.id === id ? actualizado : e))))
+      .catch((err) => {
+        console.error('Error editando empleado (revirtiendo):', err);
+        setEmpleados((prev) => prev.map((e) => (e.id === id ? snapshot : e)));
+      });
   };
   const eliminarEmpleado = (id: string) => {
+    // Snapshot current state so we can revert on failure
+    const snapshotEmpleados = [...empleados];
+    const snapshotRegistros = [...registros];
+
+    // Optimistic update: reflect the deletion immediately in the UI
+    setEmpleados((prev) => prev.filter((e) => e.id !== id));
+    setRegistros((prev) => prev.filter((r) => r.empleadoId !== id));
+
+    // Perform the server request; if it fails, revert the optimistic update
     request<void>(`/empleados/${id}`, { method: 'DELETE' })
-      .then(() => {
-        setEmpleados((prev) => prev.filter((e) => e.id !== id));
-        setRegistros((prev) => prev.filter((r) => r.empleadoId !== id));
-      })
-      .catch((err) => console.error('Error eliminando empleado:', err));
+      .catch((err) => {
+        console.error('Error eliminando empleado (revirtiendo estado):', err);
+        // Revert to previous snapshots
+        setEmpleados(snapshotEmpleados);
+        setRegistros(snapshotRegistros);
+      });
   };
 
   // Registros
   const agregarRegistro = (reg: Omit<RegistroDiario, 'id'>) => {
+    const tmpId = `tmp-reg-${Date.now()}`;
+    const tmpReg: RegistroDiario = { id: tmpId, ...reg } as RegistroDiario;
+    setRegistros((prev) => [tmpReg, ...prev]);
+
     request<RegistroDiario>('/registros', {
       method: 'POST',
       body: JSON.stringify(reg),
     })
-      .then((nuevo) => {
-        setRegistros((prev) => [nuevo, ...prev]);
-      })
-      .catch((err) => console.error('Error creando registro:', err));
+      .then((nuevo) => setRegistros((prev) => prev.map((r) => (r.id === tmpId ? nuevo : r))))
+      .catch((err) => {
+        console.error('Error creando registro (revirtiendo):', err);
+        setRegistros((prev) => prev.filter((r) => r.id !== tmpId));
+      });
   };
   const eliminarRegistro = (id: string) => {
-    request<void>(`/registros/${id}`, { method: 'DELETE' })
-      .then(() => {
-        setRegistros((prev) => prev.filter((r) => r.id !== id));
-      })
-      .catch((err) => console.error('Error eliminando registro:', err));
+    const snapshot = [...registros];
+    setRegistros((prev) => prev.filter((r) => r.id !== id));
+    request<void>(`/registros/${id}`, { method: 'DELETE' }).catch((err) => {
+      console.error('Error eliminando registro (revirtiendo):', err);
+      setRegistros(snapshot);
+    });
   };
 
   // Registros de Aseo
   const crearRegistroAseo = (payload?: object) => {
+    const tmpId = `tmp-aseo-${Date.now()}`;
+    const tmp: RegistroAseo = { id: tmpId, fecha: new Date().toISOString(), entries: [], ...(payload as any) } as RegistroAseo;
+    setRegistrosAseo((prev) => [tmp, ...prev]);
+
     request<RegistroAseo>('/registros-aseo', {
       method: 'POST',
       body: JSON.stringify(payload || {}),
     })
-      .then((nuevo) => setRegistrosAseo((prev) => [nuevo, ...prev]))
-      .catch((err) => console.error('Error creando registro de aseo:', err));
+      .then((nuevo) => setRegistrosAseo((prev) => prev.map((r) => (r.id === tmpId ? nuevo : r))))
+      .catch((err) => {
+        console.error('Error creando registro de aseo (revirtiendo):', err);
+        setRegistrosAseo((prev) => prev.filter((r) => r.id !== tmpId));
+      });
   };
 
    const toggleRegistroAseoEntry = (registroId: string, entryId: string) => {
+     // Optimistic toggle
+     const snapshot = registrosAseo.map((r) => ({ ...r, entries: r.entries.map((e) => ({ ...e })) }));
+     setRegistrosAseo((prev) =>
+       prev.map((r) =>
+         r.id !== registroId
+           ? r
+           : {
+               ...r,
+               entries: r.entries.map((e) => (e.id === entryId ? { ...e, completada: !e.completada } : e)),
+             }
+       )
+     );
+
      request<RegistroAseo>(`/registros-aseo/${registroId}/entries/${entryId}/toggle`, {
        method: 'PATCH',
      })
        .then((actualizado) => setRegistrosAseo((prev) => prev.map((r) => (r.id === actualizado.id ? actualizado : r))))
-       .catch((err) => console.error('Error toggle registro aseo entry:', err));
+       .catch((err) => {
+         console.error('Error toggle registro aseo entry (revirtiendo):', err);
+         setRegistrosAseo(snapshot);
+       });
    };
 
-   const actualizarRegistroAseoEntry = (registroId: string, entryId: string, acciones: string[], areas: string[]) => {
-     request<RegistroAseo>(`/registros-aseo/${registroId}/entries/${entryId}`, {
-       method: 'PATCH',
-       body: JSON.stringify({ acciones, areas }),
-     })
-       .then((actualizado) => setRegistrosAseo((prev) => prev.map((r) => (r.id === actualizado.id ? actualizado : r))))
-       .catch((err) => console.error('Error actualizando acciones/areas de entry:', err));
-   };
+    const actualizarRegistroAseoEntry = (registroId: string, entryId: string, acciones: string[], areas: string[]) => {
+      const snapshot = registrosAseo.map((r) => ({ ...r, entries: r.entries.map((e) => ({ ...e })) }));
 
-  const eliminarRegistroAseo = (id: string) => {
-    request<void>(`/registros-aseo/${id}`, { method: 'DELETE' })
-      .then(() => setRegistrosAseo((prev) => prev.filter((r) => r.id !== id)))
-      .catch((err) => console.error('Error eliminando registro de aseo:', err));
-  };
+      setRegistrosAseo((prev) =>
+        prev.map((r) =>
+          r.id !== registroId
+            ? r
+            : {
+                ...r,
+                entries: r.entries.map((e) => (e.id === entryId ? { ...e, acciones: acciones, areas: areas } : e)),
+              }
+        )
+      );
+
+      request<RegistroAseo>(`/registros-aseo/${registroId}/entries/${entryId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ acciones, areas }),
+      })
+        .then((actualizado) => setRegistrosAseo((prev) => prev.map((r) => (r.id === actualizado.id ? actualizado : r))))
+        .catch((err) => {
+          console.error('Error actualizando acciones/areas de entry (revirtiendo):', err);
+          setRegistrosAseo(snapshot);
+        });
+    };
+
+   const eliminarRegistroAseo = (id: string) => {
+     const snapshot = [...registrosAseo];
+     setRegistrosAseo((prev) => prev.filter((r) => r.id !== id));
+     request<void>(`/registros-aseo/${id}`, { method: 'DELETE' }).catch((err) => {
+       console.error('Error eliminando registro de aseo (revirtiendo):', err);
+       setRegistrosAseo(snapshot);
+     });
+   };
 
   // Empresas
   const agregarEmpresa = (emp: Omit<Empresa, 'id'>) => {
+    const tmpId = `tmp-emp-${Date.now()}`;
+    const tmp: Empresa = { id: tmpId, estado: 'Sin ordenes', ...emp } as Empresa;
+    setEmpresas((prev) => [tmp, ...prev]);
+
     request<Empresa>('/empresas', {
       method: 'POST',
       body: JSON.stringify(emp),
     })
-      .then((nuevo) => setEmpresas((prev) => [nuevo, ...prev]))
-      .catch((err) => console.error('Error creando empresa:', err));
+      .then((nuevo) => setEmpresas((prev) => prev.map((e) => (e.id === tmpId ? nuevo : e))))
+      .catch((err) => {
+        console.error('Error creando empresa (revirtiendo):', err);
+        setEmpresas((prev) => prev.filter((e) => e.id !== tmpId));
+      });
   };
 
   const editarEmpresa = (id: string, emp: Partial<Empresa>) => {
     const actual = empresas.find((e) => e.id === id);
     if (!actual) return;
+    const snapshot = { ...actual };
+    setEmpresas((prev) => prev.map((e) => (e.id === id ? { ...e, ...emp } : e)));
+
     const payload = { ...actual, ...emp };
     request<Empresa>(`/empresas/${id}`, { method: 'PUT', body: JSON.stringify(payload) })
       .then((actualizado) => setEmpresas((prev) => prev.map((e) => (e.id === id ? actualizado : e))))
-      .catch((err) => console.error('Error editando empresa:', err));
+      .catch((err) => {
+        console.error('Error editando empresa (revirtiendo):', err);
+        setEmpresas((prev) => prev.map((e) => (e.id === id ? snapshot : e)));
+      });
   };
 
   const eliminarEmpresa = (id: string) => {
-    request<void>(`/empresas/${id}`, { method: 'DELETE' })
-      .then(() => setEmpresas((prev) => prev.filter((e) => e.id !== id)))
-      .catch((err) => console.error('Error eliminando empresa:', err));
+    const snapshot = [...empresas];
+    setEmpresas((prev) => prev.filter((e) => e.id !== id));
+    request<void>(`/empresas/${id}`, { method: 'DELETE' }).catch((err) => {
+      console.error('Error eliminando empresa (revirtiendo):', err);
+      setEmpresas(snapshot);
+    });
   };
 
    return (
