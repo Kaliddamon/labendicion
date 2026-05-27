@@ -195,7 +195,6 @@ export const Configuracion = () => {
               value={secuencia}
               onChange={(e) => setSecuencia(e.target.value)}
             />
-            <p className="text-[10px] text-slate-400 mt-0.5 max-w-[8rem]">No es la cantidad de la orden</p>
           </div>
         )}
         <button type="submit" className="bg-teal-600 text-white px-5 py-2 rounded-xl font-bold flex items-center gap-2">
