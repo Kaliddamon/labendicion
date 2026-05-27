@@ -88,10 +88,24 @@ export const Empleados = () => {
     resetFormEmpleado();
   };
 
+  const cancelarCalificacion = () => {
+    setRegistroEditando(null);
+    setEmpleadoCalificando(null);
+    setCalificacionProducciones([crearLineaProduccionVacia()]);
+    setCalificacionAsistencia(true);
+    setCalificacionFecha(new Date().toISOString().split('T')[0]);
+    setCalificacionHoraEntrada('08:00');
+    setCalificacionHoraSalida('17:00');
+  };
+
   const abrirCalificacion = (empId: string) => {
     setEmpleadoViendoHistorial(null);
+    if (empleadoCalificando === empId && !registroEditando) {
+      cancelarCalificacion();
+      return;
+    }
     setRegistroEditando(null);
-    setEmpleadoCalificando(empleadoCalificando === empId ? null : empId);
+    setEmpleadoCalificando(empId);
     setCalificacionProducciones([crearLineaProduccionVacia()]);
   };
 
@@ -553,7 +567,7 @@ export const Empleados = () => {
                                 .map((p) => `${p.productoId}:${p.pasoId}`)
                                 .filter((k) => k !== ':');
                               const ordenSel = productos.find((p) => p.id === prod.productoId);
-                              const pasosOrden = ordenSel?.pasos ?? [];
+                              const pasosOrden = (ordenSel?.pasos ?? []).filter((ps) => ps.id);
                               const disponible = prod.productoId && prod.pasoId
                                 ? unidadesDisponiblesPaso(prod.productoId, prod.pasoId, registroEditando ?? undefined)
                                 : null;
@@ -596,22 +610,29 @@ export const Empleados = () => {
                                     <label className="mb-1 block text-xs font-semibold text-slate-500">
                                       Acción de la orden
                                     </label>
+                                    {prod.productoId && pasosOrden.length === 0 && (
+                                      <p className="mb-2 text-xs text-rose-700 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2">
+                                        Esta orden no tiene acciones guardadas. En Producción, edítala, asigna acciones del catálogo y guarda.
+                                      </p>
+                                    )}
                                     <select
                                       value={prod.pasoId}
                                       onChange={(e) =>
                                         actualizarProduccion(index, 'pasoId', e.target.value)
                                       }
                                       required
-                                      disabled={!prod.productoId}
+                                      disabled={!prod.productoId || pasosOrden.length === 0}
                                       className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium disabled:opacity-50"
                                     >
                                       <option value="">Selecciona la acción…</option>
-                                      {pasosOrden.map((ps) => {
-                                        const clave = `${prod.productoId}:${ps.id}`;
+                                      {pasosOrden.map((ps, pi) => {
+                                        const pasoKey = ps.id || `paso-${pi}`;
+                                        const clave = `${prod.productoId}:${pasoKey}`;
                                         const ocupada = clavesOtros.includes(clave);
+                                        if (!ps.id) return null;
                                         if (ocupada && ps.id !== prod.pasoId) return null;
                                         return (
-                                          <option key={ps.id ?? ps.descripcion} value={ps.id ?? ''}>
+                                          <option key={pasoKey} value={ps.id}>
                                             {ps.descripcion}
                                           </option>
                                         );
@@ -695,16 +716,13 @@ export const Empleados = () => {
 
                   <div className="mt-6 flex justify-end">
                     <div className="flex gap-2">
-                      {registroEditando && (
+                      {(registroEditando || empleadoCalificando) && (
                         <button
                           type="button"
-                          onClick={() => {
-                            setRegistroEditando(null);
-                            setCalificacionProducciones([crearLineaProduccionVacia()]);
-                          }}
+                          onClick={cancelarCalificacion}
                           className="px-6 py-4 rounded-xl font-bold border border-amber-300 text-amber-800"
                         >
-                          Cancelar edición
+                          Cancelar
                         </button>
                       )}
                     <button type="submit" className="w-full md:w-auto bg-amber-500 hover:bg-amber-600 text-white px-8 py-4 rounded-xl font-bold text-lg shadow-md active:scale-95 transition-transform">

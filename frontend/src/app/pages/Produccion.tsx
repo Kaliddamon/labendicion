@@ -73,11 +73,46 @@ export const Produccion = () => {
     return Number(value.replace(/[^0-9\-]/g, ''));
   };
 
+  const accionesValidas = accionesProduccion.filter(
+    (a) => a.id && a.id.trim() !== '' && !a.id.startsWith('tmp-') && a.activa !== false
+  );
+
   const resetForm = () => {
     setNombre(''); setCantidad(''); setEmpresa(''); setGanancia('');
     setFechaAsignacion(new Date().toISOString().split('T')[0]);
     setFechaTerminacion(''); setEstado('Pendiente');
+    setPasos([]);
+    setAccionSeleccionada('');
     setProductoEditando(null); setMostrarForm(false);
+  };
+
+  const agregarPasoAOrden = () => {
+    if (!accionSeleccionada) {
+      alert('Selecciona una acción del catálogo.');
+      return;
+    }
+    const accion = accionesValidas.find((a) => a.id === accionSeleccionada);
+    if (!accion) {
+      alert('La acción seleccionada no es válida. Recarga la página o créala en Configuración.');
+      return;
+    }
+    const yaExiste = pasos.some(
+      (p) =>
+        (p.accionProduccionId && p.accionProduccionId === accion.id) ||
+        p.descripcion.toLowerCase() === accion.nombre.toLowerCase()
+    );
+    if (yaExiste) {
+      return alert('Esa acción ya está asignada a esta orden.');
+    }
+    setPasos((prev) => [
+      ...prev,
+      {
+        accionProduccionId: accion.id,
+        descripcion: accion.nombre,
+        orden: prev.length + 1,
+      },
+    ]);
+    setAccionSeleccionada('');
   };
 
   const iniciarEdicion = (prod: Producto) => {
@@ -109,6 +144,9 @@ export const Produccion = () => {
   const handleGuardar = (e: React.FormEvent) => {
     e.preventDefault();
     if (!nombre || !cantidad || !empresa || !ganancia) return alert('Llene los campos obligatorios');
+    if (pasos.length === 0) {
+      return alert('Asigna al menos una acción del catálogo a esta orden (sección inferior del formulario).');
+    }
 
     const prodData = {
       nombre,
@@ -212,10 +250,13 @@ export const Produccion = () => {
           </div>
 
           <div className="mb-4">
-            <label className="block text-sm font-semibold text-slate-600 mb-2">Acciones de la orden</label>
-            {accionesProduccion.length === 0 ? (
+            <label className="block text-sm font-semibold text-slate-600 mb-1">Acciones de esta orden</label>
+            <p className="text-xs text-slate-500 mb-2">
+              Primero créalas en <strong>Config → Acciones producción</strong>, luego asígnalas aquí.
+            </p>
+            {accionesValidas.length === 0 ? (
               <p className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-2">
-                Define acciones en Configuración antes de asignarlas a la orden.
+                No hay acciones disponibles. Ve a Configuración y crea al menos una acción de producción.
               </p>
             ) : (
             <div className="flex gap-2 mb-2">
@@ -224,21 +265,14 @@ export const Produccion = () => {
                 value={accionSeleccionada}
                 onChange={(e) => setAccionSeleccionada(e.target.value)}
               >
-                <option value="">Seleccione una acción…</option>
-                {accionesProduccion.filter((a) => a.activa !== false).map((a) => (
+                <option value="">Seleccione una acción del catálogo…</option>
+                {accionesValidas.map((a) => (
                   <option key={a.id} value={a.id}>{a.nombre}</option>
                 ))}
               </select>
-              <button type="button" onClick={()=>{
-                if (!accionSeleccionada) return;
-                const accion = accionesProduccion.find((a) => a.id === accionSeleccionada);
-                if (!accion) return;
-                if (pasos.some((p) => p.accionProduccionId === accion.id)) {
-                  return alert('Esa acción ya está en la orden.');
-                }
-                setPasos(prev => [...prev, { accionProduccionId: accion.id, descripcion: accion.nombre, orden: prev.length + 1 }]);
-                setAccionSeleccionada('');
-              }} className="bg-teal-600 text-white px-4 py-2 rounded-xl">Agregar</button>
+              <button type="button" onClick={agregarPasoAOrden} className="bg-teal-600 text-white px-4 py-2 rounded-xl shrink-0">
+                Asignar
+              </button>
             </div>
             )}
             <ul className="space-y-2">

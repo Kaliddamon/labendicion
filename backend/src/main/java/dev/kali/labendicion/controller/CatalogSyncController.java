@@ -31,7 +31,7 @@ public class CatalogSyncController {
 
     @PostMapping("/acciones-produccion")
     public ResponseEntity<AccionProduccionSync> crearAccionProduccion(@RequestBody AccionProduccionSync body) {
-        if (body.getId() == null) body.setId(generateId());
+        normalizarIdNuevo(body);
         if (body.getActiva() == null) body.setActiva(true);
         AccionProduccionSync saved = accionProduccionRepo.save(body);
         eventService.emitAsync("ACCION_PRODUCCION_CREADA", saved);
@@ -40,11 +40,16 @@ public class CatalogSyncController {
 
     @PutMapping("/acciones-produccion/{id}")
     public ResponseEntity<AccionProduccionSync> actualizarAccionProduccion(@PathVariable String id, @RequestBody AccionProduccionSync body) {
-        if (!accionProduccionRepo.existsById(id)) return ResponseEntity.notFound().build();
-        body.setId(id);
-        AccionProduccionSync saved = accionProduccionRepo.save(body);
-        eventService.emitAsync("ACCION_PRODUCCION_ACTUALIZADA", saved);
-        return ResponseEntity.ok(saved);
+        return accionProduccionRepo.findById(id)
+                .map(existing -> {
+                    if (body.getNombre() != null && !body.getNombre().isBlank()) existing.setNombre(body.getNombre().trim());
+                    if (body.getOrden() != null) existing.setOrden(body.getOrden());
+                    if (body.getActiva() != null) existing.setActiva(body.getActiva());
+                    AccionProduccionSync saved = accionProduccionRepo.save(existing);
+                    eventService.emitAsync("ACCION_PRODUCCION_ACTUALIZADA", saved);
+                    return ResponseEntity.ok(saved);
+                })
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @DeleteMapping("/acciones-produccion/{id}")
@@ -65,7 +70,7 @@ public class CatalogSyncController {
 
     @PostMapping("/cargos")
     public ResponseEntity<CargoEmpleadoSync> crearCargo(@RequestBody CargoEmpleadoSync body) {
-        if (body.getId() == null) body.setId(generateId());
+        normalizarIdNuevo(body);
         if (body.getActiva() == null) body.setActiva(true);
         CargoEmpleadoSync saved = cargoRepo.save(body);
         eventService.emitAsync("CARGO_CREADO", saved);
@@ -74,11 +79,15 @@ public class CatalogSyncController {
 
     @PutMapping("/cargos/{id}")
     public ResponseEntity<CargoEmpleadoSync> actualizarCargo(@PathVariable String id, @RequestBody CargoEmpleadoSync body) {
-        if (!cargoRepo.existsById(id)) return ResponseEntity.notFound().build();
-        body.setId(id);
-        CargoEmpleadoSync saved = cargoRepo.save(body);
-        eventService.emitAsync("CARGO_ACTUALIZADO", saved);
-        return ResponseEntity.ok(saved);
+        return cargoRepo.findById(id)
+                .map(existing -> {
+                    if (body.getNombre() != null && !body.getNombre().isBlank()) existing.setNombre(body.getNombre().trim());
+                    if (body.getActiva() != null) existing.setActiva(body.getActiva());
+                    CargoEmpleadoSync saved = cargoRepo.save(existing);
+                    eventService.emitAsync("CARGO_ACTUALIZADO", saved);
+                    return ResponseEntity.ok(saved);
+                })
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @DeleteMapping("/cargos/{id}")
@@ -99,7 +108,7 @@ public class CatalogSyncController {
 
     @PostMapping("/areas-trabajo")
     public ResponseEntity<AreaTrabajoSync> crearArea(@RequestBody AreaTrabajoSync body) {
-        if (body.getId() == null) body.setId(generateId());
+        normalizarIdNuevo(body);
         if (body.getActiva() == null) body.setActiva(true);
         AreaTrabajoSync saved = areaRepo.save(body);
         eventService.emitAsync("AREA_TRABAJO_CREADA", saved);
@@ -108,11 +117,16 @@ public class CatalogSyncController {
 
     @PutMapping("/areas-trabajo/{id}")
     public ResponseEntity<AreaTrabajoSync> actualizarArea(@PathVariable String id, @RequestBody AreaTrabajoSync body) {
-        if (!areaRepo.existsById(id)) return ResponseEntity.notFound().build();
-        body.setId(id);
-        AreaTrabajoSync saved = areaRepo.save(body);
-        eventService.emitAsync("AREA_TRABAJO_ACTUALIZADA", saved);
-        return ResponseEntity.ok(saved);
+        return areaRepo.findById(id)
+                .map(existing -> {
+                    if (body.getNombre() != null && !body.getNombre().isBlank()) existing.setNombre(body.getNombre().trim());
+                    if (body.getDescripcion() != null) existing.setDescripcion(body.getDescripcion());
+                    if (body.getActiva() != null) existing.setActiva(body.getActiva());
+                    AreaTrabajoSync saved = areaRepo.save(existing);
+                    eventService.emitAsync("AREA_TRABAJO_ACTUALIZADA", saved);
+                    return ResponseEntity.ok(saved);
+                })
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @DeleteMapping("/areas-trabajo/{id}")
@@ -133,7 +147,7 @@ public class CatalogSyncController {
 
     @PostMapping("/acciones-aseo")
     public ResponseEntity<AccionAseoSync> crearAccionAseo(@RequestBody AccionAseoSync body) {
-        if (body.getId() == null) body.setId(generateId());
+        normalizarIdNuevo(body);
         if (body.getActiva() == null) body.setActiva(true);
         AccionAseoSync saved = accionAseoRepo.save(body);
         eventService.emitAsync("ACCION_ASEO_CREADA", saved);
@@ -142,11 +156,15 @@ public class CatalogSyncController {
 
     @PutMapping("/acciones-aseo/{id}")
     public ResponseEntity<AccionAseoSync> actualizarAccionAseo(@PathVariable String id, @RequestBody AccionAseoSync body) {
-        if (!accionAseoRepo.existsById(id)) return ResponseEntity.notFound().build();
-        body.setId(id);
-        AccionAseoSync saved = accionAseoRepo.save(body);
-        eventService.emitAsync("ACCION_ASEO_ACTUALIZADA", saved);
-        return ResponseEntity.ok(saved);
+        return accionAseoRepo.findById(id)
+                .map(existing -> {
+                    if (body.getNombre() != null && !body.getNombre().isBlank()) existing.setNombre(body.getNombre().trim());
+                    if (body.getActiva() != null) existing.setActiva(body.getActiva());
+                    AccionAseoSync saved = accionAseoRepo.save(existing);
+                    eventService.emitAsync("ACCION_ASEO_ACTUALIZADA", saved);
+                    return ResponseEntity.ok(saved);
+                })
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @DeleteMapping("/acciones-aseo/{id}")
@@ -154,6 +172,30 @@ public class CatalogSyncController {
         accionAseoRepo.deleteById(id);
         eventService.emitAsync("ACCION_ASEO_ELIMINADA", Map.of("id", id));
         return ResponseEntity.noContent().build();
+    }
+
+    private static void normalizarIdNuevo(AccionProduccionSync body) {
+        if (body.getId() == null || body.getId().isBlank() || body.getId().startsWith("tmp-")) {
+            body.setId(generateId());
+        }
+    }
+
+    private static void normalizarIdNuevo(CargoEmpleadoSync body) {
+        if (body.getId() == null || body.getId().isBlank() || body.getId().startsWith("tmp-")) {
+            body.setId(generateId());
+        }
+    }
+
+    private static void normalizarIdNuevo(AreaTrabajoSync body) {
+        if (body.getId() == null || body.getId().isBlank() || body.getId().startsWith("tmp-")) {
+            body.setId(generateId());
+        }
+    }
+
+    private static void normalizarIdNuevo(AccionAseoSync body) {
+        if (body.getId() == null || body.getId().isBlank() || body.getId().startsWith("tmp-")) {
+            body.setId(generateId());
+        }
     }
 
     private static String generateId() {

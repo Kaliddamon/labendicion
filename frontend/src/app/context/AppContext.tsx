@@ -196,10 +196,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           setRegistros(data.registros ?? []);
           setRegistrosAseo((data as any).registrosAseo ?? []);
          setEmpresas((data as any).empresas ?? []);
-         setAccionesProduccion(data.accionesProduccion ?? []);
-         setCargos(data.cargos ?? []);
-         setAreasTrabajo(data.areasTrabajo ?? []);
-         setAccionesAseo(data.accionesAseo ?? []);
+         const filtrarCatalogo = (items?: CatalogoItem[]) =>
+           (items ?? []).filter((c) => c.id && c.id.trim() !== '' && !c.id.startsWith('tmp-'));
+         setAccionesProduccion(filtrarCatalogo(data.accionesProduccion));
+         setCargos(filtrarCatalogo(data.cargos));
+         setAreasTrabajo(filtrarCatalogo(data.areasTrabajo));
+         setAccionesAseo(filtrarCatalogo(data.accionesAseo));
          console.log('Bootstrap cargado:', data.productos);
        })
        .catch((err) => {
@@ -546,6 +548,15 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     });
   };
 
+  const buildCatalogBody = (item: Partial<CatalogoItem>) => {
+    const body: Record<string, unknown> = {};
+    if (item.nombre != null) body.nombre = item.nombre;
+    if (item.activa != null) body.activa = item.activa;
+    if (item.orden != null) body.orden = item.orden;
+    if (item.descripcion != null) body.descripcion = item.descripcion;
+    return body;
+  };
+
   const makeCatalogCrud = (
     path: string,
     setter: React.Dispatch<React.SetStateAction<CatalogoItem[]>>
@@ -553,23 +564,32 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     add: (item: Omit<CatalogoItem, 'id'>) => {
       const tmpId = `tmp-cat-${Date.now()}`;
       setter((prev) => [...prev, { id: tmpId, activa: true, ...item }]);
-      request<CatalogoItem>(path, { method: 'POST', body: JSON.stringify(item) })
+      request<CatalogoItem>(path, { method: 'POST', body: JSON.stringify(buildCatalogBody(item)) })
         .then((nuevo) => setter((prev) => prev.map((c) => (c.id === tmpId ? nuevo : c))))
-        .catch(() => setter((prev) => prev.filter((c) => c.id !== tmpId)));
+        .catch(() => {
+          setter((prev) => prev.filter((c) => c.id !== tmpId));
+          alert('No se pudo guardar el ítem. Verifica que el backend esté en ejecución.');
+        });
     },
     edit: (id: string, item: Partial<CatalogoItem>) => {
+      if (!id || id.startsWith('tmp-')) {
+        alert('Este ítem aún se está guardando. Espera un momento e intenta de nuevo.');
+        return;
+      }
       let snapshot: CatalogoItem | undefined;
       setter((prev) => {
         snapshot = prev.find((c) => c.id === id);
         return prev.map((c) => (c.id === id ? { ...c, ...item } : c));
       });
-      request<CatalogoItem>(`${path}/${id}`, { method: 'PUT', body: JSON.stringify({ id, ...item }) })
+      request<CatalogoItem>(`${path}/${id}`, { method: 'PUT', body: JSON.stringify(buildCatalogBody(item)) })
         .then((nuevo) => setter((prev) => prev.map((c) => (c.id === id ? nuevo : c))))
         .catch(() => {
           if (snapshot) setter((prev) => prev.map((c) => (c.id === id ? snapshot! : c)));
+          alert('No se pudo actualizar. Si el ítem es antiguo, elimínalo y créalo de nuevo.');
         });
     },
     remove: (id: string) => {
+      if (!id || id.startsWith('tmp-')) return;
       let snapshot: CatalogoItem[] = [];
       setter((prev) => {
         snapshot = [...prev];
