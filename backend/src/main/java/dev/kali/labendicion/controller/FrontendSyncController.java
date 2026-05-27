@@ -15,7 +15,11 @@ import java.time.OffsetDateTime;
 
 import dev.kali.labendicion.domain.entity.*;
 import dev.kali.labendicion.repository.*;
+import dev.kali.labendicion.service.EventService;
+import dev.kali.labendicion.service.RegistroSyncValidationService;
+import dev.kali.labendicion.util.CsvListUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import java.util.stream.Collectors;
 
 @RestController
@@ -43,9 +47,29 @@ public class FrontendSyncController {
     @Autowired
     private PasoProduccionSyncRepository pasoRepo;
 
+    @Autowired
+    private EventService eventService;
+
+    @Autowired
+    private AccionProduccionSyncRepository accionProduccionRepo;
+
+    @Autowired
+    private CargoEmpleadoSyncRepository cargoRepo;
+
+    @Autowired
+    private AreaTrabajoSyncRepository areaTrabajoSyncRepo;
+
+    @Autowired
+    private AccionAseoSyncRepository accionAseoRepo;
+
+    @Autowired
+    private RegistroSyncValidationService registroValidation;
+
     @GetMapping("/bootstrap")
     @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public ResponseEntity<Object> bootstrap() {
+        seedCatalogsIfEmpty();
+
         // Cargar productos con pasos en una sola consulta para evitar lazy init
         List<ProductoSync> productos = productoRepo.findAllWithPasosOrderByNombre();
 
@@ -68,8 +92,8 @@ public class FrontendSyncController {
             registros = registros.stream().limit(100).collect(Collectors.toList());
         }
 
-        // Registros de aseo: cargar los registros ordenados por fecha (más recientes primero)
-        List<dev.kali.labendicion.domain.entity.RegistroAseoSync> registrosAseo = registroAseoRepo.findAllByOrderByFechaDesc();
+        // Registros de aseo: cargar con entries (evita lazy init en serialización)
+        List<dev.kali.labendicion.domain.entity.RegistroAseoSync> registrosAseo = registroAseoRepo.findAllWithEntriesOrderByFechaDesc();
         // Opcionalmente, si tienes miles de tareas, cargar solo las últimas 50:
         // if (tareasAseo.size() > 50) { tareasAseo = tareasAseo.stream().limit(50).collect(Collectors.toList()); }
 
@@ -78,6 +102,7 @@ public class FrontendSyncController {
             var pasosDto = p.getPasos() == null ? List.<Object>of() : p.getPasos().stream().map(ps -> {
                 var map = new java.util.HashMap<String, Object>();
                 map.put("id", ps.getId());
+                map.put("accionProduccionId", ps.getAccionProduccionId());
                 map.put("descripcion", ps.getDescripcion());
                 map.put("orden", ps.getOrden());
                 map.put("completado", ps.getCompletado());
@@ -100,6 +125,7 @@ public class FrontendSyncController {
             var prodDto = (r.getProducciones() == null) ? List.<Object>of() : r.getProducciones().stream().map(pr -> {
                 var m = new java.util.HashMap<String, Object>();
                 m.put("productoId", pr.getProductoId());
+                m.put("pasoId", pr.getPasoId());
                 m.put("unidadesTotales", pr.getUnidadesTotales());
                 m.put("unidadesBuenas", pr.getUnidadesBuenas());
                 return m;
@@ -130,8 +156,8 @@ public class FrontendSyncController {
                 me.put("id", e.getId());
                 me.put("empleadoId", e.getEmpleadoId());
                 me.put("empleadoNombre", e.getEmpleadoNombre());
-                me.put("acciones", e.getAccionesCsv() == null || e.getAccionesCsv().isBlank() ? List.of() : java.util.Arrays.asList(e.getAccionesCsv().split(",")));
-                me.put("areas", e.getAreasCsv() == null || e.getAreasCsv().isBlank() ? List.of() : java.util.Arrays.asList(e.getAreasCsv().split(",")));
+                me.put("acciones", CsvListUtil.fromCsv(e.getAccionesCsv()));
+                me.put("areas", CsvListUtil.fromCsv(e.getAreasCsv()));
                 me.put("completada", e.isCompletada());
                 return me;
             }).collect(Collectors.toList());
@@ -155,6 +181,10 @@ public class FrontendSyncController {
         // Antes se devolvía 'tareasAseo' (nombre histórico). El frontend espera 'registrosAseo'.
         response.put("registrosAseo", tareasDto);
         response.put("empresas", empresasDto);
+        response.put("accionesProduccion", accionProduccionRepo.findAllByOrderByOrdenAscNombreAsc());
+        response.put("cargos", cargoRepo.findAllByOrderByNombreAsc());
+        response.put("areasTrabajo", areaTrabajoSyncRepo.findAllByOrderByNombreAsc());
+        response.put("accionesAseo", accionAseoRepo.findAllByOrderByNombreAsc());
 
         return ResponseEntity.ok(response);
     }
@@ -185,9 +215,7 @@ public class FrontendSyncController {
                         PasoProduccionSync nuevoPaso = new PasoProduccionSync();
                         nuevoPaso.setId(generateId());
                         nuevoPaso.setProductoSync(guardado);
-                        nuevoPaso.setDescripcion((String) pasoMap.getOrDefault("descripcion", ""));
-                        nuevoPaso.setOrden(pasoMap.get("orden") == null ? 0 : Integer.parseInt(pasoMap.get("orden").toString()));
-                        nuevoPaso.setCompletado((Boolean) pasoMap.getOrDefault("completado", false));
+                        aplicarDatosPaso(nuevoPaso, pasoMap);
                         pasoRepo.save(nuevoPaso);
                     }
                 }
@@ -204,11 +232,36 @@ public class FrontendSyncController {
                 }
             }
 
-            return ResponseEntity.ok(mapProductoToDto(guardado));
+            Map<String, Object> dto = mapProductoToDto(guardado);
+            // Emitir evento en tiempo real a clientes SSE
+            eventService.emitAsync("PRODUCTO_CREADO", dto);
+            return ResponseEntity.ok(dto);
         } catch (Exception e) {
             e.printStackTrace();
             try { TransactionAspectSupport.currentTransactionStatus().setRollbackOnly(); } catch (Exception ignore) {}
             return serverError(e, "/api/frontend/productos");
+        }
+    }
+
+    @PatchMapping("/productos/{id}/estado")
+    @Transactional
+    public ResponseEntity<?> actualizarEstadoProducto(@PathVariable String id, @RequestBody java.util.Map<String, Object> body) {
+        if (!productoRepo.existsById(id)) {
+            return ResponseEntity.notFound().build();
+        }
+        try {
+            ProductoSync actual = productoRepo.findById(id).orElseThrow();
+            if (body.containsKey("estado")) {
+                actual.setEstado(body.get("estado").toString());
+            }
+            ProductoSync guardado = productoRepo.save(actual);
+            Map<String, Object> dto = mapProductoToDto(guardado);
+            eventService.emitAsync("PRODUCTO_ESTADO_ACTUALIZADO", dto);
+            return ResponseEntity.ok(dto);
+        } catch (Exception e) {
+            e.printStackTrace();
+            try { TransactionAspectSupport.currentTransactionStatus().setRollbackOnly(); } catch (Exception ignore) {}
+            return serverError(e, "/api/frontend/productos/" + id + "/estado");
         }
     }
 
@@ -245,10 +298,7 @@ public class FrontendSyncController {
                         PasoProduccionSync nuevoPaso = new PasoProduccionSync();
                         nuevoPaso.setId(generateId());
                         nuevoPaso.setProductoSync(actual);
-                        nuevoPaso.setDescripcion((String) pasoMap.getOrDefault("descripcion", ""));
-                        nuevoPaso.setOrden(pasoMap.get("orden") == null ? 0 : Integer.parseInt(pasoMap.get("orden").toString()));
-                        nuevoPaso.setCompletado((Boolean) pasoMap.getOrDefault("completado", false));
-                        // Agregar el nuevo paso a la lista del producto (en lugar de guardar directamente)
+                        aplicarDatosPaso(nuevoPaso, pasoMap);
                         actual.getPasos().add(nuevoPaso);
                     }
                 }
@@ -266,7 +316,9 @@ public class FrontendSyncController {
                 }
             }
 
-            return ResponseEntity.ok(mapProductoToDto(guardado));
+            Map<String, Object> dto = mapProductoToDto(guardado);
+            eventService.emitAsync("PRODUCTO_ACTUALIZADO", dto);
+            return ResponseEntity.ok(dto);
         } catch (Exception e) {
             e.printStackTrace();
             try { TransactionAspectSupport.currentTransactionStatus().setRollbackOnly(); } catch (Exception ignore) {}
@@ -292,6 +344,7 @@ public class FrontendSyncController {
                     empresaRepo.save(emp);
                 }
             }
+            eventService.emitAsync("PRODUCTO_ELIMINADO", Map.of("id", id));
             return ResponseEntity.noContent().build();
         } catch (Exception e) {
             e.printStackTrace();
@@ -310,6 +363,7 @@ public class FrontendSyncController {
     public ResponseEntity<EmpresaSync> crearEmpresa(@RequestBody EmpresaSync empresa) {
         if (empresa.getId() == null) empresa.setId(generateId());
         EmpresaSync saved = empresaRepo.save(empresa);
+        eventService.emitAsync("EMPRESA_CREADA", saved);
         return ResponseEntity.ok(saved);
     }
 
@@ -318,12 +372,14 @@ public class FrontendSyncController {
         if (!empresaRepo.existsById(id)) return ResponseEntity.notFound().build();
         empresa.setId(id);
         EmpresaSync saved = empresaRepo.save(empresa);
+        eventService.emitAsync("EMPRESA_ACTUALIZADA", saved);
         return ResponseEntity.ok(saved);
     }
 
     @DeleteMapping("/empresas/{id}")
     public ResponseEntity<Void> eliminarEmpresa(@PathVariable String id) {
         empresaRepo.deleteById(id);
+        eventService.emitAsync("EMPRESA_ELIMINADA", Map.of("id", id));
         return ResponseEntity.noContent().build();
     }
 
@@ -333,6 +389,7 @@ public class FrontendSyncController {
             empleado.setId(generateId());
         }
         EmpleadoSync guardado = empleadoRepo.save(empleado);
+        eventService.emitAsync("EMPLEADO_CREADO", guardado);
         return ResponseEntity.ok(guardado);
     }
 
@@ -343,6 +400,7 @@ public class FrontendSyncController {
         }
         empleado.setId(id);
         EmpleadoSync guardado = empleadoRepo.save(empleado);
+        eventService.emitAsync("EMPLEADO_ACTUALIZADO", guardado);
         return ResponseEntity.ok(guardado);
     }
 
@@ -352,21 +410,47 @@ public class FrontendSyncController {
         registroRepo.deleteAll(registroRepo.findAll().stream()
                 .filter(r -> id.equals(r.getEmpleadoId()))
                 .collect(Collectors.toList()));
+        eventService.emitAsync("EMPLEADO_ELIMINADO", Map.of("id", id));
         return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/registros")
-    public ResponseEntity<RegistroSync> crearRegistro(@RequestBody RegistroSync registro) {
+    @Transactional
+    public ResponseEntity<?> crearRegistro(@RequestBody RegistroSync registro) {
         if (registro.getId() == null) {
             registro.setId(generateId());
         }
+        var error = registroValidation.validarProducciones(registro, null);
+        if (error.isPresent()) {
+            return ResponseEntity.badRequest().body(Map.of("mensaje", error.get()));
+        }
+        recalcularTotales(registro);
         RegistroSync guardado = registroRepo.save(registro);
+        eventService.emitAsync("REGISTRO_CREADO", guardado);
+        return ResponseEntity.ok(guardado);
+    }
+
+    @PutMapping("/registros/{id}")
+    @Transactional
+    public ResponseEntity<?> actualizarRegistro(@PathVariable String id, @RequestBody RegistroSync registro) {
+        if (!registroRepo.existsById(id)) {
+            return ResponseEntity.notFound().build();
+        }
+        registro.setId(id);
+        var error = registroValidation.validarProducciones(registro, id);
+        if (error.isPresent()) {
+            return ResponseEntity.badRequest().body(Map.of("mensaje", error.get()));
+        }
+        recalcularTotales(registro);
+        RegistroSync guardado = registroRepo.save(registro);
+        eventService.emitAsync("REGISTRO_ACTUALIZADO", guardado);
         return ResponseEntity.ok(guardado);
     }
 
     @DeleteMapping("/registros/{id}")
     public ResponseEntity<Void> eliminarRegistro(@PathVariable String id) {
         registroRepo.deleteById(id);
+        eventService.emitAsync("REGISTRO_ELIMINADO", Map.of("id", id));
         return ResponseEntity.noContent().build();
     }
 
@@ -409,14 +493,14 @@ public class FrontendSyncController {
     // Registros de Aseo: nuevo modelo que agrupa por fecha y contiene entradas por empleado
     @GetMapping("/registros-aseo")
     public ResponseEntity<List<Map<String, Object>>> listarRegistrosAseo() {
-        List<dev.kali.labendicion.domain.entity.RegistroAseoSync> regs = registroAseoRepo.findAllByOrderByFechaDesc();
+        List<dev.kali.labendicion.domain.entity.RegistroAseoSync> regs = registroAseoRepo.findAllWithEntriesOrderByFechaDesc();
         List<Map<String, Object>> dto = regs.stream().map(this::mapRegistroAseoToDto).collect(Collectors.toList());
         return ResponseEntity.ok(dto);
     }
 
     @GetMapping("/registros-aseo/{id}")
     public ResponseEntity<?> obtenerRegistroAseo(@PathVariable String id) {
-        return registroAseoRepo.findById(id)
+        return registroAseoRepo.findWithEntriesById(id)
                 .map(r -> ResponseEntity.ok(mapRegistroAseoToDto(r)))
                 .orElse(ResponseEntity.notFound().build());
     }
@@ -431,8 +515,18 @@ public class FrontendSyncController {
                 fecha = java.time.LocalDate.now().toString();
             }
 
-            // Obtener último registro para usar como prefills
-            dev.kali.labendicion.domain.entity.RegistroAseoSync ultimo = registroAseoRepo.findFirstByOrderByFechaDesc();
+            var existente = registroAseoRepo.findByFecha(fecha);
+            if (existente.isPresent()) {
+                return ResponseEntity.status(HttpStatus.CONFLICT)
+                        .body(Map.of("mensaje", "Ya existe un registro de aseo para la fecha " + fecha,
+                                "registro", mapRegistroAseoToDto(existente.get())));
+            }
+
+            dev.kali.labendicion.domain.entity.RegistroAseoSync ultimo = registroAseoRepo.findFirstByOrderByFechaDesc().orElse(null);
+            String defaultAcciones = CsvListUtil.toCsv(accionAseoRepo.findAllByActivaTrueOrderByNombreAsc().stream()
+                    .map(AccionAseoSync::getNombre).collect(Collectors.toList()));
+            String defaultAreas = CsvListUtil.toCsv(areaTrabajoSyncRepo.findAllByActivaTrueOrderByNombreAsc().stream()
+                    .map(AreaTrabajoSync::getNombre).collect(Collectors.toList()));
 
             // Crear nuevo registro
             dev.kali.labendicion.domain.entity.RegistroAseoSync nuevo = new dev.kali.labendicion.domain.entity.RegistroAseoSync();
@@ -448,7 +542,7 @@ public class FrontendSyncController {
                 entry.setEmpleadoNombre(emp.getNombre());
                 entry.setCompletada(false);
 
-                // Prefill from ultimo registro for this empleado
+                // Prefill from ultimo registro for this empleado, o catálogo por defecto
                 if (ultimo != null && ultimo.getEntries() != null) {
                     ultimo.getEntries().stream()
                             .filter(e -> emp.getId().equals(e.getEmpleadoId()))
@@ -458,11 +552,18 @@ public class FrontendSyncController {
                                 entry.setAreasCsv(prev.getAreasCsv());
                             });
                 }
+                if (entry.getAccionesCsv() == null || entry.getAccionesCsv().isBlank()) {
+                    entry.setAccionesCsv(defaultAcciones);
+                }
+                if (entry.getAreasCsv() == null || entry.getAreasCsv().isBlank()) {
+                    entry.setAreasCsv(defaultAreas);
+                }
 
                 nuevo.getEntries().add(entry);
             }
 
             RegistroAseoSync saved = registroAseoRepo.save(nuevo);
+            eventService.emitAsync("REGISTRO_ASEO_CREADO", mapRegistroAseoToDto(saved));
             return ResponseEntity.ok(mapRegistroAseoToDto(saved));
         } catch (Exception e) {
             e.printStackTrace();
@@ -475,7 +576,8 @@ public class FrontendSyncController {
     @Transactional
     public ResponseEntity<?> toggleEntryCompletada(@PathVariable String registroId, @PathVariable String entryId) {
         try {
-            dev.kali.labendicion.domain.entity.RegistroAseoSync reg = registroAseoRepo.findById(registroId).orElseThrow();
+            dev.kali.labendicion.domain.entity.RegistroAseoSync reg = registroAseoRepo.findWithEntriesById(registroId)
+                    .orElseThrow(() -> new java.util.NoSuchElementException("Registro no encontrado"));
             boolean changed = false;
             for (dev.kali.labendicion.domain.entity.RegistroAseoEntrySync e : reg.getEntries()) {
                 if (e.getId().equals(entryId)) {
@@ -486,6 +588,7 @@ public class FrontendSyncController {
             }
                 if (changed) {
                     RegistroAseoSync saved = registroAseoRepo.save(reg);
+                    eventService.emitAsync("REGISTRO_ASEO_ENTRY_TOGGLE", mapRegistroAseoToDto(saved));
                     return ResponseEntity.ok(mapRegistroAseoToDto(saved));
                 }
             return ResponseEntity.notFound().build();
@@ -501,25 +604,22 @@ public class FrontendSyncController {
     public ResponseEntity<?> actualizarEntryAccionesYAreas(@PathVariable String registroId, @PathVariable String entryId,
                                                            @RequestBody java.util.Map<String, Object> body) {
         try {
-            dev.kali.labendicion.domain.entity.RegistroAseoSync reg = registroAseoRepo.findById(registroId).orElseThrow();
+            dev.kali.labendicion.domain.entity.RegistroAseoSync reg = registroAseoRepo.findWithEntriesById(registroId)
+                    .orElseThrow(() -> new java.util.NoSuchElementException("Registro no encontrado"));
             boolean changed = false;
             for (dev.kali.labendicion.domain.entity.RegistroAseoEntrySync e : reg.getEntries()) {
                 if (e.getId().equals(entryId)) {
                     if (body.containsKey("acciones")) {
                         Object accionesObj = body.get("acciones");
                         if (accionesObj instanceof java.util.List) {
-                            String csv = String.join(",", ((java.util.List<?>) accionesObj).stream()
-                                    .map(Object::toString).collect(Collectors.toList()));
-                            e.setAccionesCsv(csv);
+                            e.setAccionesCsv(CsvListUtil.toCsv(((java.util.List<?>) accionesObj)));
                             changed = true;
                         }
                     }
                     if (body.containsKey("areas")) {
                         Object areasObj = body.get("areas");
                         if (areasObj instanceof java.util.List) {
-                            String csv = String.join(",", ((java.util.List<?>) areasObj).stream()
-                                    .map(Object::toString).collect(Collectors.toList()));
-                            e.setAreasCsv(csv);
+                            e.setAreasCsv(CsvListUtil.toCsv(((java.util.List<?>) areasObj)));
                             changed = true;
                         }
                     }
@@ -528,6 +628,7 @@ public class FrontendSyncController {
             }
             if (changed) {
                 RegistroAseoSync saved = registroAseoRepo.save(reg);
+                eventService.emitAsync("REGISTRO_ASEO_ENTRY_ACTUALIZADO", mapRegistroAseoToDto(saved));
                 return ResponseEntity.ok(mapRegistroAseoToDto(saved));
             }
             return ResponseEntity.notFound().build();
@@ -542,6 +643,7 @@ public class FrontendSyncController {
     @Transactional
     public ResponseEntity<Void> eliminarRegistroAseo(@PathVariable String id) {
         registroAseoRepo.deleteById(id);
+        eventService.emitAsync("REGISTRO_ASEO_ELIMINADO", Map.of("id", id));
         return ResponseEntity.noContent().build();
     }
 
@@ -559,9 +661,7 @@ public class FrontendSyncController {
             PasoProduccionSync paso = new PasoProduccionSync();
             paso.setId(generateId());
             paso.setProductoSync(producto);
-            paso.setDescripcion((String) body.getOrDefault("descripcion", ""));
-            paso.setOrden(body.get("orden") == null ? 0 : Integer.parseInt(body.get("orden").toString()));
-            paso.setCompletado((Boolean) body.getOrDefault("completado", false));
+            aplicarDatosPaso(paso, body);
             PasoProduccionSync guardado = pasoRepo.save(paso);
             return ResponseEntity.ok(guardado);
         } catch (Exception e) {
@@ -613,11 +713,66 @@ public class FrontendSyncController {
         return UUID.randomUUID().toString().replace("-", "").substring(0, 12);
     }
 
+    private void seedCatalogsIfEmpty() {
+        if (accionProduccionRepo.count() == 0) {
+            String[][] defaults = {{"Confeccionar", "1"}, {"Revisar calidad", "2"}, {"Empacar", "3"}};
+            for (String[] d : defaults) {
+                accionProduccionRepo.save(AccionProduccionSync.builder()
+                        .id(generateId()).nombre(d[0]).orden(Integer.parseInt(d[1])).activa(true).build());
+            }
+        }
+        if (cargoRepo.count() == 0) {
+            for (String nombre : new String[]{"Costurera", "Cortador", "Empacador", "Supervisor"}) {
+                cargoRepo.save(CargoEmpleadoSync.builder().id(generateId()).nombre(nombre).activa(true).build());
+            }
+        }
+        if (areaTrabajoSyncRepo.count() == 0) {
+            for (String nombre : new String[]{"Taller", "Almacén", "Oficina", "Baño"}) {
+                areaTrabajoSyncRepo.save(AreaTrabajoSync.builder().id(generateId()).nombre(nombre).activa(true).build());
+            }
+        }
+        if (accionAseoRepo.count() == 0) {
+            for (String nombre : new String[]{"Barrer", "Trapear", "Organizar", "Desechar"}) {
+                accionAseoRepo.save(AccionAseoSync.builder().id(generateId()).nombre(nombre).activa(true).build());
+            }
+        }
+    }
+
+    private void aplicarDatosPaso(PasoProduccionSync paso, java.util.Map<String, Object> pasoMap) {
+        if (pasoMap.containsKey("accionProduccionId") && pasoMap.get("accionProduccionId") != null) {
+            String accionId = pasoMap.get("accionProduccionId").toString();
+            paso.setAccionProduccionId(accionId);
+            accionProduccionRepo.findById(accionId).ifPresent(a -> paso.setDescripcion(a.getNombre()));
+        }
+        if (pasoMap.containsKey("descripcion")) {
+            paso.setDescripcion((String) pasoMap.getOrDefault("descripcion", paso.getDescripcion()));
+        } else if (paso.getDescripcion() == null) {
+            paso.setDescripcion("");
+        }
+        paso.setOrden(pasoMap.get("orden") == null ? 0 : Integer.parseInt(pasoMap.get("orden").toString()));
+        paso.setCompletado((Boolean) pasoMap.getOrDefault("completado", false));
+    }
+
+    private void recalcularTotales(RegistroSync registro) {
+        if (registro.getProducciones() == null || registro.getProducciones().isEmpty()) {
+            registro.setUnidadesTotales(0);
+            registro.setUnidadesBuenas(0);
+            return;
+        }
+        int total = registro.getProducciones().stream()
+                .mapToInt(p -> p.getUnidadesTotales() == null ? 0 : p.getUnidadesTotales()).sum();
+        int buenas = registro.getProducciones().stream()
+                .mapToInt(p -> p.getUnidadesBuenas() == null ? 0 : p.getUnidadesBuenas()).sum();
+        registro.setUnidadesTotales(total);
+        registro.setUnidadesBuenas(buenas);
+    }
+
     // Convierte una entidad ProductoSync a un DTO plano (evita serializar objetos Hibernate con referencias recursivas)
     private Map<String, Object> mapProductoToDto(ProductoSync p) {
         var pasosDto = (p.getPasos() == null) ? List.<Object>of() : p.getPasos().stream().map(ps -> {
             var m = new java.util.HashMap<String, Object>();
             m.put("id", ps.getId());
+            m.put("accionProduccionId", ps.getAccionProduccionId());
             m.put("descripcion", ps.getDescripcion());
             m.put("orden", ps.getOrden());
             m.put("completado", ps.getCompletado());
@@ -654,8 +809,8 @@ public class FrontendSyncController {
             me.put("id", e.getId());
             me.put("empleadoId", e.getEmpleadoId());
             me.put("empleadoNombre", e.getEmpleadoNombre());
-            me.put("acciones", e.getAccionesCsv() == null || e.getAccionesCsv().isBlank() ? List.of() : java.util.Arrays.asList(e.getAccionesCsv().split(",")));
-            me.put("areas", e.getAreasCsv() == null || e.getAreasCsv().isBlank() ? List.of() : java.util.Arrays.asList(e.getAreasCsv().split(",")));
+            me.put("acciones", CsvListUtil.fromCsv(e.getAccionesCsv()));
+            me.put("areas", CsvListUtil.fromCsv(e.getAreasCsv()));
             me.put("completada", e.isCompletada());
             return me;
         }).collect(Collectors.toList());

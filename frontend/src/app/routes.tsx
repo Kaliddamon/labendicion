@@ -8,6 +8,7 @@ import { Aseo } from "./pages/Aseo";
 import { Rendimiento } from "./pages/Rendimiento";
 import { Login } from "./pages/Login";
 import { GestionarRoles } from "./components/GestionarRoles";
+import { Configuracion } from "./pages/Configuracion";
 
 export const router = createBrowserRouter([
   { path: "/login", Component: Login },
@@ -21,6 +22,7 @@ export const router = createBrowserRouter([
       { path: "aseo", Component: () => <ProtectedRoute requiredRoles={['SUPERADMINISTRADOR', 'ADMINISTRADOR', 'TRABAJADOR']}><Aseo /></ProtectedRoute> },
       { path: "rendimiento", Component: () => <ProtectedRoute requiredRoles={['SUPERADMINISTRADOR', 'ADMINISTRADOR', 'TRABAJADOR']}><Rendimiento /></ProtectedRoute> },
       { path: "roles", Component: () => <ProtectedRoute requiredRoles={['SUPERADMINISTRADOR', 'ADMINISTRADOR']}><GestionarRoles /></ProtectedRoute> },
+      { path: "configuracion", Component: () => <ProtectedRoute requiredRoles={['SUPERADMINISTRADOR', 'ADMINISTRADOR']}><Configuracion /></ProtectedRoute> },
     ],
   },
 ]);

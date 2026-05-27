@@ -3,7 +3,15 @@ import { useAppContext, RegistroAseo, RegistroAseoEntry } from '../context/AppCo
 import { Sparkles, CheckCircle2, Circle, Plus, Trash2, Check, X, Edit2 } from 'lucide-react';
 
 export const Aseo = () => {
-  const { registrosAseo, crearRegistroAseo, toggleRegistroAseoEntry, actualizarRegistroAseoEntry, eliminarRegistroAseo } = useAppContext();
+  const {
+    registrosAseo,
+    crearRegistroAseo,
+    toggleRegistroAseoEntry,
+    actualizarRegistroAseoEntry,
+    eliminarRegistroAseo,
+    accionesAseo,
+    areasTrabajo,
+  } = useAppContext();
 
   // Mostrar el registro más reciente y permitir crear un nuevo registro (se autofillará)
   const [verHistorico, setVerHistorico] = useState(false);
@@ -16,7 +24,9 @@ export const Aseo = () => {
     : 0;
 
   const crearNuevoRegistro = () => {
-    // Backend autorellena con acciones/areas del último registro por trabajador
+    if (accionesCatalogo.length === 0 || areasCatalogo.length === 0) {
+      return alert('Configura al menos una acción y un área en Configuración antes de crear el registro.');
+    }
     crearRegistroAseo();
   };
 
@@ -29,8 +39,8 @@ export const Aseo = () => {
   const [editAcciones, setEditAcciones] = useState<string[]>([]);
   const [editAreas, setEditAreas] = useState<string[]>([]);
 
-  const ACCIONES_PREDEFINIDAS = ['Barrer', 'Trapear', 'Organizar', 'Desechar'];
-  const AREAS_PREDEFINIDAS = ['Taller', 'Almacén', 'Oficina', 'Baño'];
+  const accionesCatalogo = accionesAseo.filter((a) => a.activa !== false).map((a) => a.nombre);
+  const areasCatalogo = areasTrabajo.filter((a) => a.activa !== false).map((a) => a.nombre);
 
   const iniciarEdicion = (entry: RegistroAseoEntry) => {
     setEditandoEntry(entry.id);
@@ -146,7 +156,7 @@ export const Aseo = () => {
                     <td className="px-6 py-4">
                       {editandoEntry === entry.id ? (
                         <div className="flex flex-wrap gap-2">
-                          {ACCIONES_PREDEFINIDAS.map(accion => (
+                          {accionesCatalogo.map(accion => (
                             <button
                               key={accion}
                               onClick={() => toggleAccion(accion)}
@@ -179,7 +189,7 @@ export const Aseo = () => {
                     <td className="px-6 py-4">
                       {editandoEntry === entry.id ? (
                         <div className="flex flex-wrap gap-2">
-                          {AREAS_PREDEFINIDAS.map(area => (
+                          {areasCatalogo.map(area => (
                             <button
                               key={area}
                               onClick={() => toggleArea(area)}

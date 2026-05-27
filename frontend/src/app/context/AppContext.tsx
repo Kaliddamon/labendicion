@@ -2,6 +2,14 @@ import React, { createContext, useEffect, useState, useContext, ReactNode } from
 
 // === MODELOS (Entidades) ===
 
+export interface PasoProducto {
+  id?: string;
+  accionProduccionId?: string;
+  descripcion: string;
+  orden: number;
+  completado?: boolean;
+}
+
 export interface Producto {
   id: string;
   nombre: string;
@@ -11,7 +19,15 @@ export interface Producto {
   fechaAsignacion: string;
   fechaTerminacion: string;
   estado: 'Pendiente' | 'En proceso' | 'Terminado';
-  pasos?: { descripcion: string; orden: number; completado?: boolean }[];
+  pasos?: PasoProducto[];
+}
+
+export interface CatalogoItem {
+  id: string;
+  nombre: string;
+  activa?: boolean;
+  orden?: number;
+  descripcion?: string;
 }
 
 export interface Empleado {
@@ -44,9 +60,10 @@ export interface RegistroDiario {
   producciones?: ProduccionRegistro[];
 }
 
-/** Aporte del empleado vinculado a una orden creada en Producción (`Producto`). */
+/** Aporte del empleado vinculado a una orden y acción (paso) de producción. */
 export interface ProduccionRegistro {
   productoId: string;
+  pasoId: string;
   unidadesTotales: number;
   unidadesBuenas: number;
 }
@@ -71,6 +88,10 @@ interface BootstrapResponse {
   empleados: Empleado[];
   registros: RegistroDiario[];
   registrosAseo: RegistroAseo[];
+  accionesProduccion?: CatalogoItem[];
+  cargos?: CatalogoItem[];
+  areasTrabajo?: CatalogoItem[];
+  accionesAseo?: CatalogoItem[];
 }
 
 // === TIPO DEL CONTEXTO ===
@@ -88,10 +109,32 @@ interface AppContextType {
   editarEmpleado: (id: string, emp: Partial<Empleado>) => void;
   eliminarEmpleado: (id: string) => void;
 
-  // Registros de Empleados
+  // Registros de Empleados (evaluaciones)
   registros: RegistroDiario[];
-  agregarRegistro: (reg: Omit<RegistroDiario, 'id'>) => void;
+  agregarRegistro: (reg: Omit<RegistroDiario, 'id'>) => Promise<void>;
+  editarRegistro: (id: string, reg: Partial<RegistroDiario>) => Promise<void>;
   eliminarRegistro: (id: string) => void;
+  unidadesDisponiblesPaso: (productoId: string, pasoId: string, excluirRegistroId?: string) => number;
+
+  // Catálogos
+  accionesProduccion: CatalogoItem[];
+  cargos: CatalogoItem[];
+  areasTrabajo: CatalogoItem[];
+  accionesAseo: CatalogoItem[];
+  agregarAccionProduccion: (item: Omit<CatalogoItem, 'id'>) => void;
+  editarAccionProduccion: (id: string, item: Partial<CatalogoItem>) => void;
+  eliminarAccionProduccion: (id: string) => void;
+  agregarCargo: (item: Omit<CatalogoItem, 'id'>) => void;
+  editarCargo: (id: string, item: Partial<CatalogoItem>) => void;
+  eliminarCargo: (id: string) => void;
+  agregarArea: (item: Omit<CatalogoItem, 'id'>) => void;
+  editarArea: (id: string, item: Partial<CatalogoItem>) => void;
+  eliminarArea: (id: string) => void;
+  agregarAccionAseo: (item: Omit<CatalogoItem, 'id'>) => void;
+  editarAccionAseo: (id: string, item: Partial<CatalogoItem>) => void;
+  eliminarAccionAseo: (id: string) => void;
+
+  cambiarEstadoProducto: (id: string, estado: Producto['estado']) => void;
 
    // Registros de Aseo
    registrosAseo: RegistroAseo[];
@@ -138,6 +181,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [registros, setRegistros] = useState<RegistroDiario[]>([]);
   const [registrosAseo, setRegistrosAseo] = useState<RegistroAseo[]>([]);
   const [empresas, setEmpresas] = useState<Empresa[]>([]);
+  const [accionesProduccion, setAccionesProduccion] = useState<CatalogoItem[]>([]);
+  const [cargos, setCargos] = useState<CatalogoItem[]>([]);
+  const [areasTrabajo, setAreasTrabajo] = useState<CatalogoItem[]>([]);
+  const [accionesAseo, setAccionesAseo] = useState<CatalogoItem[]>([]);
 
    useEffect(() => {
      let mounted = true;
@@ -149,6 +196,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           setRegistros(data.registros ?? []);
           setRegistrosAseo((data as any).registrosAseo ?? []);
          setEmpresas((data as any).empresas ?? []);
+         setAccionesProduccion(data.accionesProduccion ?? []);
+         setCargos(data.cargos ?? []);
+         setAreasTrabajo(data.areasTrabajo ?? []);
+         setAccionesAseo(data.accionesAseo ?? []);
          console.log('Bootstrap cargado:', data.productos);
        })
        .catch((err) => {
@@ -216,6 +267,22 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         setProductos((prev) => prev.map((p) => (p.id === id ? snapshot : p)));
       });
   };
+  const cambiarEstadoProducto = (id: string, estado: Producto['estado']) => {
+    const actual = productos.find((p) => p.id === id);
+    if (!actual) return;
+    const snapshot = { ...actual };
+    setProductos((prev) => prev.map((p) => (p.id === id ? { ...p, estado } : p)));
+    request<Producto>(`/productos/${id}/estado`, {
+      method: 'PATCH',
+      body: JSON.stringify({ estado }),
+    })
+      .then((actualizado) => setProductos((prev) => prev.map((p) => (p.id === id ? actualizado : p))))
+      .catch((err) => {
+        console.error('Error cambiando estado (revirtiendo):', err);
+        setProductos((prev) => prev.map((p) => (p.id === id ? snapshot : p)));
+      });
+  };
+
   const eliminarProducto = (id: string) => {
     const snapshotProductos = [...productos];
     const snapshotRegistros = [...registros];
@@ -288,22 +355,60 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       });
   };
 
-  // Registros
-  const agregarRegistro = (reg: Omit<RegistroDiario, 'id'>) => {
+  const unidadesDisponiblesPaso = (productoId: string, pasoId: string, excluirRegistroId?: string) => {
+    const producto = productos.find((p) => p.id === productoId);
+    if (!producto) return 0;
+    const meta = producto.cantidad ?? 0;
+    let usado = 0;
+    for (const r of registros) {
+      if (excluirRegistroId && r.id === excluirRegistroId) continue;
+      for (const p of r.producciones ?? []) {
+        if (p.productoId === productoId && p.pasoId === pasoId) {
+          usado += Number(p.unidadesTotales || 0);
+        }
+      }
+    }
+    return Math.max(0, meta - usado);
+  };
+
+  const agregarRegistro = async (reg: Omit<RegistroDiario, 'id'>) => {
     const tmpId = `tmp-reg-${Date.now()}`;
     const tmpReg: RegistroDiario = { id: tmpId, ...reg } as RegistroDiario;
     setRegistros((prev) => [tmpReg, ...prev]);
 
-    request<RegistroDiario>('/registros', {
-      method: 'POST',
-      body: JSON.stringify(reg),
-    })
-      .then((nuevo) => setRegistros((prev) => prev.map((r) => (r.id === tmpId ? nuevo : r))))
-      .catch((err) => {
-        console.error('Error creando registro (revirtiendo):', err);
-        setRegistros((prev) => prev.filter((r) => r.id !== tmpId));
+    try {
+      const nuevo = await request<RegistroDiario>('/registros', {
+        method: 'POST',
+        body: JSON.stringify(reg),
       });
+      setRegistros((prev) => prev.map((r) => (r.id === tmpId ? nuevo : r)));
+    } catch (err) {
+      console.error('Error creando registro (revirtiendo):', err);
+      setRegistros((prev) => prev.filter((r) => r.id !== tmpId));
+      throw err;
+    }
   };
+
+  const editarRegistro = async (id: string, reg: Partial<RegistroDiario>) => {
+    const actual = registros.find((r) => r.id === id);
+    if (!actual) return;
+    const snapshot = { ...actual };
+    const payload = { ...actual, ...reg };
+    setRegistros((prev) => prev.map((r) => (r.id === id ? { ...r, ...reg } : r)));
+
+    try {
+      const actualizado = await request<RegistroDiario>(`/registros/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(payload),
+      });
+      setRegistros((prev) => prev.map((r) => (r.id === id ? actualizado : r)));
+    } catch (err) {
+      console.error('Error editando registro (revirtiendo):', err);
+      setRegistros((prev) => prev.map((r) => (r.id === id ? snapshot : r)));
+      throw err;
+    }
+  };
+
   const eliminarRegistro = (id: string) => {
     const snapshot = [...registros];
     setRegistros((prev) => prev.filter((r) => r.id !== id));
@@ -319,11 +424,23 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     const tmp: RegistroAseo = { id: tmpId, fecha: new Date().toISOString(), entries: [], ...(payload as any) } as RegistroAseo;
     setRegistrosAseo((prev) => [tmp, ...prev]);
 
-    request<RegistroAseo>('/registros-aseo', {
+    fetch(`${API_BASE}/registros-aseo`, {
       method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload || {}),
     })
-      .then((nuevo) => setRegistrosAseo((prev) => prev.map((r) => (r.id === tmpId ? nuevo : r))))
+      .then(async (res) => {
+        const data = await res.json().catch(() => ({}));
+        if (res.status === 409 && data.registro) {
+          setRegistrosAseo((prev) => {
+            const sinDup = prev.filter((r) => r.id !== data.registro.id && r.id !== tmpId);
+            return [data.registro, ...sinDup];
+          });
+          return;
+        }
+        if (!res.ok) throw new Error(data.mensaje || `API ${res.status}`);
+        setRegistrosAseo((prev) => prev.map((r) => (r.id === tmpId ? data : r)));
+      })
       .catch((err) => {
         console.error('Error creando registro de aseo (revirtiendo):', err);
         setRegistrosAseo((prev) => prev.filter((r) => r.id !== tmpId));
@@ -429,13 +546,70 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     });
   };
 
+  const makeCatalogCrud = (
+    path: string,
+    setter: React.Dispatch<React.SetStateAction<CatalogoItem[]>>
+  ) => ({
+    add: (item: Omit<CatalogoItem, 'id'>) => {
+      const tmpId = `tmp-cat-${Date.now()}`;
+      setter((prev) => [...prev, { id: tmpId, activa: true, ...item }]);
+      request<CatalogoItem>(path, { method: 'POST', body: JSON.stringify(item) })
+        .then((nuevo) => setter((prev) => prev.map((c) => (c.id === tmpId ? nuevo : c))))
+        .catch(() => setter((prev) => prev.filter((c) => c.id !== tmpId)));
+    },
+    edit: (id: string, item: Partial<CatalogoItem>) => {
+      let snapshot: CatalogoItem | undefined;
+      setter((prev) => {
+        snapshot = prev.find((c) => c.id === id);
+        return prev.map((c) => (c.id === id ? { ...c, ...item } : c));
+      });
+      request<CatalogoItem>(`${path}/${id}`, { method: 'PUT', body: JSON.stringify({ id, ...item }) })
+        .then((nuevo) => setter((prev) => prev.map((c) => (c.id === id ? nuevo : c))))
+        .catch(() => {
+          if (snapshot) setter((prev) => prev.map((c) => (c.id === id ? snapshot! : c)));
+        });
+    },
+    remove: (id: string) => {
+      let snapshot: CatalogoItem[] = [];
+      setter((prev) => {
+        snapshot = [...prev];
+        return prev.filter((c) => c.id !== id);
+      });
+      request<void>(`${path}/${id}`, { method: 'DELETE' }).catch(() => setter(snapshot));
+    },
+  });
+
+  const accionProdCrud = makeCatalogCrud('/acciones-produccion', setAccionesProduccion);
+  const cargoCrud = makeCatalogCrud('/cargos', setCargos);
+  const areaCrud = makeCatalogCrud('/areas-trabajo', setAreasTrabajo);
+  const accionAseoCrud = makeCatalogCrud('/acciones-aseo', setAccionesAseo);
+
+  const agregarAccionProduccion = accionProdCrud.add;
+  const editarAccionProduccion = accionProdCrud.edit;
+  const eliminarAccionProduccion = accionProdCrud.remove;
+  const agregarCargo = cargoCrud.add;
+  const editarCargo = cargoCrud.edit;
+  const eliminarCargo = cargoCrud.remove;
+  const agregarArea = areaCrud.add;
+  const editarArea = areaCrud.edit;
+  const eliminarArea = areaCrud.remove;
+  const agregarAccionAseo = accionAseoCrud.add;
+  const editarAccionAseo = accionAseoCrud.edit;
+  const eliminarAccionAseo = accionAseoCrud.remove;
+
    return (
      <AppContext.Provider value={{
        productos, agregarProducto, editarProducto, eliminarProducto,
        empleados, agregarEmpleado, editarEmpleado, eliminarEmpleado,
-       registros, agregarRegistro, eliminarRegistro,
+       registros, agregarRegistro, editarRegistro, eliminarRegistro, unidadesDisponiblesPaso,
        registrosAseo, crearRegistroAseo, toggleRegistroAseoEntry, actualizarRegistroAseoEntry, eliminarRegistroAseo,
-       empresas, agregarEmpresa, editarEmpresa, eliminarEmpresa
+       empresas, agregarEmpresa, editarEmpresa, eliminarEmpresa,
+       accionesProduccion, cargos, areasTrabajo, accionesAseo,
+       agregarAccionProduccion, editarAccionProduccion, eliminarAccionProduccion,
+       agregarCargo, editarCargo, eliminarCargo,
+       agregarArea, editarArea, eliminarArea,
+       agregarAccionAseo, editarAccionAseo, eliminarAccionAseo,
+       cambiarEstadoProducto
      }}>
        {children}
      </AppContext.Provider>

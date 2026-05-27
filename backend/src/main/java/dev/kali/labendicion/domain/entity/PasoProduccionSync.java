@@ -22,6 +22,9 @@ public class PasoProduccionSync {
     @JsonBackReference
     private ProductoSync productoSync;
 
+    /** Referencia al catálogo de acciones de producción (opcional). */
+    private String accionProduccionId;
+
     private String descripcion;
     private Integer orden;
     private Boolean completado;

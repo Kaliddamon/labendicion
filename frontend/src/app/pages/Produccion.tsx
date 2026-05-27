@@ -29,7 +29,7 @@ const EmpresaForm = ({ onCreate }: { onCreate: (emp: { razonSocial: string; tele
 };
 
 export const Produccion = () => {
-  const { productos, agregarProducto, editarProducto, eliminarProducto } = useAppContext();
+  const { productos, agregarProducto, editarProducto, eliminarProducto, cambiarEstadoProducto, accionesProduccion } = useAppContext();
   const { empresas, agregarEmpresa, editarEmpresa, eliminarEmpresa } = useAppContext();
   const { tieneRol } = useAuth();
   const [busqueda, setBusqueda] = useState('');
@@ -44,8 +44,8 @@ export const Produccion = () => {
   const [empresa, setEmpresa] = useState('');
   const [ganancia, setGanancia] = useState('');
   const [mostrarModalEmpresas, setMostrarModalEmpresas] = useState(false);
-  const [pasos, setPasos] = useState<{ descripcion: string; orden: number }[]>([]);
-  const [nuevoPaso, setNuevoPaso] = useState('');
+  const [pasos, setPasos] = useState<{ accionProduccionId?: string; descripcion: string; orden: number }[]>([]);
+  const [accionSeleccionada, setAccionSeleccionada] = useState('');
   const [fechaAsignacion, setFechaAsignacion] = useState(new Date().toISOString().split('T')[0]);
   const [fechaTerminacion, setFechaTerminacion] = useState('');
   const [estado, setEstado] = useState<Producto['estado']>('Pendiente');
@@ -87,7 +87,8 @@ export const Produccion = () => {
       const obj = (prod as any).pasos;
       if (Array.isArray(obj)) {
         setPasos(obj.map((p: any, i: number) => ({
-          descripcion: p.descripcion ?? p?.descripcion ?? '',
+          accionProduccionId: p.accionProduccionId,
+          descripcion: p.descripcion ?? '',
           orden: p.orden ?? i + 1
         })));
       } else if (typeof obj === 'string' && obj.trim() !== '') {
@@ -211,15 +212,35 @@ export const Produccion = () => {
           </div>
 
           <div className="mb-4">
-            <label className="block text-sm font-semibold text-slate-600 mb-2">Acciones / Pasos</label>
+            <label className="block text-sm font-semibold text-slate-600 mb-2">Acciones de la orden</label>
+            {accionesProduccion.length === 0 ? (
+              <p className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-2">
+                Define acciones en Configuración antes de asignarlas a la orden.
+              </p>
+            ) : (
             <div className="flex gap-2 mb-2">
-              <input type="text" className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2" placeholder="Nueva acción" value={nuevoPaso} onChange={e=>setNuevoPaso(e.target.value)} />
+              <select
+                className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2"
+                value={accionSeleccionada}
+                onChange={(e) => setAccionSeleccionada(e.target.value)}
+              >
+                <option value="">Seleccione una acción…</option>
+                {accionesProduccion.filter((a) => a.activa !== false).map((a) => (
+                  <option key={a.id} value={a.id}>{a.nombre}</option>
+                ))}
+              </select>
               <button type="button" onClick={()=>{
-                if (!nuevoPaso.trim()) return;
-                setPasos(prev => [...prev, { descripcion: nuevoPaso.trim(), orden: prev.length + 1 }]);
-                setNuevoPaso('');
+                if (!accionSeleccionada) return;
+                const accion = accionesProduccion.find((a) => a.id === accionSeleccionada);
+                if (!accion) return;
+                if (pasos.some((p) => p.accionProduccionId === accion.id)) {
+                  return alert('Esa acción ya está en la orden.');
+                }
+                setPasos(prev => [...prev, { accionProduccionId: accion.id, descripcion: accion.nombre, orden: prev.length + 1 }]);
+                setAccionSeleccionada('');
               }} className="bg-teal-600 text-white px-4 py-2 rounded-xl">Agregar</button>
             </div>
+            )}
             <ul className="space-y-2">
               {pasos.map((p, idx) => (
                 <li key={idx} className="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-xl px-4 py-2">
@@ -271,9 +292,16 @@ export const Produccion = () => {
                   <p className="text-slate-500 font-medium mt-1">{prod.empresa}</p>
                   
                   <div className="flex flex-wrap items-center gap-2 mt-3">
-                    <span className={`px-3 py-1 rounded-full text-xs font-bold ${getEstadoBadge(prod.estado)}`}>
-                      {prod.estado}
-                    </span>
+                    <select
+                      value={prod.estado}
+                      onChange={(e) => cambiarEstadoProducto(prod.id, e.target.value as Producto['estado'])}
+                      className={`px-3 py-1 rounded-full text-xs font-bold cursor-pointer ${getEstadoBadge(prod.estado)}`}
+                      title="Cambiar estado sin editar la orden"
+                    >
+                      <option value="Pendiente">Pendiente</option>
+                      <option value="En proceso">En proceso</option>
+                      <option value="Terminado">Terminado</option>
+                    </select>
                     <span className="text-sm font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full">
                       {formatMonto(prod.ganancia)}
                     </span>

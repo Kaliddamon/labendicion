@@ -1,6 +1,6 @@
 import React from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router';
-import { Home, Scissors, Users, Sparkles, TrendingUp, LogOut, Shield } from 'lucide-react';
+import { Home, Scissors, Users, Sparkles, TrendingUp, LogOut, Shield, Settings } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export const Layout = () => {
@@ -19,6 +19,7 @@ export const Layout = () => {
     { path: '/aseo', icon: Sparkles, label: 'Aseo', requiredRoles: ['SUPERADMINISTRADOR', 'ADMINISTRADOR', 'TRABAJADOR'] },
     { path: '/rendimiento', icon: TrendingUp, label: 'Desempeño', requiredRoles: ['SUPERADMINISTRADOR', 'ADMINISTRADOR', 'TRABAJADOR'] },
     { path: '/roles', icon: Shield, label: 'Roles', requiredRoles: ['SUPERADMINISTRADOR', 'ADMINISTRADOR'] },
+    { path: '/configuracion', icon: Settings, label: 'Config', requiredRoles: ['SUPERADMINISTRADOR', 'ADMINISTRADOR'] },
   ];
 
   const filteredNavItems = navItems.filter(item => {

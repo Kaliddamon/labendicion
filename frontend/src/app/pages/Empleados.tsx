@@ -11,11 +11,16 @@ export const Empleados = () => {
     eliminarEmpleado,
     registros,
     agregarRegistro,
+    editarRegistro,
+    eliminarRegistro,
+    unidadesDisponiblesPaso,
     productos,
+    cargos,
   } = useAppContext();
 
   const crearLineaProduccionVacia = (): ProduccionRegistro => ({
     productoId: '',
+    pasoId: '',
     unidadesTotales: 0,
     unidadesBuenas: 0,
   });
@@ -40,6 +45,7 @@ export const Empleados = () => {
 
   // Estados para calificar empleado en un día
   const [empleadoCalificando, setEmpleadoCalificando] = useState<string | null>(null);
+  const [registroEditando, setRegistroEditando] = useState<string | null>(null);
   const [calificacionFecha, setCalificacionFecha] = useState(new Date().toISOString().split('T')[0]);
   const [calificacionHoraEntrada, setCalificacionHoraEntrada] = useState('08:00');
   const [calificacionHoraSalida, setCalificacionHoraSalida] = useState('17:00');
@@ -84,6 +90,7 @@ export const Empleados = () => {
 
   const abrirCalificacion = (empId: string) => {
     setEmpleadoViendoHistorial(null);
+    setRegistroEditando(null);
     setEmpleadoCalificando(empleadoCalificando === empId ? null : empId);
     setCalificacionProducciones([crearLineaProduccionVacia()]);
   };
@@ -93,7 +100,28 @@ export const Empleados = () => {
     setEmpleadoViendoHistorial(empleadoViendoHistorial === empId ? null : empId);
   };
 
-  const guardarCalificacion = (e: React.FormEvent) => {
+  const etiquetaPaso = (productoId: string, pasoId: string) => {
+    const p = productos.find((x) => x.id === productoId);
+    const paso = p?.pasos?.find((ps) => ps.id === pasoId || (ps as { id?: string }).id === pasoId);
+    return paso?.descripcion ?? 'Acción';
+  };
+
+  const cargarRegistroParaEdicion = (reg: typeof registros[0]) => {
+    setRegistroEditando(reg.id);
+    setCalificacionFecha(reg.fecha);
+    setCalificacionAsistencia(reg.horaEntrada !== '--:--');
+    setCalificacionHoraEntrada(reg.horaEntrada !== '--:--' ? reg.horaEntrada : '08:00');
+    setCalificacionHoraSalida(reg.horaSalida !== '--:--' ? reg.horaSalida : '17:00');
+    setCalificacionProducciones(
+      reg.producciones?.length
+        ? reg.producciones.map((p) => ({ ...p, pasoId: p.pasoId ?? '' }))
+        : [crearLineaProduccionVacia()]
+    );
+    setEmpleadoCalificando(reg.empleadoId);
+    setEmpleadoViendoHistorial(null);
+  };
+
+  const guardarCalificacion = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!empleadoCalificando) return;
 
@@ -102,25 +130,38 @@ export const Empleados = () => {
         return alert('Primero crea al menos una orden en la sección Producción.');
       }
       if (calificacionProducciones.length === 0) {
-        return alert('Debes vincular al menos una orden de producción.');
+        return alert('Debes vincular al menos una orden y acción de producción.');
       }
 
-      const ids = calificacionProducciones.map((p) => p.productoId).filter(Boolean);
-      if (new Set(ids).size !== ids.length) {
-        return alert('No puedes repetir la misma orden en dos líneas distintas.');
+      const claves = calificacionProducciones
+        .filter((p) => p.productoId && p.pasoId)
+        .map((p) => `${p.productoId}:${p.pasoId}`);
+      if (new Set(claves).size !== claves.length) {
+        return alert('No puedes repetir la misma acción de la misma orden en dos líneas.');
       }
 
-      const invalida = calificacionProducciones.some((prod) => {
-        const ordenOk = prod.productoId.length > 0 && productos.some((p) => p.id === prod.productoId);
-        const subtotalOk = prod.unidadesTotales > 0;
-        const calidadOk = prod.unidadesBuenas >= 0 && prod.unidadesBuenas <= prod.unidadesTotales;
-        return !ordenOk || !subtotalOk || !calidadOk;
-      });
-
-      if (invalida) {
-        return alert(
-          'Revisa cada línea: elige una orden existente, confeccionadas > 0 y calidad no mayor a confeccionadas.'
+      for (const prod of calificacionProducciones) {
+        const orden = productos.find((p) => p.id === prod.productoId);
+        const pasoOk = orden?.pasos?.some((ps) => ps.id === prod.pasoId);
+        if (!orden || !pasoOk) {
+          return alert('Cada línea debe tener una orden y una acción válida de esa orden.');
+        }
+        if (prod.unidadesTotales <= 0) {
+          return alert('Las unidades confeccionadas deben ser mayores a cero.');
+        }
+        if (prod.unidadesBuenas > prod.unidadesTotales) {
+          return alert('La calidad no puede superar las unidades confeccionadas.');
+        }
+        const disponible = unidadesDisponiblesPaso(
+          prod.productoId,
+          prod.pasoId,
+          registroEditando ?? undefined
         );
+        if (prod.unidadesTotales > disponible) {
+          return alert(
+            `Para "${etiquetaPaso(prod.productoId, prod.pasoId)}" en ${orden.nombre} solo quedan ${disponible} unidades disponibles (meta: ${orden.cantidad}).`
+          );
+        }
       }
     }
 
@@ -131,19 +172,29 @@ export const Empleados = () => {
       ? calificacionProducciones.reduce((acc, prod) => acc + Number(prod.unidadesBuenas || 0), 0)
       : 0;
 
-    agregarRegistro({
+    const payload = {
       empleadoId: empleadoCalificando,
       fecha: calificacionFecha,
       horaEntrada: calificacionAsistencia ? calificacionHoraEntrada : '--:--',
       horaSalida: calificacionAsistencia ? calificacionHoraSalida : '--:--',
       unidadesTotales: totalUnidades,
       unidadesBuenas: totalBuenas,
-      producciones: calificacionAsistencia ? calificacionProducciones : []
-    });
+      producciones: calificacionAsistencia ? calificacionProducciones : [],
+    };
 
-    setEmpleadoCalificando(null);
-    setCalificacionProducciones([crearLineaProduccionVacia()]);
-    alert('Desempeño diario registrado correctamente ✅');
+    try {
+      if (registroEditando) {
+        await editarRegistro(registroEditando, payload);
+      } else {
+        await agregarRegistro(payload);
+      }
+      setEmpleadoCalificando(null);
+      setRegistroEditando(null);
+      setCalificacionProducciones([crearLineaProduccionVacia()]);
+      alert('Evaluación guardada correctamente ✅');
+    } catch {
+      alert('No se pudo guardar la evaluación. Revisa los datos o intenta de nuevo.');
+    }
   };
 
   const actualizarProduccion = (
@@ -255,7 +306,16 @@ export const Empleados = () => {
             </div>
             <div>
               <label className="block text-sm font-semibold text-slate-600 mb-2">Cargo / Rol</label>
-              <input type="text" placeholder="Ej. Costurera, Cortador..." className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-lg" value={cargo} onChange={e=>setCargo(e.target.value)} />
+              <select
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-lg"
+                value={cargo}
+                onChange={(e) => setCargo(e.target.value)}
+              >
+                <option value="">Seleccione un cargo…</option>
+                {cargos.filter((c) => c.activa !== false).map((c) => (
+                  <option key={c.id} value={c.nombre}>{c.nombre}</option>
+                ))}
+              </select>
             </div>
             <div>
               <label className="block text-sm font-semibold text-slate-600 mb-2">Teléfono</label>
@@ -381,6 +441,7 @@ export const Empleados = () => {
                                     <span className="font-bold text-slate-600 shrink-0">#{index + 1}</span>
                                     <span className="truncate font-medium text-slate-800" title={etiquetaOrden(prod.productoId)}>
                                       {etiquetaOrden(prod.productoId)}
+                                      {prod.pasoId ? ` · ${etiquetaPaso(prod.productoId, prod.pasoId)}` : ''}
                                     </span>
                                     <span className="text-slate-600 sm:ml-auto">
                                       <span className="font-semibold">{prod.unidadesTotales}</span> conf. ·{' '}
@@ -397,6 +458,22 @@ export const Empleados = () => {
                                   >
                                     <FileText size={14} /> Ver orden
                                   </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => cargarRegistroParaEdicion(reg)}
+                                    className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-800"
+                                  >
+                                    <Edit2 size={14} /> Editar
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      if (window.confirm('¿Eliminar esta evaluación?')) eliminarRegistro(reg.id);
+                                    }}
+                                    className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-bold text-red-700"
+                                  >
+                                    <Trash2 size={14} /> Eliminar
+                                  </button>
                                 </div>
                               ))}
                             </div>
@@ -411,7 +488,9 @@ export const Empleados = () => {
               {/* === FORMULARIO DE CALIFICACIÓN DIARIA === */}
               {empleadoCalificando === emp.id && (
                 <form onSubmit={guardarCalificacion} className="bg-amber-50/50 p-6 animate-in slide-in-from-top-2">
-                  <h4 className="font-bold text-amber-900 mb-4 flex items-center gap-2"><Star size={20} /> Registrar trabajo de hoy</h4>
+                  <h4 className="font-bold text-amber-900 mb-4 flex items-center gap-2">
+                    <Star size={20} /> {registroEditando ? 'Editar evaluación' : 'Registrar trabajo de hoy'}
+                  </h4>
                   
                   <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 items-start">
                     
@@ -450,7 +529,7 @@ export const Empleados = () => {
                         <div className="col-span-2 pt-1">
                           <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                             <p className="text-sm font-bold uppercase tracking-wider text-slate-500">
-                              ✂️ Vincular a órdenes de Producción
+                              ✂️ Vincular a orden y acción de producción
                             </p>
                             <button
                               type="button"
@@ -469,17 +548,19 @@ export const Empleados = () => {
                           ) : (
                           <div className="space-y-3">
                             {calificacionProducciones.map((prod, index) => {
-                              const idsOtros = calificacionProducciones
+                              const clavesOtros = calificacionProducciones
                                 .filter((_, i) => i !== index)
-                                .map((p) => p.productoId)
-                                .filter(Boolean);
-                              const opciones = productos.filter(
-                                (p) => p.id === prod.productoId || !idsOtros.includes(p.id)
-                              );
+                                .map((p) => `${p.productoId}:${p.pasoId}`)
+                                .filter((k) => k !== ':');
+                              const ordenSel = productos.find((p) => p.id === prod.productoId);
+                              const pasosOrden = ordenSel?.pasos ?? [];
+                              const disponible = prod.productoId && prod.pasoId
+                                ? unidadesDisponiblesPaso(prod.productoId, prod.pasoId, registroEditando ?? undefined)
+                                : null;
                               return (
                               <div key={`prod-${index}`} className="rounded-xl border border-slate-200 bg-slate-50 p-3">
                                 <div className="mb-2 flex items-center justify-between">
-                                  <p className="text-xs font-bold uppercase text-slate-600">Orden {index + 1}</p>
+                                  <p className="text-xs font-bold uppercase text-slate-600">Línea {index + 1}</p>
                                   <button
                                     type="button"
                                     onClick={() => quitarProduccion(index)}
@@ -496,19 +577,51 @@ export const Empleados = () => {
                                     </label>
                                     <select
                                       value={prod.productoId}
-                                      onChange={(e) =>
-                                        actualizarProduccion(index, 'productoId', e.target.value)
-                                      }
+                                      onChange={(e) => {
+                                        actualizarProduccion(index, 'productoId', e.target.value);
+                                        actualizarProduccion(index, 'pasoId', '');
+                                      }}
                                       required
                                       className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium"
                                     >
                                       <option value="">Selecciona una orden…</option>
-                                      {opciones.map((p) => (
+                                      {productos.map((p) => (
                                         <option key={p.id} value={p.id}>
                                           {p.nombre} — {p.empresa} ({p.estado}, meta {p.cantidad} u.)
                                         </option>
                                       ))}
                                     </select>
+                                  </div>
+                                  <div>
+                                    <label className="mb-1 block text-xs font-semibold text-slate-500">
+                                      Acción de la orden
+                                    </label>
+                                    <select
+                                      value={prod.pasoId}
+                                      onChange={(e) =>
+                                        actualizarProduccion(index, 'pasoId', e.target.value)
+                                      }
+                                      required
+                                      disabled={!prod.productoId}
+                                      className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium disabled:opacity-50"
+                                    >
+                                      <option value="">Selecciona la acción…</option>
+                                      {pasosOrden.map((ps) => {
+                                        const clave = `${prod.productoId}:${ps.id}`;
+                                        const ocupada = clavesOtros.includes(clave);
+                                        if (ocupada && ps.id !== prod.pasoId) return null;
+                                        return (
+                                          <option key={ps.id ?? ps.descripcion} value={ps.id ?? ''}>
+                                            {ps.descripcion}
+                                          </option>
+                                        );
+                                      })}
+                                    </select>
+                                    {disponible != null && prod.pasoId && (
+                                      <p className="mt-1 text-xs text-teal-700">
+                                        Disponibles para esta acción: <strong>{disponible}</strong> de {ordenSel?.cantidad ?? 0}
+                                      </p>
+                                    )}
                                   </div>
                                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:items-end">
                                     <div className="flex flex-col">
@@ -524,6 +637,7 @@ export const Empleados = () => {
                                       <input
                                         type="number"
                                         min={0}
+                                        max={disponible ?? undefined}
                                         value={prod.unidadesTotales || ''}
                                         onChange={(e) =>
                                           actualizarProduccion(index, 'unidadesTotales', Number(e.target.value))
@@ -580,9 +694,23 @@ export const Empleados = () => {
                   </div>
 
                   <div className="mt-6 flex justify-end">
+                    <div className="flex gap-2">
+                      {registroEditando && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setRegistroEditando(null);
+                            setCalificacionProducciones([crearLineaProduccionVacia()]);
+                          }}
+                          className="px-6 py-4 rounded-xl font-bold border border-amber-300 text-amber-800"
+                        >
+                          Cancelar edición
+                        </button>
+                      )}
                     <button type="submit" className="w-full md:w-auto bg-amber-500 hover:bg-amber-600 text-white px-8 py-4 rounded-xl font-bold text-lg shadow-md active:scale-95 transition-transform">
-                      Guardar Evaluación
+                      {registroEditando ? 'Actualizar evaluación' : 'Guardar evaluación'}
                     </button>
+                    </div>
                   </div>
                 </form>
               )}
