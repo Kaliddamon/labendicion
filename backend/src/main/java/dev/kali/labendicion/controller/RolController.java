@@ -14,7 +14,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/roles")
-@CrossOrigin(origins = {"http://localhost:5173", "http://localhost:5174", "https://labendicion.vercel.app", "https://labendicion-beta.vercel.app"})
 public class RolController {
     
     @Autowired

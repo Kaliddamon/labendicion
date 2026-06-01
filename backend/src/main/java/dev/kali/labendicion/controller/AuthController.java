@@ -19,7 +19,6 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/auth")
-@CrossOrigin(origins = {"http://localhost:5173", "http://localhost:5174", "https://labendicion.vercel.app", "https://labendicion-beta.vercel.app"})
 public class AuthController {
 
     private static final String GOOGLE_CLIENT_ID = System.getenv("GOOGLE_CLIENT_ID") != null
@@ -133,46 +132,4 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/me")
-    public ResponseEntity<Map<String, Object>> getCurrentUser() {
-        Map<String, Object> response = new HashMap<>();
-        response.put("authenticated", true);
-        return ResponseEntity.ok(response);
-    }
-
-    @GetMapping("/debug/roles")
-    public ResponseEntity<Map<String, Object>> debugRoles() {
-        Map<String, Object> response = new HashMap<>();
-
-        try {
-            // Verificar si los roles existen
-            var roles = rolService.obtenerTodosLosRoles();
-            response.put("roles_count", roles.size());
-            response.put("roles", roles.stream().map(rol -> Map.of(
-                "id", rol.getId(),
-                "nombre", rol.getNombre(),
-                "permisos", rol.getPermisos().size()
-            )).toList());
-
-            // Verificar usuario específico
-            var usuarioOpt = usuarioRepository.findByEmail("cristian.san.garcia@gmail.com");
-            if (usuarioOpt.isPresent()) {
-                var usuario = usuarioOpt.get();
-                response.put("usuario_superadmin", Map.of(
-                    "id", usuario.getId(),
-                    "email", usuario.getEmail(),
-                    "roles", usuario.getRoles().stream().map(rol -> rol.getNombre()).toList()
-                ));
-            } else {
-                response.put("usuario_superadmin", "NO ENCONTRADO");
-            }
-
-            response.put("success", true);
-        } catch (Exception e) {
-            response.put("success", false);
-            response.put("error", e.getMessage());
-        }
-
-        return ResponseEntity.ok(response);
-    }
 }

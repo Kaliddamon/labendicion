@@ -820,11 +820,4 @@ public class FrontendSyncController {
         return dto;
     }
 
-    public record BootstrapResponse(
-            List<ProductoSync> productos,
-            List<EmpleadoSync> empleados,
-            List<RegistroSync> registros,
-            List<TareaAseoSync> tareasAseo,
-            List<EmpresaSync> empresas
-    ) {}
 }
