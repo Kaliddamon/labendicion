@@ -98,6 +98,8 @@
             <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
 
+        <!-- Resend API se consume via java.net.http.HttpClient (Java 17+) -->
+
         <!-- Testing -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

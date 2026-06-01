@@ -9,6 +9,8 @@ import java.util.List;
 @Repository
 public interface RegistroSyncRepository extends JpaRepository<RegistroSync, String> {
     List<RegistroSync> findByOrderByFechaDesc();
+    
+    List<RegistroSync> findByFecha(String fecha);
 
     // Query optimizada para bootstrap: traer últimos 100 registros (evita cargar Miles)
     // Ordenado por fecha descendente
