@@ -1,0 +1,22 @@
+DO $$ 
+BEGIN
+    -- Verificar si la columna 'id' de la tabla 'empleado' es de tipo numérico (bigint o integer)
+    -- Esto indica que son las tablas base antiguas heredadas antes de usar UUIDs (varchars)
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'empleado' AND column_name = 'id' AND data_type IN ('bigint', 'integer')) THEN
+        -- Como detectamos que las tablas tienen el schema viejo y causan errores 500,
+        -- las dropeamos para que Hibernate las vuelva a crear con el tipo correcto (VARCHAR).
+        DROP TABLE IF EXISTS paso_produccion CASCADE;
+        DROP TABLE IF EXISTS produccion_registro CASCADE;
+        DROP TABLE IF EXISTS registro_aseo_entry CASCADE;
+        DROP TABLE IF EXISTS tarea_aseo CASCADE;
+        DROP TABLE IF EXISTS registro CASCADE;
+        DROP TABLE IF EXISTS registro_aseo CASCADE;
+        DROP TABLE IF EXISTS producto CASCADE;
+        DROP TABLE IF EXISTS accion_aseo CASCADE;
+        DROP TABLE IF EXISTS accion_produccion CASCADE;
+        DROP TABLE IF EXISTS area_trabajo CASCADE;
+        DROP TABLE IF EXISTS cargo_empleado CASCADE;
+        DROP TABLE IF EXISTS empleado CASCADE;
+        DROP TABLE IF EXISTS empresa CASCADE;
+    END IF;
+END $$;
