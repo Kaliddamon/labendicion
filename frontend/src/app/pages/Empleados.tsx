@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAppContext, Empleado, ProduccionRegistro } from '../context/AppContext';
+import { useAuth } from '../context/AuthContext';
 import { Users, Plus, Star, ClipboardList, Trash2, Edit2, CheckCircle2, History, Clock, MinusCircle, FileText } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
 
@@ -17,6 +18,7 @@ export const Empleados = () => {
     productos,
     cargos,
   } = useAppContext();
+  const { tieneRol } = useAuth();
 
   const crearLineaProduccionVacia = (): ProduccionRegistro => ({
     productoId: '',
@@ -396,9 +398,11 @@ export const Empleados = () => {
                   <button onClick={() => iniciarEdicion(emp)} className="bg-slate-100 hover:bg-slate-200 text-slate-700 p-3 rounded-xl transition-transform active:scale-95 border border-transparent">
                     <Edit2 size={20} />
                   </button>
-                  <button onClick={() => { if(window.confirm('¿Seguro que deseas eliminar este empleado?')) eliminarEmpleado(emp.id); }} className="bg-red-50 hover:bg-red-100 text-red-600 p-3 rounded-xl transition-transform active:scale-95 border border-transparent">
-                    <Trash2 size={20} />
-                  </button>
+                  {tieneRol('SUPERADMINISTRADOR') && (
+                    <button onClick={() => { if(window.confirm('¿Seguro que deseas eliminar este empleado?')) eliminarEmpleado(emp.id); }} className="bg-red-50 hover:bg-red-100 text-red-600 p-3 rounded-xl transition-transform active:scale-95 border border-transparent">
+                      <Trash2 size={20} />
+                    </button>
+                  )}
                 </div>
               </div>
 

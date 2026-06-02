@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAppContext, Producto } from '../context/AppContext';
+import { useAuth } from '../context/AuthContext';
 import { Search, Plus, Package, Edit2, Trash2, X } from 'lucide-react';
 import { AccessibleButton } from '../components/ui/accessible/AccessibleButton';
 import { AccessibleInput } from '../components/ui/accessible/AccessibleInput';
@@ -7,6 +8,7 @@ import { AccessibleCardSelector } from '../components/ui/accessible/AccessibleCa
 
 export const Produccion = () => {
   const { productos, agregarProducto, editarProducto, eliminarProducto, cambiarEstadoProducto, accionesProduccion, empresas } = useAppContext();
+  const { tieneRol } = useAuth();
   const [busqueda, setBusqueda] = useState('');
   
   // Estado para el formulario (Crear/Editar)
@@ -412,13 +414,15 @@ export const Produccion = () => {
                     >
                       <Edit2 size={24} /> Editar
                     </AccessibleButton>
-                    <AccessibleButton 
-                      variant="danger" 
-                      onClick={() => { if(window.confirm('¿Seguro que deseas eliminar esta orden permanentemente?')) eliminarProducto(prod.id); }} 
-                      className="flex-1 lg:flex-none !px-4"
-                    >
-                      <Trash2 size={24} /> Eliminar
-                    </AccessibleButton>
+                    {tieneRol('SUPERADMINISTRADOR') && (
+                      <AccessibleButton 
+                        variant="danger" 
+                        onClick={() => { if(window.confirm('¿Seguro que deseas eliminar esta orden permanentemente?')) eliminarProducto(prod.id); }} 
+                        className="flex-1 lg:flex-none !px-4"
+                      >
+                        <Trash2 size={24} /> Eliminar
+                      </AccessibleButton>
+                    )}
                   </div>
 
                 </div>

@@ -346,11 +346,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const eliminarEmpleado = (id: string) => {
     // Snapshot current state so we can revert on failure
     const snapshotEmpleados = [...empleados];
-    const snapshotRegistros = [...registros];
 
-    // Optimistic update: reflect the deletion immediately in the UI
-    setEmpleados((prev) => prev.filter((e) => e.id !== id));
-    setRegistros((prev) => prev.filter((r) => r.empleadoId !== id));
+    // Optimistic update: reflect the soft deletion immediately in the UI
+    setEmpleados((prev) => prev.map((e) => (e.id === id ? { ...e, estado: 'Inactivo' } : e)));
 
     // Perform the server request; if it fails, revert the optimistic update
     request<void>(`/empleados/${id}`, { method: 'DELETE' })
@@ -358,7 +356,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         console.error('Error eliminando empleado (revirtiendo estado):', err);
         // Revert to previous snapshots
         setEmpleados(snapshotEmpleados);
-        setRegistros(snapshotRegistros);
       });
   };
 

@@ -27,6 +27,13 @@ public class RegistroSyncValidationService {
      * la cantidad de la orden por acción (acumulado histórico + nuevo registro).
      */
     public Optional<String> validarProducciones(RegistroSync registro, String registroIdExcluir) {
+        if (registro.getHoraEntrada() != null && !registro.getHoraEntrada().isBlank() &&
+            registro.getHoraSalida() != null && !registro.getHoraSalida().isBlank()) {
+            if (registro.getHoraSalida().compareTo(registro.getHoraEntrada()) < 0) {
+                return Optional.of("La hora de salida no puede ser anterior a la hora de entrada.");
+            }
+        }
+
         if (registro.getProducciones() == null || registro.getProducciones().isEmpty()) {
             return Optional.empty();
         }

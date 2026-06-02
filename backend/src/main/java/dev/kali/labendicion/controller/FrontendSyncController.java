@@ -10,8 +10,12 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.time.OffsetDateTime;
+import java.util.stream.Collectors;
+import jakarta.validation.Validator;
+import jakarta.validation.ConstraintViolation;
 
 import dev.kali.labendicion.domain.entity.*;
 import dev.kali.labendicion.repository.*;
@@ -64,6 +68,9 @@ public class FrontendSyncController {
 
     @Autowired
     private RegistroSyncValidationService registroValidation;
+    
+    @Autowired
+    private Validator validator;
 
     @GetMapping("/bootstrap")
     @org.springframework.transaction.annotation.Transactional(readOnly = true)
@@ -205,6 +212,19 @@ public class FrontendSyncController {
             producto.setFechaEntregaReal((String) body.getOrDefault("fechaEntregaReal", null));
             producto.setEstado((String) body.getOrDefault("estado", "Pendiente"));
 
+            Set<ConstraintViolation<ProductoSync>> violations = validator.validate(producto);
+            if (!violations.isEmpty()) {
+                String msg = violations.iterator().next().getMessage();
+                return ResponseEntity.badRequest().body(Map.of("error", msg));
+            }
+
+            if (producto.getFechaTerminacion() != null && !producto.getFechaTerminacion().isBlank() && 
+                producto.getFechaAsignacion() != null && !producto.getFechaAsignacion().isBlank()) {
+                if (producto.getFechaTerminacion().compareTo(producto.getFechaAsignacion()) < 0) {
+                    return ResponseEntity.badRequest().body(Map.of("error", "La fecha límite no puede ser anterior a la fecha de asignación."));
+                }
+            }
+
             ProductoSync guardado = productoRepo.save(producto);
 
             // Procesar pasos como entidades relacionales
@@ -254,7 +274,28 @@ public class FrontendSyncController {
         try {
             ProductoSync actual = productoRepo.findById(id).orElseThrow();
             if (body.containsKey("estado")) {
-                actual.setEstado(body.get("estado").toString());
+                String nuevoEstado = body.get("estado").toString();
+                if ("Terminado".equals(nuevoEstado)) {
+                    if (actual.getPasos() != null && !actual.getPasos().isEmpty() && actual.getCantidad() != null) {
+                        Map<String, Integer> acumulado = new java.util.HashMap<>();
+                        for (RegistroSync r : registroRepo.findAll()) {
+                            if (r.getProducciones() != null) {
+                                for (var p : r.getProducciones()) {
+                                    if (id.equals(p.getProductoId())) {
+                                        acumulado.merge(p.getPasoId(), p.getUnidadesTotales() == null ? 0 : p.getUnidadesTotales(), Integer::sum);
+                                    }
+                                }
+                            }
+                        }
+                        for (var paso : actual.getPasos()) {
+                            int sum = acumulado.getOrDefault(paso.getId(), 0);
+                            if (sum < actual.getCantidad()) {
+                                return ResponseEntity.badRequest().body(Map.of("error", "No se puede terminar la orden: el paso " + paso.getAccion() + " solo tiene " + sum + " unidades reportadas de " + actual.getCantidad() + " requeridas."));
+                            }
+                        }
+                    }
+                }
+                actual.setEstado(nuevoEstado);
             }
             // Si se marca como Terminado, guardar fechaEntregaReal (default: hoy)
             if ("Terminado".equals(actual.getEstado())) {
@@ -295,6 +336,19 @@ public class FrontendSyncController {
                 actual.setFechaEntregaReal((String) body.get("fechaEntregaReal"));
             }
             actual.setEstado((String) body.getOrDefault("estado", actual.getEstado()));
+
+            Set<ConstraintViolation<ProductoSync>> violations = validator.validate(actual);
+            if (!violations.isEmpty()) {
+                String msg = violations.iterator().next().getMessage();
+                return ResponseEntity.badRequest().body(Map.of("error", msg));
+            }
+
+            if (actual.getFechaTerminacion() != null && !actual.getFechaTerminacion().isBlank() && 
+                actual.getFechaAsignacion() != null && !actual.getFechaAsignacion().isBlank()) {
+                if (actual.getFechaTerminacion().compareTo(actual.getFechaAsignacion()) < 0) {
+                    return ResponseEntity.badRequest().body(Map.of("error", "La fecha límite no puede ser anterior a la fecha de asignación."));
+                }
+            }
 
             // Eliminar pasos previos: solo limpiar la lista en-memory.
             // Con orphanRemoval=true en ProductoSync, Hibernate eliminará automáticamente
@@ -421,11 +475,11 @@ public class FrontendSyncController {
 
     @DeleteMapping("/empleados/{id}")
     public ResponseEntity<Void> eliminarEmpleado(@PathVariable String id) {
-        empleadoRepo.deleteById(id);
-        registroRepo.deleteAll(registroRepo.findAll().stream()
-                .filter(r -> id.equals(r.getEmpleadoId()))
-                .collect(Collectors.toList()));
-        eventService.emitAsync("EMPLEADO_ELIMINADO", Map.of("id", id));
+        if (!empleadoRepo.existsById(id)) return ResponseEntity.notFound().build();
+        EmpleadoSync emp = empleadoRepo.findById(id).orElseThrow();
+        emp.setEstado("Inactivo");
+        empleadoRepo.save(emp);
+        eventService.emitAsync("EMPLEADO_ACTUALIZADO", emp);
         return ResponseEntity.noContent().build();
     }
 

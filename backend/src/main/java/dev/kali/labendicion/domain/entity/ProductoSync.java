@@ -8,6 +8,8 @@ import lombok.NoArgsConstructor;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import java.util.ArrayList;
 import java.util.List;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Min;
 
 @Data
 @NoArgsConstructor
@@ -19,9 +21,16 @@ public class ProductoSync {
     @Id
     private String id;
 
+    @NotBlank(message = "El nombre es obligatorio")
     private String nombre;
+    
+    @Min(value = 1, message = "La cantidad debe ser mayor a cero")
     private Integer cantidad;
+    
+    @NotBlank(message = "La empresa es obligatoria")
     private String empresa;
+    
+    @Min(value = 0, message = "La ganancia no puede ser negativa")
     private Integer ganancia;
     private String fechaAsignacion;
     private String fechaTerminacion;
