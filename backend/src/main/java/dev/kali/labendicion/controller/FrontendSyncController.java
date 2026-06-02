@@ -116,6 +116,7 @@ public class FrontendSyncController {
             map.put("ganancia", p.getGanancia());
             map.put("fechaAsignacion", p.getFechaAsignacion());
             map.put("fechaTerminacion", p.getFechaTerminacion());
+            map.put("fechaEntregaReal", p.getFechaEntregaReal());
             map.put("estado", p.getEstado());
             map.put("pasos", pasosDto);
             return map;
@@ -201,6 +202,7 @@ public class FrontendSyncController {
             producto.setGanancia(body.get("ganancia") == null ? null : Integer.parseInt(body.get("ganancia").toString()));
             producto.setFechaAsignacion((String) body.getOrDefault("fechaAsignacion", ""));
             producto.setFechaTerminacion((String) body.getOrDefault("fechaTerminacion", ""));
+            producto.setFechaEntregaReal((String) body.getOrDefault("fechaEntregaReal", null));
             producto.setEstado((String) body.getOrDefault("estado", "Pendiente"));
 
             ProductoSync guardado = productoRepo.save(producto);
@@ -254,6 +256,16 @@ public class FrontendSyncController {
             if (body.containsKey("estado")) {
                 actual.setEstado(body.get("estado").toString());
             }
+            // Si se marca como Terminado, guardar fechaEntregaReal (default: hoy)
+            if ("Terminado".equals(actual.getEstado())) {
+                String fechaEntrega = body.containsKey("fechaEntregaReal") && body.get("fechaEntregaReal") != null
+                        ? body.get("fechaEntregaReal").toString()
+                        : null;
+                if (fechaEntrega == null || fechaEntrega.isBlank()) {
+                    fechaEntrega = java.time.LocalDate.now().toString();
+                }
+                actual.setFechaEntregaReal(fechaEntrega);
+            }
             ProductoSync guardado = productoRepo.save(actual);
             Map<String, Object> dto = mapProductoToDto(guardado);
             eventService.emitAsync("PRODUCTO_ESTADO_ACTUALIZADO", dto);
@@ -279,6 +291,9 @@ public class FrontendSyncController {
             if (body.containsKey("ganancia")) actual.setGanancia(body.get("ganancia") == null ? null : Integer.parseInt(body.get("ganancia").toString()));
             actual.setFechaAsignacion((String) body.getOrDefault("fechaAsignacion", actual.getFechaAsignacion()));
             actual.setFechaTerminacion((String) body.getOrDefault("fechaTerminacion", actual.getFechaTerminacion()));
+            if (body.containsKey("fechaEntregaReal")) {
+                actual.setFechaEntregaReal((String) body.get("fechaEntregaReal"));
+            }
             actual.setEstado((String) body.getOrDefault("estado", actual.getEstado()));
 
             // Eliminar pasos previos: solo limpiar la lista en-memory.
@@ -786,6 +801,7 @@ public class FrontendSyncController {
         map.put("ganancia", p.getGanancia());
         map.put("fechaAsignacion", p.getFechaAsignacion());
         map.put("fechaTerminacion", p.getFechaTerminacion());
+        map.put("fechaEntregaReal", p.getFechaEntregaReal());
         map.put("estado", p.getEstado());
         map.put("pasos", pasosDto);
         return map;

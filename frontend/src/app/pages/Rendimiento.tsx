@@ -158,10 +158,21 @@ export const Rendimiento = () => {
 
   const capacidadDespacho = useMemo(() => {
     const hoy = new Date().toISOString().slice(0, 10);
-    const pedidosConVencimiento = productos.filter((p) => p.fechaTerminacion <= hoy);
-    const pedidosTerminados = pedidosConVencimiento.filter((p) => p.estado === 'Terminado').length;
+    // Solo evaluar órdenes que tengan una fecha límite definida
+    const pedidosEvaluables = productos.filter(
+      (p) => p.fechaTerminacion && (p.estado === 'Terminado' || p.fechaTerminacion <= hoy)
+    );
+    const pedidosATiempo = pedidosEvaluables.filter((p) => {
+      if (p.estado === 'Terminado') {
+        // Usar fechaEntregaReal si existe, si no, asumir hoy como fecha de entrega
+        const fechaEntrega = p.fechaEntregaReal || hoy;
+        return fechaEntrega <= p.fechaTerminacion;
+      }
+      // Si no está terminado pero la fecha límite ya pasó → entrega tardía
+      return false;
+    }).length;
     const cumplimientoDespacho =
-      pedidosConVencimiento.length > 0 ? (pedidosTerminados / pedidosConVencimiento.length) * 100 : 100;
+      pedidosEvaluables.length > 0 ? (pedidosATiempo / pedidosEvaluables.length) * 100 : 100;
     const capacidadDiaria = dataDiaria.length > 0
       ? dataDiaria.reduce((acc, d) => acc + d.total, 0) / dataDiaria.length
       : 0;
