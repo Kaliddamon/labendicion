@@ -1,10 +1,10 @@
 package dev.kali.labendicion.service;
 
-import dev.kali.labendicion.domain.entity.ProductoSync;
-import dev.kali.labendicion.domain.entity.RegistroSync;
+import dev.kali.labendicion.domain.entity.Producto;
+import dev.kali.labendicion.domain.entity.Registro;
 import dev.kali.labendicion.domain.entity.Usuario;
-import dev.kali.labendicion.repository.ProductoSyncRepository;
-import dev.kali.labendicion.repository.RegistroSyncRepository;
+import dev.kali.labendicion.repository.ProductoRepository;
+import dev.kali.labendicion.repository.RegistroRepository;
 import dev.kali.labendicion.repository.UsuarioRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,10 +24,10 @@ public class AlertaEmailService {
     private ResendEmailService resendEmailService;
 
     @Autowired
-    private RegistroSyncRepository registroRepo;
+    private RegistroRepository registroRepo;
 
     @Autowired
-    private ProductoSyncRepository productoRepo;
+    private ProductoRepository productoRepo;
 
     @Autowired
     private UsuarioRepository usuarioRepo;
@@ -41,8 +41,8 @@ public class AlertaEmailService {
         log.info("Evaluando alertas de rendimiento al final del turno...");
         
         String hoy = LocalDate.now(ZoneId.of("America/Bogota")).toString();
-        List<RegistroSync> registrosHoy = registroRepo.findByFecha(hoy);
-        List<ProductoSync> todosProductos = productoRepo.findAll();
+        List<Registro> registrosHoy = registroRepo.findByFecha(hoy);
+        List<Producto> todosProductos = productoRepo.findAll();
         
         if (registrosHoy.isEmpty()) {
             log.info("No hay registros hoy, no se evalúan alertas operativas.");
@@ -53,7 +53,7 @@ public class AlertaEmailService {
         double totalBuenas = 0;
         double horasAsistidas = 0;
 
-        for (RegistroSync r : registrosHoy) {
+        for (Registro r : registrosHoy) {
             totalTotales += (r.getUnidadesTotales() != null) ? r.getUnidadesTotales() : 0;
             totalBuenas += (r.getUnidadesBuenas() != null) ? r.getUnidadesBuenas() : 0;
             horasAsistidas += calcularHorasTrabajadas(r.getHoraEntrada(), r.getHoraSalida());
@@ -67,7 +67,7 @@ public class AlertaEmailService {
         double ausentismo = horasPlanificadas > 0 ? ((horasPlanificadas - horasAsistidas) / horasPlanificadas) * 100 : 0;
 
         // OTD (Cumplimiento Despacho)
-        List<ProductoSync> evaluables = todosProductos.stream()
+        List<Producto> evaluables = todosProductos.stream()
                 .filter(p -> p.getFechaTerminacion() != null && !p.getFechaTerminacion().isEmpty() && 
                             (p.getFechaTerminacion().compareTo(hoy) <= 0 || "Terminado".equalsIgnoreCase(p.getEstado())))
                 .collect(Collectors.toList());
