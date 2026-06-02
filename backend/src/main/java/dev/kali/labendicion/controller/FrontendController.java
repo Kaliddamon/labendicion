@@ -296,6 +296,7 @@ public class FrontendController {
                 actual.setEstado(nuevoEstado);
             }
 <<<<<<< HEAD:backend/src/main/java/dev/kali/labendicion/controller/FrontendController.java
+<<<<<<< HEAD:backend/src/main/java/dev/kali/labendicion/controller/FrontendController.java
             // Si se marca como Terminado, guardar fechaEntregaReal (default: hoy)
             if ("Terminado".equals(actual.getEstado())) {
                 String fechaEntrega = body.containsKey("fechaEntregaReal") && body.get("fechaEntregaReal") != null
@@ -308,6 +309,8 @@ public class FrontendController {
             }
             Producto guardado = productoRepo.save(actual);
 =======
+=======
+>>>>>>> parent of 231d13d3 (Actualización Dashboard (OTD)):backend/src/main/java/dev/kali/labendicion/controller/FrontendSyncController.java
             ProductoSync guardado = productoRepo.save(actual);
 >>>>>>> parent of 231d13d3 (Actualización Dashboard (OTD)):backend/src/main/java/dev/kali/labendicion/controller/FrontendSyncController.java
             Map<String, Object> dto = mapProductoToDto(guardado);

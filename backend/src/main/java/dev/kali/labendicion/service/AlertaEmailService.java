@@ -68,9 +68,14 @@ public class AlertaEmailService {
 
         // OTD (Cumplimiento Despacho)
 <<<<<<< HEAD
+<<<<<<< HEAD
         List<Producto> evaluables = todosProductos.stream()
                 .filter(p -> p.getFechaTerminacion() != null && !p.getFechaTerminacion().isEmpty() && 
                             (p.getFechaTerminacion().compareTo(hoy) <= 0 || "Terminado".equalsIgnoreCase(p.getEstado())))
+=======
+        List<ProductoSync> conVencimiento = todosProductos.stream()
+                .filter(p -> p.getFechaTerminacion() != null && p.getFechaTerminacion().compareTo(hoy) <= 0)
+>>>>>>> parent of 231d13d3 (Actualización Dashboard (OTD))
 =======
         List<ProductoSync> conVencimiento = todosProductos.stream()
                 .filter(p -> p.getFechaTerminacion() != null && p.getFechaTerminacion().compareTo(hoy) <= 0)
