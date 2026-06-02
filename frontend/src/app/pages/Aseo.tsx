@@ -268,13 +268,15 @@ export const Aseo = () => {
                   <strong className="text-slate-800">{r.fecha}</strong>
                   <div className="text-right">
                     <span className="text-sm text-slate-500">{r.entries.length} empleados</span>
-                    <button
-                      onClick={() => { if(window.confirm('¿Eliminar este registro?')) eliminarRegistroAseo(r.id); }}
-                      className="ml-4 text-red-600 hover:text-red-700 active:scale-95 transition-transform"
-                      title="Eliminar"
-                    >
-                      <Trash2 size={18} />
-                    </button>
+                    {tieneRol('SUPERADMIN') && (
+                      <button
+                        onClick={() => { if(window.confirm('¿Eliminar este registro?')) eliminarRegistroAseo(r.id); }}
+                        className="ml-4 text-red-600 hover:text-red-700 active:scale-95 transition-transform"
+                        title="Eliminar"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    )}
                   </div>
                 </div>
                 <div className="text-sm text-slate-600 space-y-1">

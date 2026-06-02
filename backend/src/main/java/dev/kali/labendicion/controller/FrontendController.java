@@ -290,7 +290,7 @@ public class FrontendController {
                         for (var paso : actual.getPasos()) {
                             int sum = acumulado.getOrDefault(paso.getId(), 0);
                             if (sum < actual.getCantidad()) {
-                                return ResponseEntity.badRequest().body(Map.of("error", "No se puede terminar la orden: el paso " + paso.getAccion() + " solo tiene " + sum + " unidades reportadas de " + actual.getCantidad() + " requeridas."));
+                                return ResponseEntity.badRequest().body(Map.of("error", "No se puede terminar la orden: el paso " + paso.getDescripcion() + " solo tiene " + sum + " unidades reportadas de " + actual.getCantidad() + " requeridas."));
                             }
                         }
                     }
