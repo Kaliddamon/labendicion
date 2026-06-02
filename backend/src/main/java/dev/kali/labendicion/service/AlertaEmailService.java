@@ -67,18 +67,21 @@ public class AlertaEmailService {
         double ausentismo = horasPlanificadas > 0 ? ((horasPlanificadas - horasAsistidas) / horasPlanificadas) * 100 : 0;
 
         // OTD (Cumplimiento Despacho)
+<<<<<<< HEAD
         List<Producto> evaluables = todosProductos.stream()
                 .filter(p -> p.getFechaTerminacion() != null && !p.getFechaTerminacion().isEmpty() && 
                             (p.getFechaTerminacion().compareTo(hoy) <= 0 || "Terminado".equalsIgnoreCase(p.getEstado())))
+=======
+        List<ProductoSync> conVencimiento = todosProductos.stream()
+                .filter(p -> p.getFechaTerminacion() != null && p.getFechaTerminacion().compareTo(hoy) <= 0)
+>>>>>>> parent of 231d13d3 (Actualización Dashboard (OTD))
                 .collect(Collectors.toList());
         
-        long aTiempo = evaluables.stream()
-                .filter(p -> "Terminado".equalsIgnoreCase(p.getEstado()) && 
-                            (p.getFechaEntregaReal() == null || p.getFechaEntregaReal().isEmpty() || 
-                             p.getFechaEntregaReal().compareTo(p.getFechaTerminacion()) <= 0))
+        long terminados = conVencimiento.stream()
+                .filter(p -> "Terminado".equalsIgnoreCase(p.getEstado()))
                 .count();
 
-        double otd = evaluables.isEmpty() ? 100 : ((double) aTiempo / evaluables.size()) * 100;
+        double otd = conVencimiento.isEmpty() ? 100 : ((double) terminados / conVencimiento.size()) * 100;
 
         // Evaluar umbrales
         String estEficiencia = getEstadoByThreshold(eficiencia, 90, 80);

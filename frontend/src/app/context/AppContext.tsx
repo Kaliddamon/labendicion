@@ -18,7 +18,6 @@ export interface Producto {
   ganancia: number;
   fechaAsignacion: string;
   fechaTerminacion: string;
-  fechaEntregaReal?: string;
   estado: 'Pendiente' | 'En proceso' | 'Terminado';
   pasos?: PasoProducto[];
 }
@@ -135,7 +134,7 @@ interface AppContextType {
   editarAccionAseo: (id: string, item: Partial<CatalogoItem>) => void;
   eliminarAccionAseo: (id: string) => void;
 
-  cambiarEstadoProducto: (id: string, estado: Producto['estado'], fechaEntregaReal?: string) => void;
+  cambiarEstadoProducto: (id: string, estado: Producto['estado']) => void;
 
    // Registros de Aseo
    registrosAseo: RegistroAseo[];
@@ -270,18 +269,14 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         setProductos((prev) => prev.map((p) => (p.id === id ? snapshot : p)));
       });
   };
-  const cambiarEstadoProducto = (id: string, estado: Producto['estado'], fechaEntregaReal?: string) => {
+  const cambiarEstadoProducto = (id: string, estado: Producto['estado']) => {
     const actual = productos.find((p) => p.id === id);
     if (!actual) return;
     const snapshot = { ...actual };
-    const updates: Partial<Producto> = { estado };
-    if (estado === 'Terminado') {
-      updates.fechaEntregaReal = fechaEntregaReal || new Date().toISOString().split('T')[0];
-    }
-    setProductos((prev) => prev.map((p) => (p.id === id ? { ...p, ...updates } : p)));
+    setProductos((prev) => prev.map((p) => (p.id === id ? { ...p, estado } : p)));
     request<Producto>(`/productos/${id}/estado`, {
       method: 'PATCH',
-      body: JSON.stringify({ estado, fechaEntregaReal: updates.fechaEntregaReal }),
+      body: JSON.stringify({ estado }),
     })
       .then((actualizado) => setProductos((prev) => prev.map((p) => (p.id === id ? actualizado : p))))
       .catch((err) => {

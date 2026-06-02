@@ -34,7 +34,6 @@ public class Producto {
     private Integer ganancia;
     private String fechaAsignacion;
     private String fechaTerminacion;
-    private String fechaEntregaReal;
     private String estado;
 
     @OneToMany(mappedBy = "producto", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)

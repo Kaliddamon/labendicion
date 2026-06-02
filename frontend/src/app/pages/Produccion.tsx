@@ -24,7 +24,6 @@ export const Produccion = () => {
   const [accionSeleccionada, setAccionSeleccionada] = useState('');
   const [fechaAsignacion, setFechaAsignacion] = useState(new Date().toISOString().split('T')[0]);
   const [fechaTerminacion, setFechaTerminacion] = useState('');
-  const [fechaEntregaReal, setFechaEntregaReal] = useState('');
   const [estado, setEstado] = useState<Producto['estado']>('Pendiente');
 
   const productosFiltrados = productos.filter(p => 
@@ -55,7 +54,7 @@ export const Produccion = () => {
   const resetForm = () => {
     setNombre(''); setCantidad(''); setEmpresa(''); setGanancia('');
     setFechaAsignacion(new Date().toISOString().split('T')[0]);
-    setFechaTerminacion(''); setFechaEntregaReal(''); setEstado('Pendiente');
+    setFechaTerminacion(''); setEstado('Pendiente');
     setPasos([]);
     setAccionSeleccionada('');
     setProductoEditando(null); setMostrarForm(false);
@@ -112,11 +111,8 @@ export const Produccion = () => {
     } catch (e) {
       setPasos([]);
     }
-    setFechaAsignacion(prod.fechaAsignacion); 
-    setFechaTerminacion(prod.fechaTerminacion);
-    setFechaEntregaReal(prod.fechaEntregaReal || '');
-    setEstado(prod.estado); 
-    setProductoEditando(prod.id); setMostrarForm(true);
+    setFechaAsignacion(prod.fechaAsignacion); setFechaTerminacion(prod.fechaTerminacion);
+    setEstado(prod.estado); setProductoEditando(prod.id); setMostrarForm(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -134,7 +130,6 @@ export const Produccion = () => {
       ganancia: parseFormattedNumber(ganancia),
       fechaAsignacion,
       fechaTerminacion,
-      fechaEntregaReal: estado === 'Terminado' ? fechaEntregaReal : undefined,
       estado,
       pasos,
     };
@@ -249,12 +244,7 @@ export const Produccion = () => {
                 label="Estado actual"
                 options={opcionesEstado}
                 value={estado}
-                onChange={(val) => {
-                  setEstado(val as Producto['estado']);
-                  if (val === 'Terminado' && !fechaEntregaReal) {
-                    setFechaEntregaReal(new Date().toISOString().split('T')[0]);
-                  }
-                }}
+                onChange={(val) => setEstado(val as Producto['estado'])}
                 columns={3}
               />
 
@@ -268,25 +258,12 @@ export const Produccion = () => {
                 />
                 <AccessibleInput 
                   type="date"
-                  label="Fecha Límite (Esperada)" 
+                  label="Fecha de Entrega" 
                   helperText="(Opcional)"
                   value={fechaTerminacion} 
                   onChange={e=>setFechaTerminacion(e.target.value)} 
                 />
               </div>
-
-              {estado === 'Terminado' && (
-                <div className="mt-4 p-4 bg-emerald-50 border border-emerald-200 rounded-xl">
-                  <AccessibleInput 
-                    type="date"
-                    label="Fecha Real de Entrega" 
-                    helperText="Esta fecha se usa para medir si hubo atrasos."
-                    value={fechaEntregaReal} 
-                    onChange={e=>setFechaEntregaReal(e.target.value)} 
-                    required 
-                  />
-                </div>
-              )}
             </div>
           </div>
 

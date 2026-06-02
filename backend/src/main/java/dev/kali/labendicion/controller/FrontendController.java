@@ -123,7 +123,6 @@ public class FrontendController {
             map.put("ganancia", p.getGanancia());
             map.put("fechaAsignacion", p.getFechaAsignacion());
             map.put("fechaTerminacion", p.getFechaTerminacion());
-            map.put("fechaEntregaReal", p.getFechaEntregaReal());
             map.put("estado", p.getEstado());
             map.put("pasos", pasosDto);
             return map;
@@ -209,7 +208,6 @@ public class FrontendController {
             producto.setGanancia(body.get("ganancia") == null ? null : Integer.parseInt(body.get("ganancia").toString()));
             producto.setFechaAsignacion((String) body.getOrDefault("fechaAsignacion", ""));
             producto.setFechaTerminacion((String) body.getOrDefault("fechaTerminacion", ""));
-            producto.setFechaEntregaReal((String) body.getOrDefault("fechaEntregaReal", null));
             producto.setEstado((String) body.getOrDefault("estado", "Pendiente"));
 
             Set<ConstraintViolation<Producto>> violations = validator.validate(producto);
@@ -297,6 +295,7 @@ public class FrontendController {
                 }
                 actual.setEstado(nuevoEstado);
             }
+<<<<<<< HEAD:backend/src/main/java/dev/kali/labendicion/controller/FrontendController.java
             // Si se marca como Terminado, guardar fechaEntregaReal (default: hoy)
             if ("Terminado".equals(actual.getEstado())) {
                 String fechaEntrega = body.containsKey("fechaEntregaReal") && body.get("fechaEntregaReal") != null
@@ -308,6 +307,9 @@ public class FrontendController {
                 actual.setFechaEntregaReal(fechaEntrega);
             }
             Producto guardado = productoRepo.save(actual);
+=======
+            ProductoSync guardado = productoRepo.save(actual);
+>>>>>>> parent of 231d13d3 (Actualización Dashboard (OTD)):backend/src/main/java/dev/kali/labendicion/controller/FrontendSyncController.java
             Map<String, Object> dto = mapProductoToDto(guardado);
             eventService.emitAsync("PRODUCTO_ESTADO_ACTUALIZADO", dto);
             return ResponseEntity.ok(dto);
@@ -332,9 +334,6 @@ public class FrontendController {
             if (body.containsKey("ganancia")) actual.setGanancia(body.get("ganancia") == null ? null : Integer.parseInt(body.get("ganancia").toString()));
             actual.setFechaAsignacion((String) body.getOrDefault("fechaAsignacion", actual.getFechaAsignacion()));
             actual.setFechaTerminacion((String) body.getOrDefault("fechaTerminacion", actual.getFechaTerminacion()));
-            if (body.containsKey("fechaEntregaReal")) {
-                actual.setFechaEntregaReal((String) body.get("fechaEntregaReal"));
-            }
             actual.setEstado((String) body.getOrDefault("estado", actual.getEstado()));
 
             Set<ConstraintViolation<Producto>> violations = validator.validate(actual);
@@ -855,7 +854,6 @@ public class FrontendController {
         map.put("ganancia", p.getGanancia());
         map.put("fechaAsignacion", p.getFechaAsignacion());
         map.put("fechaTerminacion", p.getFechaTerminacion());
-        map.put("fechaEntregaReal", p.getFechaEntregaReal());
         map.put("estado", p.getEstado());
         map.put("pasos", pasosDto);
         return map;
