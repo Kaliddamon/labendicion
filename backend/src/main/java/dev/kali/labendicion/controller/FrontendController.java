@@ -111,7 +111,7 @@ public class FrontendController {
                 map.put("id", ps.getId());
                 map.put("accionProduccionId", ps.getAccionProduccionId());
                 map.put("descripcion", ps.getDescripcion());
-                map.put("orden", ps.getOrden());
+                map.put("metaUnidadesHora", ps.getMetaUnidadesHora());
                 map.put("completado", ps.getCompletado());
                 return map;
             }).collect(Collectors.toList());
@@ -799,7 +799,7 @@ public class FrontendController {
         try {
             PasoProduccion paso = pasoRepo.findById(pasoId).orElseThrow();
             if (body.containsKey("descripcion")) paso.setDescripcion((String) body.get("descripcion"));
-            if (body.containsKey("orden")) paso.setOrden(Integer.parseInt(body.get("orden").toString()));
+            if (body.containsKey("metaUnidadesHora")) paso.setMetaUnidadesHora(body.get("metaUnidadesHora") == null ? null : Integer.parseInt(body.get("metaUnidadesHora").toString()));
             if (body.containsKey("completado")) paso.setCompletado((Boolean) body.get("completado"));
             PasoProduccion guardado = pasoRepo.save(paso);
             return ResponseEntity.ok(guardado);
@@ -871,7 +871,7 @@ public class FrontendController {
         } else if (paso.getDescripcion() == null) {
             paso.setDescripcion("");
         }
-        paso.setOrden(pasoMap.get("orden") == null ? 0 : Integer.parseInt(pasoMap.get("orden").toString()));
+        paso.setMetaUnidadesHora(pasoMap.get("metaUnidadesHora") == null ? null : Integer.parseInt(pasoMap.get("metaUnidadesHora").toString()));
         paso.setCompletado((Boolean) pasoMap.getOrDefault("completado", false));
     }
 
@@ -896,7 +896,7 @@ public class FrontendController {
             m.put("id", ps.getId());
             m.put("accionProduccionId", ps.getAccionProduccionId());
             m.put("descripcion", ps.getDescripcion());
-            m.put("orden", ps.getOrden());
+            m.put("metaUnidadesHora", ps.getMetaUnidadesHora());
             m.put("completado", ps.getCompletado());
             return m;
         }).collect(Collectors.toList());
