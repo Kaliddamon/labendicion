@@ -40,6 +40,9 @@ export const Login = () => {
   return (
     <div className='min-h-screen bg-gradient-to-br from-teal-50 to-blue-50 flex items-center justify-center'>
       <div className='bg-white rounded-2xl shadow-xl p-8 max-w-md w-full'>
+        <div className='flex justify-center mb-4'>
+          <img src="/logo.png" alt="Logo La Bendición" className="h-24 w-auto object-contain" />
+        </div>
         <h1 className='text-3xl font-bold text-center text-teal-900 mb-4'>La Bendición</h1>
         <p className='text-center text-slate-600 mb-6 text-sm'>Sistema de Gestión Textil</p>
 

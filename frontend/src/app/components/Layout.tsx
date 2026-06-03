@@ -44,7 +44,7 @@ export const Layout = () => {
         ].join(' ')}
       >
         <div className="hidden md:flex md:flex-col md:items-center md:pt-6 md:pb-4 text-teal-600">
-          <Scissors size={36} strokeWidth={1.5} className="shrink-0" />
+          <img src="/logo.png" alt="Logo Taller" className="w-12 h-12 object-contain shrink-0" />
           <span className="mt-2 text-center text-[10px] font-bold uppercase tracking-widest leading-tight">
             Taller
           </span>
