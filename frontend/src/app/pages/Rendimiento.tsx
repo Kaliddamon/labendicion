@@ -112,8 +112,12 @@ export const Rendimiento = () => {
     for (const r of registrosFiltrados) {
       for (const prod of (r.producciones || [])) {
         const producto = productos.find(p => p.id === prod.productoId);
-        const paso = producto?.pasos?.find(ps => ps.id === prod.pasoId);
-        const meta = paso?.metaUnidadesHora || 12; // Fallback
+        let paso = producto?.pasos?.find(ps => ps.id === prod.pasoId);
+        // Fallback heurístico para registros viejos con IDs corruptos
+        if (!paso && producto?.pasos?.length === 1) {
+          paso = producto.pasos[0];
+        }
+        const meta = paso?.metaUnidadesHora || 12; // Fallback final
         horasProductivasEstimadas += (Number(prod.unidadesBuenas) || 0) / meta;
       }
     }
@@ -154,7 +158,11 @@ export const Rendimiento = () => {
         for (const r of registrosEmpleado) {
           for (const prod of (r.producciones || [])) {
             const producto = productos.find(p => p.id === prod.productoId);
-            const paso = producto?.pasos?.find(ps => ps.id === prod.pasoId);
+            let paso = producto?.pasos?.find(ps => ps.id === prod.pasoId);
+            // Fallback heurístico para registros viejos con IDs corruptos
+            if (!paso && producto?.pasos?.length === 1) {
+              paso = producto.pasos[0];
+            }
             const meta = paso?.metaUnidadesHora || 12;
             horasProductivasEmpleado += (Number(prod.unidadesBuenas) || 0) / meta;
           }
