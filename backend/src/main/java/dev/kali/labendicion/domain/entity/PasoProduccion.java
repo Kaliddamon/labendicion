@@ -26,7 +26,7 @@ public class PasoProduccion {
     private String accionProduccionId;
 
     private String descripcion;
-    private Integer orden;
+    private Integer metaUnidadesHora;
     private Boolean completado;
 }
 

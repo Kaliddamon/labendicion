@@ -20,8 +20,9 @@ export const Produccion = () => {
   const [cantidad, setCantidad] = useState('');
   const [empresa, setEmpresa] = useState('');
   const [ganancia, setGanancia] = useState('');
-  const [pasos, setPasos] = useState<{ accionProduccionId?: string; descripcion: string; orden: number }[]>([]);
+  const [pasos, setPasos] = useState<{ accionProduccionId?: string; descripcion: string; metaUnidadesHora?: number }[]>([]);
   const [accionSeleccionada, setAccionSeleccionada] = useState('');
+  const [metaHoraPaso, setMetaHoraPaso] = useState('');
   const [fechaAsignacion, setFechaAsignacion] = useState(new Date().toISOString().split('T')[0]);
   const [fechaTerminacion, setFechaTerminacion] = useState('');
   const [estado, setEstado] = useState<Producto['estado']>('Pendiente');
@@ -57,12 +58,18 @@ export const Produccion = () => {
     setFechaTerminacion(''); setEstado('Pendiente');
     setPasos([]);
     setAccionSeleccionada('');
+    setMetaHoraPaso('');
     setProductoEditando(null); setMostrarForm(false);
   };
 
   const agregarPasoAOrden = () => {
-    if (!accionSeleccionada) {
-      alert('Selecciona una acción del catálogo.');
+    if (!accionSeleccionada || !metaHoraPaso) {
+      alert('Selecciona una acción del catálogo y asigna una meta de unidades por hora.');
+      return;
+    }
+    const metaNum = Number(metaHoraPaso);
+    if (isNaN(metaNum) || metaNum <= 0) {
+      alert('La meta debe ser un número mayor a cero.');
       return;
     }
     const accion = accionesValidas.find((a) => a.id === accionSeleccionada);
@@ -83,10 +90,11 @@ export const Produccion = () => {
       {
         accionProduccionId: accion.id,
         descripcion: accion.nombre,
-        orden: prev.length + 1,
+        metaUnidadesHora: metaNum,
       },
     ]);
     setAccionSeleccionada('');
+    setMetaHoraPaso('');
   };
 
   const iniciarEdicion = (prod: Producto) => {
@@ -95,15 +103,15 @@ export const Produccion = () => {
     try {
       const obj = (prod as any).pasos;
       if (Array.isArray(obj)) {
-        setPasos(obj.map((p: any, i: number) => ({
+        setPasos(obj.map((p: any) => ({
           accionProduccionId: p.accionProduccionId,
           descripcion: p.descripcion ?? '',
-          orden: p.orden ?? i + 1
+          metaUnidadesHora: p.metaUnidadesHora
         })));
       } else if (typeof obj === 'string' && obj.trim() !== '') {
-        setPasos(JSON.parse(obj).map((p: any, i: number) => ({
+        setPasos(JSON.parse(obj).map((p: any) => ({
           descripcion: p.descripcion ?? '',
-          orden: p.orden ?? i + 1
+          metaUnidadesHora: p.metaUnidadesHora
         })));
       } else {
         setPasos([]);
@@ -277,10 +285,10 @@ export const Produccion = () => {
                 ⚠️ No hay acciones configuradas en el sistema.
               </p>
             ) : (
-            <div className="flex flex-col sm:flex-row gap-3 mb-6">
-              <div className="flex-1">
+            <div className="flex flex-col sm:flex-row gap-3 mb-6 items-end">
+              <div className="flex-[2]">
                 <AccessibleInput 
-                  label=""
+                  label="Proceso"
                   isSelect
                   options={[
                     { value: '', label: 'Seleccione un proceso...' },
@@ -290,13 +298,22 @@ export const Produccion = () => {
                   onChange={(e) => setAccionSeleccionada(e.target.value)}
                 />
               </div>
+              <div className="flex-[1]">
+                <AccessibleInput 
+                  label="Meta Unidades / Hora"
+                  inputMode="numeric"
+                  placeholder="Ej. 25"
+                  value={metaHoraPaso}
+                  onChange={(e) => setMetaHoraPaso(e.target.value)}
+                />
+              </div>
               <AccessibleButton 
                 type="button" 
                 variant="secondary" 
                 onClick={agregarPasoAOrden}
-                className="mt-1.5"
+                className="mb-1"
               >
-                <Plus size={20} /> Asignar Paso
+                <Plus size={20} /> Asignar
               </AccessibleButton>
             </div>
             )}
@@ -310,13 +327,15 @@ export const Produccion = () => {
               {pasos.map((p, idx) => (
                 <div key={idx} className="flex items-center justify-between bg-white border border-slate-200 rounded-xl px-5 py-4 shadow-sm">
                   <div className="flex items-center gap-3 text-lg font-bold text-slate-700">
-                    <span className="bg-slate-100 text-slate-500 w-8 h-8 rounded-full flex items-center justify-center text-sm">{p.orden}</span>
+                    <span className="bg-slate-100 text-slate-500 px-3 py-1 rounded-full text-sm font-semibold whitespace-nowrap">
+                      {p.metaUnidadesHora ?? 12} und/hr
+                    </span>
                     {p.descripcion}
                   </div>
                   <button 
                     type="button" 
                     onClick={()=>{
-                      setPasos(prev => prev.filter((_, i) => i !== idx).map((x, i)=> ({...x, orden: i+1})));
+                      setPasos(prev => prev.filter((_, i) => i !== idx));
                     }} 
                     className="p-3 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg active:scale-95 transition-all"
                     title="Eliminar paso"

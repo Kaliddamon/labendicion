@@ -19,7 +19,6 @@ import { useAppContext } from '../context/AppContext';
 type Periodo = '7d' | '30d';
 
 const HORAS_PLAN_DIA = 9;
-const META_UNIDADES_HORA = 12;
 
 const formatearPorcentaje = (valor: number) => `${valor.toFixed(1)}%`;
 
@@ -107,8 +106,19 @@ export const Rendimiento = () => {
     const defectos = Math.max(total - buenas, 0);
     const horasAsistidas = registrosFiltrados.reduce((acc, r) => acc + horasTrabajadas(r.horaEntrada, r.horaSalida), 0);
     const horasPlanificadas = registrosFiltrados.length * HORAS_PLAN_DIA;
-    const horasProductivasEstimadas = buenas / META_UNIDADES_HORA;
-    const eficiencia = horasAsistidas > 0 ? (buenas / horasAsistidas / META_UNIDADES_HORA) * 100 : 0;
+    
+    // Cálculo dinámico de horas productivas usando la meta de cada paso
+    let horasProductivasEstimadas = 0;
+    for (const r of registrosFiltrados) {
+      for (const prod of (r.producciones || [])) {
+        const producto = productos.find(p => p.id === prod.productoId);
+        const paso = producto?.pasos?.find(ps => ps.id === prod.pasoId);
+        const meta = paso?.metaUnidadesHora || 12; // Fallback
+        horasProductivasEstimadas += (Number(prod.unidadesBuenas) || 0) / meta;
+      }
+    }
+
+    const eficiencia = horasAsistidas > 0 ? (horasProductivasEstimadas / horasAsistidas) * 100 : 0;
     const fpy = total > 0 ? (buenas / total) * 100 : 0;
     const defectosRate = total > 0 ? (defectos / total) * 100 : 0;
     const retrabajoRate = defectosRate;
@@ -139,7 +149,18 @@ export const Rendimiento = () => {
         const buenas = registrosEmpleado.reduce((acc, r) => acc + r.unidadesBuenas, 0);
         const horas = registrosEmpleado.reduce((acc, r) => acc + horasTrabajadas(r.horaEntrada, r.horaSalida), 0);
         const defectos = Math.max(total - buenas, 0);
-        const eficiencia = horas > 0 ? (buenas / horas / META_UNIDADES_HORA) * 100 : 0;
+        
+        let horasProductivasEmpleado = 0;
+        for (const r of registrosEmpleado) {
+          for (const prod of (r.producciones || [])) {
+            const producto = productos.find(p => p.id === prod.productoId);
+            const paso = producto?.pasos?.find(ps => ps.id === prod.pasoId);
+            const meta = paso?.metaUnidadesHora || 12;
+            horasProductivasEmpleado += (Number(prod.unidadesBuenas) || 0) / meta;
+          }
+        }
+        
+        const eficiencia = horas > 0 ? (horasProductivasEmpleado / horas) * 100 : 0;
 
         return {
           nombre: emp.nombre,

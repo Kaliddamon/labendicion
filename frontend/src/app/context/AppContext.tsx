@@ -6,7 +6,7 @@ export interface PasoProducto {
   id?: string;
   accionProduccionId?: string;
   descripcion: string;
-  orden: number;
+  metaUnidadesHora?: number;
   completado?: boolean;
 }
 
