@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAppContext, RegistroAseo, RegistroAseoEntry } from '../context/AppContext';
+import { useAuth } from '../context/AuthContext';
 import { Sparkles, CheckCircle2, Circle, Plus, Trash2, Check, X, Edit2 } from 'lucide-react';
 
 export const Aseo = () => {
@@ -12,6 +13,8 @@ export const Aseo = () => {
     accionesAseo,
     areasTrabajo,
   } = useAppContext();
+  
+  const { tieneRol } = useAuth();
 
   // Mostrar el registro más reciente y permitir crear un nuevo registro (se autofillará)
   const [verHistorico, setVerHistorico] = useState(false);
