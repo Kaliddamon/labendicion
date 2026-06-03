@@ -22,8 +22,8 @@ public final class CsvListUtil {
 
     public static List<String> fromCsv(String csv) {
         if (csv == null || csv.isBlank()) return List.of();
-        String delimiter = csv.contains(DELIMITER) ? DELIMITER : ",";
-        return Arrays.stream(csv.split(delimiter))
+        String delimiterRegex = csv.contains(DELIMITER) ? "\\|" : ",";
+        return Arrays.stream(csv.split(delimiterRegex))
                 .map(String::trim)
                 .filter(s -> !s.isEmpty())
                 .collect(Collectors.toList());
