@@ -328,11 +328,22 @@ export const Produccion = () => {
               )}
               {pasos.map((p, idx) => (
                 <div key={idx} className="flex items-center justify-between bg-white border border-slate-200 rounded-xl px-5 py-4 shadow-sm">
-                  <div className="flex items-center gap-3 text-lg font-bold text-slate-700">
-                    <span className="bg-slate-100 text-slate-500 px-3 py-1 rounded-full text-sm font-semibold whitespace-nowrap">
-                      {p.metaUnidadesHora ?? 12} und/hr
-                    </span>
-                    {p.descripcion}
+                  <div className="flex items-center gap-3 text-lg font-bold text-slate-700 flex-1">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        className="w-20 px-2 py-1 text-center bg-slate-100 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-teal-500 focus:bg-white transition-colors"
+                        value={p.metaUnidadesHora ?? ''}
+                        onChange={(e) => {
+                          const val = Number(e.target.value);
+                          setPasos(prev => prev.map((paso, i) => i === idx ? { ...paso, metaUnidadesHora: val > 0 ? val : undefined } : paso));
+                        }}
+                        placeholder="Meta"
+                        title="Meta de unidades por hora"
+                      />
+                      <span className="text-sm text-slate-500 font-normal">und/hr</span>
+                    </div>
+                    <span className="ml-2">{p.descripcion}</span>
                   </div>
                   <button
                     type="button"
