@@ -20,3 +20,18 @@ BEGIN
         DROP TABLE IF EXISTS empresa CASCADE;
     END IF;
 END $$;
+
+-- Limpieza definitiva de tablas fantasma / legacy (huérfanas del diseño inicial)
+-- Se ejecutan de forma segura (IF EXISTS) sin afectar el rendimiento
+DROP TABLE IF EXISTS detalle_pedido CASCADE;
+DROP TABLE IF EXISTS entrega_empleado CASCADE;
+DROP TABLE IF EXISTS evaluacion_empleado CASCADE;
+DROP TABLE IF EXISTS factura CASCADE;
+DROP TABLE IF EXISTS mantenimiento_maquina CASCADE;
+DROP TABLE IF EXISTS maquina CASCADE;
+DROP TABLE IF EXISTS materia_prima_recibida CASCADE;
+DROP TABLE IF EXISTS pago CASCADE;
+DROP TABLE IF EXISTS pedido_servicio CASCADE;
+DROP TABLE IF EXISTS empresa_cliente CASCADE;
+DROP TABLE IF EXISTS orden_produccion CASCADE;
+
