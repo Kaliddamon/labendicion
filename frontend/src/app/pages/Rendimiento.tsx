@@ -139,7 +139,7 @@ export const Rendimiento = () => {
       asistenciaEfectiva,
       ausentismo,
     };
-  }, [registrosFiltrados]);
+  }, [registrosFiltrados, productos]);
 
   const productividadPorEmpleado = useMemo(() => {
     return empleados
@@ -171,7 +171,7 @@ export const Rendimiento = () => {
         };
       })
       .sort((a, b) => b.eficiencia - a.eficiencia);
-  }, [empleados, registrosPeriodo]);
+  }, [empleados, registrosPeriodo, productos]);
 
   const defectosPareto = productividadPorEmpleado
     .map((emp) => ({ name: emp.nombre, value: Number(emp.defectos.toFixed(1)) }))
