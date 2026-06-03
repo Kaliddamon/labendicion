@@ -8,6 +8,7 @@ import dev.kali.labendicion.repository.RegistroRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,10 +24,26 @@ public class RegistroValidationService {
     private RegistroRepository registroRepo;
 
     /**
-     * Valida que cada línea tenga paso asociado a la orden y que las unidades no superen
-     * la cantidad de la orden por acción (acumulado histórico + nuevo registro).
+     * Valida todas las reglas de negocio de un registro diario:
+     * - Fecha no futura
+     * - Horarios coherentes (salida > entrada)
+     * - Control de calidad (buenas <= totales)
+     * - Límites de meta (acumulado histórico <= meta de la orden)
+     * - Anti-duplicidad diaria (no repetir misma acción en misma orden en el mismo registro)
      */
     public Optional<String> validarProducciones(Registro registro, String registroIdExcluir) {
+
+        // ── Regla: fecha no puede ser futura ─────────────────────────────────
+        if (registro.getFecha() != null && !registro.getFecha().isBlank()) {
+            try {
+                LocalDate fechaRegistro = LocalDate.parse(registro.getFecha().split("T")[0]);
+                if (fechaRegistro.isAfter(LocalDate.now())) {
+                    return Optional.of("La fecha del registro no puede ser futura.");
+                }
+            } catch (Exception ignored) { }
+        }
+
+        // ── Regla: hora de salida no anterior a la de entrada ─────────────────
         if (registro.getHoraEntrada() != null && !registro.getHoraEntrada().isBlank() &&
             registro.getHoraSalida() != null && !registro.getHoraSalida().isBlank()) {
             if (registro.getHoraSalida().compareTo(registro.getHoraEntrada()) < 0) {
@@ -36,6 +53,17 @@ public class RegistroValidationService {
 
         if (registro.getProducciones() == null || registro.getProducciones().isEmpty()) {
             return Optional.empty();
+        }
+
+        // ── Regla: anti-duplicidad dentro del mismo registro ──────────────────
+        var clavesEnRegistro = new java.util.HashSet<String>();
+        for (ProduccionRegistro prod : registro.getProducciones()) {
+            if (prod.getProductoId() != null && prod.getPasoId() != null) {
+                String clave = prod.getProductoId() + ":" + prod.getPasoId();
+                if (!clavesEnRegistro.add(clave)) {
+                    return Optional.of("No puedes reportar la misma acción de la misma orden dos veces en el mismo día.");
+                }
+            }
         }
 
         Map<String, Integer> acumuladoExistente = calcularAcumuladoPorPaso(registroIdExcluir);
@@ -61,13 +89,18 @@ public class RegistroValidationService {
 
             int cantidadOrden = producto.getCantidad() == null ? 0 : producto.getCantidad();
             int unidades = prod.getUnidadesTotales() == null ? 0 : prod.getUnidadesTotales();
+
+            // ── Regla: unidades confeccionadas > 0 ───────────────────────────
             if (unidades <= 0) {
                 return Optional.of("Las unidades confeccionadas deben ser mayores a cero.");
             }
+
+            // ── Regla: calidad <= confeccionadas ──────────────────────────────
             if (prod.getUnidadesBuenas() != null && prod.getUnidadesBuenas() > unidades) {
                 return Optional.of("Las unidades con calidad no pueden superar las confeccionadas.");
             }
 
+            // ── Regla: acumulado + nuevas <= meta de la orden ─────────────────
             String clave = prod.getProductoId() + ":" + prod.getPasoId();
             int yaRegistrado = acumuladoExistente.getOrDefault(clave, 0);
             if (yaRegistrado + unidades > cantidadOrden) {

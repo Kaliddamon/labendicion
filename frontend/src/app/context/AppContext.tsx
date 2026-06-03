@@ -299,6 +299,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       console.error('Error eliminando producto (revirtiendo):', err);
       setProductos(snapshotProductos);
       setRegistros(snapshotRegistros);
+      const msg = err?.message || '';
+      const match = msg.match(/"error"\s*:\s*"([^"]+)"/);
+      alert(match ? match[1] : 'No se pudo eliminar esta orden. Puede que tenga reportes asociados.');
     });
   };
 

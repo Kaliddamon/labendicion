@@ -81,6 +81,17 @@ export const Empleados = () => {
   const guardarEmpleado = (e: React.FormEvent) => {
     e.preventDefault();
     if (!nombre || !documento) return alert('El nombre y documento son obligatorios');
+    if (!cargo) return alert('El cargo es obligatorio. Por favor selecciona uno.');
+
+    if (fechaIngreso) {
+      const hoy = new Date().toISOString().split('T')[0];
+      if (fechaIngreso > hoy) return alert('La fecha de ingreso no puede ser una fecha futura.');
+    }
+
+    if (telefono) {
+      const telefonoValido = /^[0-9+\- ]{7,15}$/.test(telefono);
+      if (!telefonoValido) return alert('El formato del teléfono es inválido. Usa solo números, espacios, + o -, entre 7 y 15 caracteres.');
+    }
 
     const cargoObj = cargo ? { id: cargo, nombre: cargos.find(c => c.id === cargo)?.nombre || '' } : null;
     if (empleadoEditando) {
@@ -143,6 +154,12 @@ export const Empleados = () => {
     if (!empleadoCalificando) return;
 
     if (calificacionAsistencia) {
+      // Validar fecha no futura
+      const hoy = new Date().toISOString().split('T')[0];
+      if (calificacionFecha > hoy) {
+        return alert('No se puede registrar una evaluación con fecha futura.');
+      }
+
       if (productos.length === 0) {
         return alert('Primero crea al menos una orden en la sección Producción.');
       }
@@ -327,6 +344,7 @@ export const Empleados = () => {
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-lg"
                 value={cargo}
                 onChange={(e) => setCargo(e.target.value)}
+                required
               >
                 <option value="">Seleccione un cargo…</option>
                 {cargos.filter((c) => c.activa !== false).map((c) => (
@@ -336,11 +354,11 @@ export const Empleados = () => {
             </div>
             <div>
               <label className="block text-sm font-semibold text-slate-600 mb-2">Teléfono</label>
-              <input type="text" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-lg" value={telefono} onChange={e=>setTelefono(e.target.value)} />
+              <input type="tel" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-lg" value={telefono} onChange={e=>setTelefono(e.target.value)} pattern="[0-9+\-\ ]{7,15}" title="Entre 7 y 15 caracteres. Solo números, +, - o espacios" />
             </div>
             <div>
               <label className="block text-sm font-semibold text-slate-600 mb-2">Fecha de Ingreso</label>
-              <input type="date" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-lg" value={fechaIngreso} onChange={e=>setFechaIngreso(e.target.value)} />
+              <input type="date" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-lg" value={fechaIngreso} onChange={e=>setFechaIngreso(e.target.value)} max={new Date().toISOString().split('T')[0]} />
             </div>
             <div>
               <label className="block text-sm font-semibold text-slate-600 mb-2">Estado</label>
@@ -515,7 +533,7 @@ export const Empleados = () => {
                     
                     <div className="flex flex-col gap-2">
                       <label className="block text-sm font-semibold text-amber-800">Fecha del registro</label>
-                      <input type="date" value={calificacionFecha} onChange={e=>setCalificacionFecha(e.target.value)} className="w-full bg-white border border-amber-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-amber-500" required />
+                      <input type="date" value={calificacionFecha} onChange={e=>setCalificacionFecha(e.target.value)} className="w-full bg-white border border-amber-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-amber-500" required max={new Date().toISOString().split('T')[0]} />
                     </div>
                     
                     <div className="flex flex-col gap-2">

@@ -394,11 +394,16 @@ public class FrontendController {
     @Transactional
     public ResponseEntity<?> eliminarProducto(@PathVariable String id) {
         try {
+            boolean tieneReportes = registroRepo.findAll().stream()
+                    .filter(r -> r.getProducciones() != null)
+                    .anyMatch(r -> r.getProducciones().stream().anyMatch(p -> id.equals(p.getProductoId())));
+            
+            if (tieneReportes) {
+                return ResponseEntity.badRequest().body(Map.of("error", "No se puede eliminar esta orden de producción porque ya tiene reportes de trabajo (evaluaciones) asociados."));
+            }
+
             productoRepo.deleteById(id);
-            registroRepo.deleteAll(registroRepo.findAll().stream()
-                    .filter(r -> r.getProducciones() != null && r.getProducciones()
-                            .stream().anyMatch(p -> id.equals(p.getProductoId())))
-                    .collect(Collectors.toList()));
+            
             // Actualizar estado de empresa asociada si ya no tiene órdenes
             List<Empresa> todas = empresaRepo.findAll();
             for (Empresa emp : todas) {
@@ -448,20 +453,59 @@ public class FrontendController {
     }
 
     @PostMapping("/empleados")
-    public ResponseEntity<Empleado> crearEmpleado(@RequestBody Empleado empleado) {
+    public ResponseEntity<?> crearEmpleado(@RequestBody Empleado empleado) {
         if (empleado.getId() == null) {
             empleado.setId(generateId());
         }
+        
+        Set<ConstraintViolation<Empleado>> violations = validator.validate(empleado);
+        if (!violations.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error", violations.iterator().next().getMessage()));
+        }
+        
+        if (empleadoRepo.findByDocumento(empleado.getDocumento()).isPresent()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Ya existe un empleado con este documento."));
+        }
+        
+        if (empleado.getFechaIngreso() != null && !empleado.getFechaIngreso().isBlank()) {
+            try {
+                java.time.LocalDate fechaIngreso = java.time.LocalDate.parse(empleado.getFechaIngreso().split("T")[0]);
+                if (fechaIngreso.isAfter(java.time.LocalDate.now())) {
+                    return ResponseEntity.badRequest().body(Map.of("error", "La fecha de ingreso no puede ser futura."));
+                }
+            } catch (Exception e) {}
+        }
+
         Empleado guardado = empleadoRepo.save(empleado);
         eventService.emitAsync("EMPLEADO_CREADO", guardado);
         return ResponseEntity.ok(guardado);
     }
 
     @PutMapping("/empleados/{id}")
-    public ResponseEntity<Empleado> actualizarEmpleado(@PathVariable String id, @RequestBody Empleado empleado) {
+    public ResponseEntity<?> actualizarEmpleado(@PathVariable String id, @RequestBody Empleado empleado) {
         if (!empleadoRepo.existsById(id)) {
             return ResponseEntity.notFound().build();
         }
+        
+        Set<ConstraintViolation<Empleado>> violations = validator.validate(empleado);
+        if (!violations.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error", violations.iterator().next().getMessage()));
+        }
+        
+        var existing = empleadoRepo.findByDocumento(empleado.getDocumento());
+        if (existing.isPresent() && !existing.get().getId().equals(id)) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Ya existe otro empleado con este documento."));
+        }
+        
+        if (empleado.getFechaIngreso() != null && !empleado.getFechaIngreso().isBlank()) {
+            try {
+                java.time.LocalDate fechaIngreso = java.time.LocalDate.parse(empleado.getFechaIngreso().split("T")[0]);
+                if (fechaIngreso.isAfter(java.time.LocalDate.now())) {
+                    return ResponseEntity.badRequest().body(Map.of("error", "La fecha de ingreso no puede ser futura."));
+                }
+            } catch (Exception e) {}
+        }
+
         empleado.setId(id);
         Empleado guardado = empleadoRepo.save(empleado);
         eventService.emitAsync("EMPLEADO_ACTUALIZADO", guardado);
@@ -668,6 +712,20 @@ public class FrontendController {
     public ResponseEntity<?> actualizarEntryAccionesYAreas(@PathVariable String registroId, @PathVariable String entryId,
                                                            @RequestBody java.util.Map<String, Object> body) {
         try {
+            // Validar que haya al menos 1 acción y 1 área
+            if (body.containsKey("acciones")) {
+                Object accionesObj = body.get("acciones");
+                if (accionesObj instanceof java.util.List && ((java.util.List<?>) accionesObj).isEmpty()) {
+                    return ResponseEntity.badRequest().body(Map.of("error", "Debes asignar al menos una acción de aseo al empleado."));
+                }
+            }
+            if (body.containsKey("areas")) {
+                Object areasObj = body.get("areas");
+                if (areasObj instanceof java.util.List && ((java.util.List<?>) areasObj).isEmpty()) {
+                    return ResponseEntity.badRequest().body(Map.of("error", "Debes asignar al menos un área de trabajo al empleado."));
+                }
+            }
+
             dev.kali.labendicion.domain.entity.RegistroAseo reg = registroAseoRepo.findWithEntriesById(registroId)
                     .orElseThrow(() -> new java.util.NoSuchElementException("Registro no encontrado"));
             boolean changed = false;

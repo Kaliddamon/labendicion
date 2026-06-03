@@ -63,6 +63,12 @@ export const Aseo = () => {
   };
 
   const guardarEdicion = (registroId: string, entryId: string) => {
+    if (editAcciones.length === 0) {
+      return alert('Debes asignar al menos una acción de aseo al empleado.');
+    }
+    if (editAreas.length === 0) {
+      return alert('Debes asignar al menos un área de trabajo al empleado.');
+    }
     // Llamar al contexto para actualizar acciones/areas del entry
     actualizarRegistroAseoEntry(registroId, entryId, editAcciones, editAreas);
     cancelarEdicion();
