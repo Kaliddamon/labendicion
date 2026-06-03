@@ -33,7 +33,7 @@ export interface CatalogoItem {
 export interface Empleado {
   id: string;
   nombre: string;
-  cargo: string;
+  cargo: { id: string; nombre: string } | null;
   documento: string;
   telefono: string;
   fechaIngreso: string;

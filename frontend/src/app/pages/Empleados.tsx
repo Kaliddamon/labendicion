@@ -71,7 +71,7 @@ export const Empleados = () => {
   };
 
   const iniciarEdicion = (emp: Empleado) => {
-    setNombre(emp.nombre); setCargo(emp.cargo); setDocumento(emp.documento);
+    setNombre(emp.nombre); setCargo(emp.cargo?.id || ''); setDocumento(emp.documento);
     setTelefono(emp.telefono); setFechaIngreso(emp.fechaIngreso); setEstado(emp.estado);
     setEmpleadoEditando(emp.id); setMostrarFormEmpleado(true);
     setEmpleadoCalificando(null); 
@@ -82,10 +82,11 @@ export const Empleados = () => {
     e.preventDefault();
     if (!nombre || !documento) return alert('El nombre y documento son obligatorios');
 
+    const cargoObj = cargo ? { id: cargo, nombre: cargos.find(c => c.id === cargo)?.nombre || '' } : null;
     if (empleadoEditando) {
-      editarEmpleado(empleadoEditando, { nombre, cargo, documento, telefono, fechaIngreso, estado });
+      editarEmpleado(empleadoEditando, { nombre, cargo: cargoObj, documento, telefono, fechaIngreso, estado });
     } else {
-      agregarEmpleado({ nombre, cargo, documento, telefono, fechaIngreso, estado });
+      agregarEmpleado({ nombre, cargo: cargoObj, documento, telefono, fechaIngreso, estado });
     }
     resetFormEmpleado();
   };
@@ -329,7 +330,7 @@ export const Empleados = () => {
               >
                 <option value="">Seleccione un cargo…</option>
                 {cargos.filter((c) => c.activa !== false).map((c) => (
-                  <option key={c.id} value={c.nombre}>{c.nombre}</option>
+                  <option key={c.id} value={c.id}>{c.nombre}</option>
                 ))}
               </select>
             </div>
@@ -373,7 +374,7 @@ export const Empleados = () => {
                       {emp.estado}
                     </span>
                   </div>
-                  <p className="text-slate-500 text-lg font-medium">{emp.cargo}</p>
+                  <p className="text-slate-500 text-lg font-medium">{emp.cargo?.nombre || 'Sin cargo'}</p>
                   <div className="flex flex-wrap gap-4 mt-4 text-sm text-slate-500">
                     <span className="bg-slate-50 px-3 py-2 rounded-lg border border-slate-100">C.C. {emp.documento}</span>
                     <span className="bg-slate-50 px-3 py-2 rounded-lg border border-slate-100">📞 {emp.telefono || 'Sin teléfono'}</span>

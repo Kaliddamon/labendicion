@@ -21,7 +21,9 @@ public class Empleado {
     @NotBlank(message = "El nombre es obligatorio")
     private String nombre;
     
-    private String cargo;
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "cargo_id")
+    private CargoEmpleado cargo;
     
     @NotBlank(message = "El documento es obligatorio")
     private String documento;
