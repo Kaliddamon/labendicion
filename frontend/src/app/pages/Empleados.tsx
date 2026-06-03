@@ -81,6 +81,7 @@ export const Empleados = () => {
   const guardarEmpleado = (e: React.FormEvent) => {
     e.preventDefault();
     if (!nombre || !documento) return alert('El nombre y documento son obligatorios');
+    if (!/^[0-9]+$/.test(documento)) return alert('El documento debe contener únicamente números.');
     if (!cargo) return alert('El cargo es obligatorio. Por favor selecciona uno.');
 
     if (fechaIngreso) {
@@ -336,7 +337,7 @@ export const Empleados = () => {
             </div>
             <div>
               <label className="block text-sm font-semibold text-slate-600 mb-2">Documento de Identidad</label>
-              <input type="text" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-lg" value={documento} onChange={e=>setDocumento(e.target.value)} required />
+              <input type="text" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-lg" value={documento} onChange={e=>setDocumento(e.target.value)} pattern="[0-9]+" title="Solo se permiten números" required />
             </div>
             <div>
               <label className="block text-sm font-semibold text-slate-600 mb-2">Cargo / Rol</label>

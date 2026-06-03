@@ -383,7 +383,15 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         method: 'POST',
         body: JSON.stringify(reg),
       });
-      setRegistros((prev) => prev.map((r) => (r.id === tmpId ? nuevo : r)));
+      setRegistros((prev) => {
+        const nuevosRegistros = prev.map((r) => (r.id === tmpId ? nuevo : r));
+        // Automatizar estado de los productos afectados
+        const productosAfectados = new Set(nuevo.producciones?.map(p => p.productoId) || []);
+        setTimeout(() => {
+          productosAfectados.forEach(prodId => chequearYActualizarEstadoProducto(prodId, nuevosRegistros));
+        }, 100);
+        return nuevosRegistros;
+      });
     } catch (err) {
       console.error('Error creando registro (revirtiendo):', err);
       setRegistros((prev) => prev.filter((r) => r.id !== tmpId));
@@ -403,11 +411,57 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         method: 'PUT',
         body: JSON.stringify(payload),
       });
-      setRegistros((prev) => prev.map((r) => (r.id === id ? actualizado : r)));
+      setRegistros((prev) => {
+        const nuevosRegistros = prev.map((r) => (r.id === id ? actualizado : r));
+        const productosAfectados = new Set(actualizado.producciones?.map(p => p.productoId) || []);
+        setTimeout(() => {
+          productosAfectados.forEach(prodId => chequearYActualizarEstadoProducto(prodId, nuevosRegistros));
+        }, 100);
+        return nuevosRegistros;
+      });
     } catch (err) {
       console.error('Error editando registro (revirtiendo):', err);
       setRegistros((prev) => prev.map((r) => (r.id === id ? snapshot : r)));
       throw err;
+    }
+  };
+
+  const chequearYActualizarEstadoProducto = (productoId: string, todosRegistros: RegistroDiario[]) => {
+    const producto = productos.find(p => p.id === productoId);
+    if (!producto) return;
+
+    const cantidadMeta = producto.cantidad || 0;
+    const pasos = producto.pasos || [];
+    
+    let totalRealizadasCualquierPaso = 0;
+    let totalRealizadasUltimoPaso = 0;
+    
+    // Si hay pasos, el último determina si está terminado. Si no, cualquier unidad cuenta.
+    const ultimoPasoId = pasos.length > 0 ? pasos[pasos.length - 1].id : null;
+
+    for (const r of todosRegistros) {
+      for (const prod of (r.producciones || [])) {
+        if (prod.productoId === productoId) {
+          const realizadas = Number(prod.unidadesTotales || 0);
+          totalRealizadasCualquierPaso += realizadas;
+          if (ultimoPasoId && prod.pasoId === ultimoPasoId) {
+            totalRealizadasUltimoPaso += realizadas;
+          }
+        }
+      }
+    }
+
+    const totalParaTerminar = pasos.length > 0 ? totalRealizadasUltimoPaso : totalRealizadasCualquierPaso;
+
+    let nuevoEstado = producto.estado;
+    if (totalParaTerminar >= cantidadMeta && cantidadMeta > 0) {
+      nuevoEstado = 'Terminado';
+    } else if (totalRealizadasCualquierPaso > 0 && producto.estado === 'Pendiente') {
+      nuevoEstado = 'En proceso';
+    }
+
+    if (nuevoEstado !== producto.estado) {
+      cambiarEstadoProducto(productoId, nuevoEstado);
     }
   };
 

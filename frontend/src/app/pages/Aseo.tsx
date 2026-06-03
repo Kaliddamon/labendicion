@@ -20,7 +20,9 @@ export const Aseo = () => {
   const [verHistorico, setVerHistorico] = useState(false);
   const ultimoRegistro: RegistroAseo | null = registrosAseo && registrosAseo.length > 0 ? registrosAseo[0] : null;
 
-  const tareasMostradas = ultimoRegistro ? ultimoRegistro.entries : [] as RegistroAseoEntry[];
+  const tareasMostradas = ultimoRegistro 
+    ? [...ultimoRegistro.entries].sort((a, b) => a.empleadoNombre.localeCompare(b.empleadoNombre))
+    : [] as RegistroAseoEntry[];
 
   const progreso = tareasMostradas.length > 0
     ? Math.round((tareasMostradas.filter(t => t.completada).length / tareasMostradas.length) * 100)

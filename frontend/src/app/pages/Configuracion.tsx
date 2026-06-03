@@ -83,6 +83,8 @@ export const Configuracion = () => {
     e.preventDefault();
     if (tab === 'empresas') {
       if (!empresaForm.razonSocial?.trim()) return alert('La razón social es obligatoria.');
+      if (empresaForm.correo && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(empresaForm.correo)) return alert('El correo electrónico no tiene un formato válido.');
+      if (empresaForm.telefono && !/^[0-9+\- ]{7,15}$/.test(empresaForm.telefono)) return alert('El teléfono tiene un formato inválido. Usa entre 7 y 15 números, espacios, + o -.');
       if (empresaEditando) {
         editarEmpresa(empresaEditando, { ...empresaForm, razonSocial: empresaForm.razonSocial.trim() });
       } else {
@@ -112,9 +114,6 @@ export const Configuracion = () => {
       }
 
       const updates: Partial<CatalogoItem> = { nombre: nombre.trim() };
-      if (tab === 'accionesProduccion') {
-        updates.orden = secuencia ? Number(secuencia) : actual.orden;
-      }
 
       switch (tab) {
         case 'accionesProduccion':
@@ -135,9 +134,6 @@ export const Configuracion = () => {
         nombre: nombre.trim(),
         activa: true,
       };
-      if (tab === 'accionesProduccion') {
-        nuevo.orden = secuencia ? Number(secuencia) : listaActual().length + 1;
-      }
 
       switch (tab) {
         case 'accionesProduccion':
@@ -262,14 +258,18 @@ export const Configuracion = () => {
             <div className="min-w-[160px]">
               <label className="block text-sm font-semibold text-slate-600 mb-1">Teléfono</label>
               <input
+                type="tel"
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2"
                 value={empresaForm.telefono ?? ''}
                 onChange={(e) => setEmpresaForm((p) => ({ ...p, telefono: e.target.value }))}
+                pattern="[0-9+\-\ ]{7,15}"
+                title="Entre 7 y 15 caracteres. Solo números, +, - o espacios"
               />
             </div>
             <div className="min-w-[220px]">
               <label className="block text-sm font-semibold text-slate-600 mb-1">Correo</label>
               <input
+                type="email"
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2"
                 value={empresaForm.correo ?? ''}
                 onChange={(e) => setEmpresaForm((p) => ({ ...p, correo: e.target.value }))}
@@ -307,21 +307,6 @@ export const Configuracion = () => {
             required
           />
         </div>
-        {tab === 'accionesProduccion' && (
-          <div className="w-28">
-            <label className="block text-sm font-semibold text-slate-600 mb-1" title="Orden en que aparecen al asignarlas a una orden (1, 2, 3…)">
-              Secuencia
-            </label>
-            <input
-              type="number"
-              min={1}
-              placeholder="1"
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2"
-              value={secuencia}
-              onChange={(e) => setSecuencia(e.target.value)}
-            />
-          </div>
-        )}
           </>
         )}
         <button type="submit" className="bg-teal-600 text-white px-5 py-2 rounded-xl font-bold flex items-center gap-2">
