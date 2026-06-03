@@ -28,6 +28,7 @@ public class Empleado {
     private CargoEmpleado cargo;
     
     @NotBlank(message = "El documento es obligatorio")
+    @Pattern(regexp = "^[0-9]+$", message = "El documento debe contener únicamente números")
     @Column(unique = true)
     private String documento;
     
