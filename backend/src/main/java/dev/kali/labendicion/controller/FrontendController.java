@@ -345,26 +345,52 @@ public class FrontendController {
                 }
             }
 
-            // Eliminar pasos previos: solo limpiar la lista en-memory.
-            // Con orphanRemoval=true en Producto, Hibernate eliminará automáticamente
-            // los pasos que se remuevan de la lista al hacer save().
-            if (actual.getPasos() != null) {
-                actual.getPasos().clear();
-            }
-
-            // Procesar nuevos pasos desde el request y agregarlos a la lista
+            // Procesar pasos entrantes preservando IDs
             Object pasosObj = body.get("pasos");
             if (pasosObj != null && pasosObj instanceof java.util.List) {
                 java.util.List<?> pasosList = (java.util.List<?>) pasosObj;
+                
+                // Mapear los pasos entrantes
+                java.util.Map<String, java.util.Map<String, Object>> incomingMap = new java.util.HashMap<>();
                 for (Object paso : pasosList) {
                     if (paso instanceof java.util.Map) {
-                        java.util.Map<String, Object> pasoMap = (java.util.Map<String, Object>) paso;
-                        PasoProduccion nuevoPaso = new PasoProduccion();
-                        nuevoPaso.setId(generateId());
-                        nuevoPaso.setProducto(actual);
-                        aplicarDatosPaso(nuevoPaso, pasoMap);
-                        actual.getPasos().add(nuevoPaso);
+                        java.util.Map<String, Object> p = (java.util.Map<String, Object>) paso;
+                        if (p.containsKey("id") && p.get("id") != null && !p.get("id").toString().isBlank()) {
+                            incomingMap.put(p.get("id").toString(), p);
+                        } else {
+                            // Asignar ID temporal para nuevos
+                            incomingMap.put("NEW_" + java.util.UUID.randomUUID().toString(), p);
+                        }
                     }
+                }
+                
+                if (actual.getPasos() == null) {
+                    actual.setPasos(new java.util.ArrayList<>());
+                }
+
+                // Actualizar existentes, remover faltantes
+                java.util.Iterator<PasoProduccion> iterator = actual.getPasos().iterator();
+                while (iterator.hasNext()) {
+                    PasoProduccion existente = iterator.next();
+                    if (incomingMap.containsKey(existente.getId())) {
+                        aplicarDatosPaso(existente, incomingMap.get(existente.getId()));
+                        incomingMap.remove(existente.getId());
+                    } else {
+                        iterator.remove();
+                    }
+                }
+                
+                // Añadir los nuevos
+                for (java.util.Map<String, Object> newPasoMap : incomingMap.values()) {
+                    PasoProduccion nuevoPaso = new PasoProduccion();
+                    nuevoPaso.setId(generateId());
+                    nuevoPaso.setProducto(actual);
+                    aplicarDatosPaso(nuevoPaso, newPasoMap);
+                    actual.getPasos().add(nuevoPaso);
+                }
+            } else {
+                if (actual.getPasos() != null) {
+                    actual.getPasos().clear();
                 }
             }
 
