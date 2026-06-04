@@ -13,14 +13,13 @@ export const Aseo = () => {
     accionesAseo,
     areasTrabajo,
   } = useAppContext();
-  
+
   const { tieneRol } = useAuth();
 
-  // Mostrar el registro más reciente y permitir crear un nuevo registro (se autofillará)
   const [verHistorico, setVerHistorico] = useState(false);
   const ultimoRegistro: RegistroAseo | null = registrosAseo && registrosAseo.length > 0 ? registrosAseo[0] : null;
 
-  const tareasMostradas = ultimoRegistro 
+  const tareasMostradas = ultimoRegistro
     ? [...ultimoRegistro.entries].sort((a, b) => a.empleadoNombre.localeCompare(b.empleadoNombre))
     : [] as RegistroAseoEntry[];
 
@@ -35,11 +34,6 @@ export const Aseo = () => {
     crearRegistroAseo();
   };
 
-  const toggleEntry = (registroId: string, entryId: string) => {
-    toggleRegistroAseoEntry(registroId, entryId);
-  };
-
-  // --- Estados para edición inline de entry ---
   const [editandoEntry, setEditandoEntry] = useState<string | null>(null);
   const [editAcciones, setEditAcciones] = useState<string[]>([]);
   const [editAreas, setEditAreas] = useState<string[]>([]);
@@ -74,120 +68,165 @@ export const Aseo = () => {
     if (editAreas.length === 0) {
       return alert('Debes asignar al menos un área de trabajo al empleado.');
     }
-    // Llamar al contexto para actualizar acciones/areas del entry
     actualizarRegistroAseoEntry(registroId, entryId, editAcciones, editAreas);
     cancelarEdicion();
   };
 
   return (
-    <div className="animate-in fade-in duration-300">
+    <div className="animate-fade-up">
+      {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold text-teal-900 flex items-center gap-3">
-            Gestión de Aseo <Sparkles className="text-amber-500" />
+          <div className="flex items-center gap-3 mb-1">
+            <div className="w-10 h-1 rounded-full" style={{ background: 'var(--accent-copper)' }} />
+            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400" style={{ fontFamily: 'var(--font-heading)' }}>
+              Limpieza
+            </span>
+          </div>
+          <h1
+            className="text-3xl font-bold flex items-center gap-3"
+            style={{ fontFamily: 'var(--font-heading)', color: 'var(--carbon)' }}
+          >
+            Gestión de Aseo
+            <div className="w-9 h-9 rounded-lg bg-amber-100 flex items-center justify-center">
+              <Sparkles size={18} className="text-amber-600" />
+            </div>
           </h1>
-          <p className="text-slate-500 mt-2">Mantengamos nuestro taller impecable</p>
+          <p className="text-slate-500 mt-1.5 text-sm">Mantengamos nuestro taller impecable</p>
         </div>
-        
-        <button 
+
+        <button
           onClick={() => crearNuevoRegistro()}
-          className={`bg-teal-600 hover:bg-teal-700 text-white px-6 py-4 rounded-2xl font-bold flex items-center justify-center gap-2 shadow-lg transition-transform active:scale-95`}
+          className="px-5 py-3 rounded-xl font-semibold text-sm flex items-center gap-2 text-white transition-all active:scale-[0.97]"
+          style={{ background: 'var(--accent-copper)', boxShadow: 'var(--shadow-copper)' }}
         >
-          <Plus size={24} /> Nuevo Registro
+          <Plus size={20} /> Nuevo Registro
         </button>
       </div>
 
-      {/* Tarjeta de progreso */}
-      <div className="bg-teal-700 rounded-3xl p-6 text-white mb-8 shadow-lg">
-        <div className="flex justify-between items-end mb-4">
-          <span className="text-xl font-semibold">Progreso del día</span>
-          <span className="text-4xl font-extrabold">{progreso}%</span>
+      {/* Progress card */}
+      <div
+        className="rounded-2xl p-6 text-white mb-6"
+        style={{
+          background: 'linear-gradient(135deg, var(--indigo-deep) 0%, #0f172a 100%)',
+          boxShadow: '0 8px 32px rgba(15, 23, 42, 0.15)',
+        }}
+      >
+        <div className="flex justify-between items-end mb-3">
+          <span className="text-sm font-medium text-slate-300" style={{ fontFamily: 'var(--font-heading)' }}>
+            Progreso del día
+          </span>
+          <span className="text-3xl font-bold" style={{ fontFamily: 'var(--font-heading)' }}>
+            {progreso}<span className="text-lg text-white/50 ml-0.5">%</span>
+          </span>
         </div>
-        <div className="w-full bg-teal-900/50 rounded-full h-4">
-          <div 
-            className="bg-amber-400 h-4 rounded-full transition-all duration-500" 
-            style={{ width: `${progreso}%` }}
+        <div className="w-full bg-white/10 rounded-full h-2.5 overflow-hidden">
+          <div
+            className="h-2.5 rounded-full transition-all duration-700"
+            style={{
+              width: `${progreso}%`,
+              background: 'linear-gradient(90deg, var(--accent-copper), var(--accent-copper-bright))',
+            }}
           />
+        </div>
+        <div className="flex justify-between mt-2 text-xs text-slate-400">
+          <span>{tareasMostradas.filter(t => t.completada).length} completadas</span>
+          <span>{tareasMostradas.length} total</span>
         </div>
       </div>
 
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-slate-800">Tareas de hoy</h2>
+      {/* Tasks header */}
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-base font-bold" style={{ fontFamily: 'var(--font-heading)', color: 'var(--carbon)' }}>Tareas de hoy</h2>
         <button
           onClick={() => setVerHistorico(!verHistorico)}
-          className="text-teal-600 font-bold bg-teal-50 px-4 py-2 rounded-xl hover:bg-teal-100 active:scale-95 transition-transform"
+          className="text-xs font-semibold px-3.5 py-1.5 rounded-lg transition-colors"
+          style={{
+            color: 'var(--accent-copper)',
+            background: 'rgba(196,139,63,0.08)',
+            border: '1px solid rgba(196,139,63,0.15)',
+          }}
         >
           {verHistorico ? 'Ocultar histórico' : 'Ver histórico'}
         </button>
       </div>
 
-      {/* Tabla de tareas */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+      {/* Tasks table */}
+      <div className="card-premium-static rounded-2xl overflow-hidden mb-6">
         {(!tareasMostradas || tareasMostradas.length === 0) ? (
-          <div className="text-center py-12 text-slate-500">
-            <p className="text-lg font-medium">No hay registros de aseo para hoy.</p>
+          <div className="text-center py-12">
+            <div className="w-14 h-14 rounded-2xl mx-auto mb-3 flex items-center justify-center" style={{ background: 'var(--surface-linen)' }}>
+              <Sparkles size={24} className="text-slate-400" />
+            </div>
+            <p className="text-sm font-medium" style={{ color: 'var(--carbon)' }}>No hay registros de aseo para hoy.</p>
+            <p className="text-xs text-slate-400 mt-1">Crea un nuevo registro para empezar</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-slate-50 border-b border-slate-200">
-                <tr>
-                  <th className="px-6 py-4 text-left font-semibold text-slate-700">Estado</th>
-                  <th className="px-6 py-4 text-left font-semibold text-slate-700">Empleado</th>
-                  <th className="px-6 py-4 text-left font-semibold text-slate-700">Acciones</th>
-                  <th className="px-6 py-4 text-left font-semibold text-slate-700">Áreas</th>
-                  <th className="px-6 py-4 text-center font-semibold text-slate-700">Acciones</th>
+              <thead>
+                <tr style={{ background: 'var(--surface-linen)', borderBottom: '1px solid var(--border-fiber)' }}>
+                  <th className="px-5 py-3.5 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500" style={{ fontFamily: 'var(--font-heading)' }}>Estado</th>
+                  <th className="px-5 py-3.5 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500" style={{ fontFamily: 'var(--font-heading)' }}>Empleado</th>
+                  <th className="px-5 py-3.5 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500" style={{ fontFamily: 'var(--font-heading)' }}>Acciones</th>
+                  <th className="px-5 py-3.5 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500" style={{ fontFamily: 'var(--font-heading)' }}>Áreas</th>
+                  <th className="px-5 py-3.5 text-center text-[11px] font-semibold uppercase tracking-wider text-slate-500" style={{ fontFamily: 'var(--font-heading)' }}>Opciones</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-200">
-                {tareasMostradas.map((entry) => (
-                  <tr key={entry.id} className={`transition-colors ${entry.completada ? 'bg-slate-50' : 'hover:bg-slate-50'}`}>
-                    {/* Estado */}
-                    <td className="px-6 py-4">
+              <tbody>
+                {tareasMostradas.map((entry, idx) => (
+                  <tr
+                    key={entry.id}
+                    className="transition-colors hover:bg-[var(--surface-linen)]/50"
+                    style={{
+                      borderBottom: idx < tareasMostradas.length - 1 ? '1px solid var(--border-fiber-light)' : 'none',
+                      background: entry.completada ? 'var(--surface-linen)' : 'transparent',
+                    }}
+                  >
+                    <td className="px-5 py-4">
                       <button
                         onClick={() => toggleRegistroAseoEntry(ultimoRegistro!.id, entry.id)}
-                        className="text-left active:scale-[0.98] transition-transform"
+                        className="active:scale-[0.92] transition-transform"
                       >
                         {entry.completada ? (
-                          <CheckCircle2 size={28} className="text-teal-500" />
+                          <CheckCircle2 size={24} style={{ color: 'var(--status-success)' }} />
                         ) : (
-                          <Circle size={28} className="text-slate-300" />
+                          <Circle size={24} className="text-slate-300 hover:text-slate-400" />
                         )}
                       </button>
                     </td>
 
-                    {/* Nombre del empleado */}
-                    <td className="px-6 py-4">
-                      <span className={`font-semibold ${entry.completada ? 'text-slate-400 line-through' : 'text-slate-800'}`}>
+                    <td className="px-5 py-4">
+                      <span className={`font-medium text-sm ${entry.completada ? 'text-slate-400 line-through' : ''}`} style={{ color: entry.completada ? undefined : 'var(--carbon)' }}>
                         {entry.empleadoNombre}
                       </span>
                     </td>
 
-                    {/* Acciones o editor */}
-                    <td className="px-6 py-4">
+                    <td className="px-5 py-4">
                       {editandoEntry === entry.id ? (
-                        <div className="flex flex-wrap gap-2">
+                        <div className="flex flex-wrap gap-1.5">
                           {accionesCatalogo.map(accion => (
                             <button
                               key={accion}
                               onClick={() => toggleAccion(accion)}
-                              className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
+                              className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition-colors border ${
                                 editAcciones.includes(accion)
-                                  ? 'bg-teal-600 text-white'
-                                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                                  ? 'text-white border-transparent'
+                                  : 'text-slate-600 border-[var(--border-fiber)] hover:bg-[var(--surface-linen)]'
                               }`}
+                              style={editAcciones.includes(accion) ? { background: 'var(--accent-copper)' } : {}}
                             >
                               {accion}
                             </button>
                           ))}
                         </div>
                       ) : (
-                        <div className="flex flex-wrap gap-2">
+                        <div className="flex flex-wrap gap-1.5">
                           {entry.acciones.length === 0 ? (
-                            <span className="text-slate-400 italic">Sin acciones</span>
+                            <span className="text-slate-400 italic text-xs">Sin acciones</span>
                           ) : (
                             entry.acciones.map((accion, i) => (
-                              <span key={i} className="bg-teal-100 text-teal-700 px-3 py-1 rounded-full text-sm font-medium">
+                              <span key={i} className="px-2.5 py-1 rounded-lg text-[11px] font-medium" style={{ background: 'rgba(196,139,63,0.1)', color: 'var(--accent-copper)' }}>
                                 {accion}
                               </span>
                             ))
@@ -196,18 +235,17 @@ export const Aseo = () => {
                       )}
                     </td>
 
-                    {/* Áreas o editor */}
-                    <td className="px-6 py-4">
+                    <td className="px-5 py-4">
                       {editandoEntry === entry.id ? (
-                        <div className="flex flex-wrap gap-2">
+                        <div className="flex flex-wrap gap-1.5">
                           {areasCatalogo.map(area => (
                             <button
                               key={area}
                               onClick={() => toggleArea(area)}
-                              className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
+                              className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition-colors border ${
                                 editAreas.includes(area)
-                                  ? 'bg-amber-600 text-white'
-                                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                                  ? 'bg-blue-600 text-white border-transparent'
+                                  : 'text-slate-600 border-[var(--border-fiber)] hover:bg-[var(--surface-linen)]'
                               }`}
                             >
                               {area}
@@ -215,12 +253,12 @@ export const Aseo = () => {
                           ))}
                         </div>
                       ) : (
-                        <div className="flex flex-wrap gap-2">
+                        <div className="flex flex-wrap gap-1.5">
                           {entry.areas.length === 0 ? (
-                            <span className="text-slate-400 italic">Sin áreas</span>
+                            <span className="text-slate-400 italic text-xs">Sin áreas</span>
                           ) : (
                             entry.areas.map((area, i) => (
-                              <span key={i} className="bg-amber-100 text-amber-700 px-3 py-1 rounded-full text-sm font-medium">
+                              <span key={i} className="px-2.5 py-1 rounded-lg text-[11px] font-medium bg-blue-50 text-blue-700">
                                 {area}
                               </span>
                             ))
@@ -229,35 +267,35 @@ export const Aseo = () => {
                       )}
                     </td>
 
-                    {/* Botones de acción */}
-                    <td className="px-6 py-4 text-center">
+                    <td className="px-5 py-4 text-center">
                       {editandoEntry === entry.id ? (
-                        <div className="flex justify-center gap-2">
+                        <div className="flex justify-center gap-1.5">
                           <button
                             onClick={() => guardarEdicion(ultimoRegistro!.id, entry.id)}
-                            className="p-2 bg-teal-50 text-teal-600 hover:bg-teal-100 rounded-lg transition-colors"
+                            className="p-2 rounded-lg transition-colors hover:bg-emerald-50"
+                            style={{ border: '1px solid rgba(22,163,74,0.2)' }}
                             title="Guardar"
                           >
-                            <Check size={20} />
+                            <Check size={16} className="text-emerald-600" />
                           </button>
                           <button
                             onClick={cancelarEdicion}
-                            className="p-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
+                            className="p-2 rounded-lg transition-colors hover:bg-rose-50"
+                            style={{ border: '1px solid rgba(225,29,72,0.15)' }}
                             title="Cancelar"
                           >
-                            <X size={20} />
+                            <X size={16} className="text-rose-500" />
                           </button>
                         </div>
                       ) : (
-                        <div className="flex justify-center gap-2">
-                          <button
-                            onClick={() => iniciarEdicion(entry)}
-                            className="p-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
-                            title="Editar"
-                          >
-                            <Edit2 size={20} />
-                          </button>
-                        </div>
+                        <button
+                          onClick={() => iniciarEdicion(entry)}
+                          className="p-2 rounded-lg transition-colors hover:bg-[var(--surface-linen)]"
+                          style={{ border: '1px solid var(--border-fiber)' }}
+                          title="Editar"
+                        >
+                          <Edit2 size={16} className="text-slate-500" />
+                        </button>
                       )}
                     </td>
                   </tr>
@@ -268,36 +306,36 @@ export const Aseo = () => {
         )}
       </div>
 
-      {/* Histórico */}
+      {/* Historical */}
       {verHistorico && (
-        <div className="mt-8">
-          <h3 className="text-lg font-bold mb-4">Histórico de registros</h3>
-          <div className="space-y-3">
+        <div className="mt-6 animate-fade-up">
+          <h3 className="text-sm font-bold mb-4" style={{ fontFamily: 'var(--font-heading)', color: 'var(--carbon)' }}>Histórico de registros</h3>
+          <div className="space-y-2.5">
             {registrosAseo.map(r => (
-              <div key={r.id} className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 hover:border-slate-300 transition-colors">
+              <div key={r.id} className="card-premium-static p-4 rounded-xl">
                 <div className="flex justify-between items-start mb-2">
-                  <strong className="text-slate-800">{r.fecha}</strong>
-                  <div className="text-right">
-                    <span className="text-sm text-slate-500">{r.entries.length} empleados</span>
+                  <strong className="text-sm" style={{ color: 'var(--carbon)', fontFamily: 'var(--font-heading)' }}>{r.fecha}</strong>
+                  <div className="text-right flex items-center gap-2">
+                    <span className="text-xs text-slate-500">{r.entries.length} empleados</span>
                     {tieneRol('SUPERADMIN') && (
                       <button
                         onClick={() => { if(window.confirm('¿Eliminar este registro?')) eliminarRegistroAseo(r.id); }}
-                        className="ml-4 text-red-600 hover:text-red-700 active:scale-95 transition-transform"
+                        className="text-rose-500 hover:text-rose-600 active:scale-95 transition-transform"
                         title="Eliminar"
                       >
-                        <Trash2 size={18} />
+                        <Trash2 size={16} />
                       </button>
                     )}
                   </div>
                 </div>
-                <div className="text-sm text-slate-600 space-y-1">
+                <div className="text-xs text-slate-600 space-y-1">
                   {r.entries.length === 0 ? (
                     <p className="italic text-slate-400">Sin entrada de datos</p>
                   ) : (
                     r.entries.map(e => (
-                      <div key={e.id} className="flex justify-between">
-                        <span className="font-medium">{e.empleadoNombre}</span>
-                        <span className="text-slate-500">
+                      <div key={e.id} className="flex justify-between py-0.5">
+                        <span className="font-medium" style={{ color: 'var(--carbon)' }}>{e.empleadoNombre}</span>
+                        <span className="text-slate-400">
                           {e.acciones.join(', ') || 'Sin acciones'} • {e.areas.join(', ') || 'Sin áreas'}
                         </span>
                       </div>

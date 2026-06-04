@@ -33,11 +33,9 @@ export const Empleados = () => {
     return `${p.nombre} · ${p.empresa}`;
   };
 
-  // Estados para el CRUD de empleados
   const [mostrarFormEmpleado, setMostrarFormEmpleado] = useState(false);
   const [empleadoEditando, setEmpleadoEditando] = useState<string | null>(null);
 
-  // Estados del Formulario de Empleado
   const [nombre, setNombre] = useState('');
   const [cargo, setCargo] = useState('');
   const [documento, setDocumento] = useState('');
@@ -45,7 +43,6 @@ export const Empleados = () => {
   const [fechaIngreso, setFechaIngreso] = useState('');
   const [estado, setEstado] = useState<'Activo'|'Inactivo'>('Activo');
 
-  // Estados para calificar empleado en un día
   const [empleadoCalificando, setEmpleadoCalificando] = useState<string | null>(null);
   const [registroEditando, setRegistroEditando] = useState<string | null>(null);
   const [calificacionFecha, setCalificacionFecha] = useState(new Date().toISOString().split('T')[0]);
@@ -56,7 +53,6 @@ export const Empleados = () => {
     crearLineaProduccionVacia(),
   ]);
 
-  // Estado para ver el historial
   const [empleadoViendoHistorial, setEmpleadoViendoHistorial] = useState<string | null>(null);
 
   const [modalOrdenProduccion, setModalOrdenProduccion] = useState<{
@@ -66,7 +62,7 @@ export const Empleados = () => {
   } | null>(null);
 
   const resetFormEmpleado = () => {
-    setNombre(''); setCargo(''); setDocumento(''); setTelefono(''); 
+    setNombre(''); setCargo(''); setDocumento(''); setTelefono('');
     setFechaIngreso(''); setEstado('Activo'); setEmpleadoEditando(null); setMostrarFormEmpleado(false);
   };
 
@@ -74,7 +70,7 @@ export const Empleados = () => {
     setNombre(emp.nombre); setCargo(emp.cargo?.id || ''); setDocumento(emp.documento);
     setTelefono(emp.telefono); setFechaIngreso(emp.fechaIngreso); setEstado(emp.estado);
     setEmpleadoEditando(emp.id); setMostrarFormEmpleado(true);
-    setEmpleadoCalificando(null); 
+    setEmpleadoCalificando(null);
     setEmpleadoViendoHistorial(null);
   };
 
@@ -155,7 +151,6 @@ export const Empleados = () => {
     if (!empleadoCalificando) return;
 
     if (calificacionAsistencia) {
-      // Validar fecha no futura
       const hoy = new Date().toISOString().split('T')[0];
       if (calificacionFecha > hoy) {
         return alert('No se puede registrar una evaluación con fecha futura.');
@@ -253,13 +248,17 @@ export const Empleados = () => {
     });
   };
 
-  // Obtener registros de un empleado para el historial
   const getRegistrosEmpleado = (empId: string) => {
     return registros.filter(r => r.empleadoId === empId).sort((a,b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
   };
 
+  const inputStyle = {
+    background: 'var(--surface-linen)',
+    border: '1px solid var(--border-fiber)',
+  };
+
   return (
-    <div className="animate-in fade-in duration-300">
+    <div className="animate-fade-up">
       <Dialog
         open={modalOrdenProduccion !== null}
         onOpenChange={(open) => {
@@ -287,66 +286,82 @@ export const Empleados = () => {
               );
             }
             return (
-              <div className="space-y-3 text-sm text-slate-700">
+              <div className="space-y-3 text-sm" style={{ color: 'var(--carbon)' }}>
                 <p>
-                  <span className="font-bold text-slate-900">{orden.nombre}</span>
+                  <span className="font-bold">{orden.nombre}</span>
                 </p>
-                <p className="text-slate-600">Cliente: {orden.empresa}</p>
-                <p className="text-slate-600">
-                  Cantidad de la orden: <span className="font-semibold">{orden.cantidad}</span> · Estado:{' '}
+                <p className="text-slate-500">Cliente: {orden.empresa}</p>
+                <p className="text-slate-500">
+                  Cantidad: <span className="font-semibold">{orden.cantidad}</span> · Estado:{' '}
                   <span className="font-semibold">{orden.estado}</span>
                 </p>
-                <p className="text-slate-600">
+                <p className="text-slate-500">
                   Asignación: {orden.fechaAsignacion}
-                  {orden.fechaTerminacion ? ` · Entrega prevista: ${orden.fechaTerminacion}` : ''}
+                  {orden.fechaTerminacion ? ` · Entrega: ${orden.fechaTerminacion}` : ''}
                 </p>
-                <p className="rounded-lg border border-amber-100 bg-amber-50/80 px-3 py-2 text-slate-800">
-                  Aporte registrado este día:{' '}
+                <div className="rounded-xl px-3 py-2" style={{ background: 'var(--surface-linen)', border: '1px solid var(--border-fiber)' }}>
+                  Aporte este día:{' '}
                   <span className="font-bold">{item.unidadesTotales}</span> confeccionadas ·{' '}
-                  <span className="font-bold text-emerald-800">{item.unidadesBuenas}</span> calidad
-                </p>
+                  <span className="font-bold text-emerald-700">{item.unidadesBuenas}</span> calidad
+                </div>
               </div>
             );
           })()}
         </DialogContent>
       </Dialog>
+
+      {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold text-teal-900 flex items-center gap-3">
-            Equipo de Trabajo <Users className="text-emerald-500" />
+          <div className="flex items-center gap-3 mb-1">
+            <div className="w-10 h-1 rounded-full" style={{ background: 'var(--accent-copper)' }} />
+            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400" style={{ fontFamily: 'var(--font-heading)' }}>
+              Personal
+            </span>
+          </div>
+          <h1
+            className="text-3xl font-bold flex items-center gap-3"
+            style={{ fontFamily: 'var(--font-heading)', color: 'var(--carbon)' }}
+          >
+            Equipo de Trabajo
+            <div className="w-9 h-9 rounded-lg bg-emerald-100 flex items-center justify-center">
+              <Users size={18} className="text-emerald-600" />
+            </div>
           </h1>
-          <p className="text-slate-500 mt-2">Gestiona el personal y revisa su desempeño</p>
+          <p className="text-slate-500 mt-1.5 text-sm">Gestiona el personal y revisa su desempeño</p>
         </div>
-        
-        <button 
+
+        <button
           onClick={() => { resetFormEmpleado(); setMostrarFormEmpleado(!mostrarFormEmpleado); }}
-          className={`${mostrarFormEmpleado ? 'bg-slate-200 text-slate-800' : 'bg-emerald-600 hover:bg-emerald-700 text-white'} px-6 py-4 rounded-2xl font-bold flex items-center gap-2 shadow-lg transition-transform active:scale-95`}
+          className={`px-5 py-3 rounded-xl font-semibold text-sm flex items-center gap-2 transition-all active:scale-[0.97] ${
+            mostrarFormEmpleado
+              ? 'bg-[var(--surface-linen)] text-[var(--carbon)] border border-[var(--border-fiber)]'
+              : 'bg-[var(--accent-copper)] hover:bg-[var(--accent-copper-bright)] text-white shadow-[0_2px_8px_rgba(196,139,63,0.3)]'
+          }`}
         >
-          {mostrarFormEmpleado ? 'Cancelar' : <><Plus size={24} /> Nuevo Empleado</>}
+          {mostrarFormEmpleado ? 'Cancelar' : <><Plus size={20} /> Nuevo Empleado</>}
         </button>
       </div>
 
+      {/* Employee form */}
       {mostrarFormEmpleado && (
-        <form onSubmit={guardarEmpleado} className="bg-white p-6 rounded-3xl shadow-sm border border-emerald-100 mb-8 slide-in-from-top-4 animate-in">
-          <h2 className="text-xl font-bold text-slate-800 mb-6">{empleadoEditando ? 'Editar Empleado' : 'Agregar Empleado'}</h2>
-          
-          <div className="grid md:grid-cols-2 gap-4 mb-6">
+        <form onSubmit={guardarEmpleado} className="card-premium-static p-6 rounded-2xl mb-8 animate-fade-up">
+          <h2 className="text-lg font-bold mb-5" style={{ fontFamily: 'var(--font-heading)', color: 'var(--carbon)' }}>
+            {empleadoEditando ? 'Editar Empleado' : 'Agregar Empleado'}
+          </h2>
+
+          <div className="grid md:grid-cols-2 gap-4 mb-5">
             <div>
-              <label className="block text-sm font-semibold text-slate-600 mb-2">Nombre Completo</label>
-              <input type="text" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-lg" value={nombre} onChange={e=>setNombre(e.target.value)} required />
+              <label className="block text-xs font-medium text-slate-500 mb-1.5" style={{ fontFamily: 'var(--font-heading)' }}>Nombre Completo</label>
+              <input type="text" className="w-full rounded-xl px-4 py-3 text-sm" style={inputStyle} value={nombre} onChange={e=>setNombre(e.target.value)} required />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-slate-600 mb-2">Documento de Identidad</label>
-              <input type="text" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-lg" value={documento} onChange={e=>setDocumento(e.target.value)} pattern="[0-9]+" title="Solo se permiten números" required />
+              <label className="block text-xs font-medium text-slate-500 mb-1.5" style={{ fontFamily: 'var(--font-heading)' }}>Documento de Identidad</label>
+              <input type="text" className="w-full rounded-xl px-4 py-3 text-sm" style={inputStyle} value={documento} onChange={e=>setDocumento(e.target.value)} pattern="[0-9]+" title="Solo se permiten números" required />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-slate-600 mb-2">Cargo / Rol</label>
-              <select
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-lg"
-                value={cargo}
-                onChange={(e) => setCargo(e.target.value)}
-                required
-              >
+              <label className="block text-xs font-medium text-slate-500 mb-1.5" style={{ fontFamily: 'var(--font-heading)' }}>Cargo / Rol</label>
+              <select className="w-full rounded-xl px-4 py-3 text-sm" style={inputStyle} value={cargo} onChange={(e) => setCargo(e.target.value)} required>
                 <option value="">Seleccione un cargo…</option>
                 {cargos.filter((c) => c.activa !== false).map((c) => (
                   <option key={c.id} value={c.id}>{c.nombre}</option>
@@ -354,164 +369,189 @@ export const Empleados = () => {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-semibold text-slate-600 mb-2">Teléfono</label>
-              <input type="tel" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-lg" value={telefono} onChange={e=>setTelefono(e.target.value)} pattern="[0-9+\-\ ]{7,15}" title="Entre 7 y 15 caracteres. Solo números, +, - o espacios" />
+              <label className="block text-xs font-medium text-slate-500 mb-1.5" style={{ fontFamily: 'var(--font-heading)' }}>Teléfono</label>
+              <input type="tel" className="w-full rounded-xl px-4 py-3 text-sm" style={inputStyle} value={telefono} onChange={e=>setTelefono(e.target.value)} pattern="[0-9+\- ]{7,15}" title="Entre 7 y 15 caracteres" />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-slate-600 mb-2">Fecha de Ingreso</label>
-              <input type="date" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-lg" value={fechaIngreso} onChange={e=>setFechaIngreso(e.target.value)} max={new Date().toISOString().split('T')[0]} />
+              <label className="block text-xs font-medium text-slate-500 mb-1.5" style={{ fontFamily: 'var(--font-heading)' }}>Fecha de Ingreso</label>
+              <input type="date" className="w-full rounded-xl px-4 py-3 text-sm" style={inputStyle} value={fechaIngreso} onChange={e=>setFechaIngreso(e.target.value)} max={new Date().toISOString().split('T')[0]} />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-slate-600 mb-2">Estado</label>
-              <select className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-lg" value={estado} onChange={e=>setEstado(e.target.value as 'Activo'|'Inactivo')}>
+              <label className="block text-xs font-medium text-slate-500 mb-1.5" style={{ fontFamily: 'var(--font-heading)' }}>Estado</label>
+              <select className="w-full rounded-xl px-4 py-3 text-sm" style={inputStyle} value={estado} onChange={e=>setEstado(e.target.value as 'Activo'|'Inactivo')}>
                 <option value="Activo">Activo trabajando</option>
                 <option value="Inactivo">Inactivo / Retirado</option>
               </select>
             </div>
           </div>
-          <button type="submit" className="w-full md:w-auto bg-emerald-500 hover:bg-emerald-600 text-white px-8 py-4 rounded-xl font-bold text-lg shadow-md active:scale-95 transition-transform">
+          <button type="submit" className="w-full md:w-auto px-6 py-3 rounded-xl font-semibold text-sm text-white active:scale-[0.97] transition-all" style={{ background: 'var(--accent-copper)', boxShadow: 'var(--shadow-copper)' }}>
             Guardar Empleado
           </button>
         </form>
       )}
 
-      <div className="grid gap-6">
+      {/* Employee list */}
+      <div className="grid gap-4">
         {empleados.length === 0 ? (
-          <div className="text-center py-12 bg-white rounded-3xl border border-dashed border-slate-300 text-slate-500">
-            <p className="text-lg">No hay empleados registrados aún.</p>
+          <div className="text-center py-12 rounded-2xl border-2 border-dashed text-slate-400" style={{ background: 'var(--surface-silk)', borderColor: 'var(--border-fiber)' }}>
+            <p className="text-base font-medium" style={{ color: 'var(--carbon)' }}>No hay empleados registrados aún.</p>
           </div>
         ) : (
           empleados.map(emp => (
-            <div key={emp.id} className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden hover:shadow-md transition-shadow">
-              
-              {/* Tarjeta del Empleado */}
-              <div className="p-6 md:p-8 flex flex-col md:flex-row gap-6 items-start md:items-center justify-between border-b border-slate-100">
-                <div>
-                  <div className="flex items-center gap-3 mb-2">
-                    <h3 className="text-2xl font-extrabold text-slate-800">{emp.nombre}</h3>
-                    <span className={`px-3 py-1 rounded-full text-xs font-bold ${emp.estado === 'Activo' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
-                      {emp.estado}
-                    </span>
+            <div key={emp.id} className="card-premium-static rounded-2xl overflow-hidden">
+
+              {/* Employee card header */}
+              <div className="p-5 md:p-6 flex flex-col md:flex-row gap-5 items-start md:items-center justify-between" style={{ borderBottom: '1px solid var(--border-fiber-light)' }}>
+                <div className="flex items-center gap-4">
+                  {/* Avatar placeholder */}
+                  <div
+                    className="w-12 h-12 rounded-xl flex items-center justify-center text-base font-bold shrink-0"
+                    style={{
+                      background: emp.estado === 'Activo' ? 'linear-gradient(135deg, #16a34a, #15803d)' : 'var(--surface-linen)',
+                      color: emp.estado === 'Activo' ? '#fff' : 'var(--carbon)',
+                    }}
+                  >
+                    {emp.nombre.charAt(0).toUpperCase()}
                   </div>
-                  <p className="text-slate-500 text-lg font-medium">{emp.cargo?.nombre || 'Sin cargo'}</p>
-                  <div className="flex flex-wrap gap-4 mt-4 text-sm text-slate-500">
-                    <span className="bg-slate-50 px-3 py-2 rounded-lg border border-slate-100">C.C. {emp.documento}</span>
-                    <span className="bg-slate-50 px-3 py-2 rounded-lg border border-slate-100">📞 {emp.telefono || 'Sin teléfono'}</span>
+                  <div>
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <h3 className="text-lg font-bold" style={{ fontFamily: 'var(--font-heading)', color: 'var(--carbon)' }}>{emp.nombre}</h3>
+                      <span className={`status-dot ${emp.estado === 'Activo' ? 'status-dot-active' : 'status-dot-neutral'}`} title={emp.estado} />
+                    </div>
+                    <p className="text-slate-500 text-sm font-medium">{emp.cargo?.nombre || 'Sin cargo'}</p>
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      <span className="text-xs px-2.5 py-1 rounded-lg" style={{ background: 'var(--surface-linen)', color: 'var(--carbon)', border: '1px solid var(--border-fiber)' }}>
+                        C.C. {emp.documento}
+                      </span>
+                      <span className="text-xs px-2.5 py-1 rounded-lg" style={{ background: 'var(--surface-linen)', color: 'var(--carbon)', border: '1px solid var(--border-fiber)' }}>
+                        📞 {emp.telefono || 'Sin teléfono'}
+                      </span>
+                    </div>
                   </div>
                 </div>
 
-                <div className="flex flex-wrap gap-2 w-full md:w-auto mt-4 md:mt-0">
-                  <button 
+                <div className="flex flex-wrap gap-2 w-full md:w-auto">
+                  <button
                     onClick={() => abrirCalificacion(emp.id)}
-                    className={`flex-1 md:flex-none px-5 py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-transform active:scale-95 border-2 
-                      ${empleadoCalificando === emp.id ? 'bg-amber-100 border-amber-500 text-amber-800' : 'bg-amber-500 hover:bg-amber-600 border-transparent text-white'}`}
+                    className={`flex-1 md:flex-none px-4 py-2.5 rounded-xl font-semibold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-[0.97] border ${
+                      empleadoCalificando === emp.id
+                        ? 'bg-amber-50 border-amber-400 text-amber-800'
+                        : 'border-[var(--accent-copper)] text-[var(--accent-copper)] bg-white hover:bg-[var(--accent-copper-glow)]'
+                    }`}
                   >
-                    <ClipboardList size={20} /> Evaluar
+                    <ClipboardList size={16} /> Evaluar
                   </button>
-                  <button 
+                  <button
                     onClick={() => abrirHistorial(emp.id)}
-                    className={`flex-1 md:flex-none px-5 py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-transform active:scale-95 border-2 
-                      ${empleadoViendoHistorial === emp.id ? 'bg-blue-100 border-blue-500 text-blue-800' : 'bg-blue-50 hover:bg-blue-100 border-transparent text-blue-700'}`}
+                    className={`flex-1 md:flex-none px-4 py-2.5 rounded-xl font-semibold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-[0.97] border ${
+                      empleadoViendoHistorial === emp.id
+                        ? 'bg-blue-50 border-blue-400 text-blue-800'
+                        : 'border-blue-300 text-blue-600 bg-white hover:bg-blue-50'
+                    }`}
                   >
-                    <History size={20} /> Historial
+                    <History size={16} /> Historial
                   </button>
-                  <button onClick={() => iniciarEdicion(emp)} className="bg-slate-100 hover:bg-slate-200 text-slate-700 p-3 rounded-xl transition-transform active:scale-95 border border-transparent">
-                    <Edit2 size={20} />
+                  <button onClick={() => iniciarEdicion(emp)} className="p-2.5 rounded-xl transition-all active:scale-[0.97] hover:bg-[var(--surface-linen)]" style={{ border: '1px solid var(--border-fiber)' }}>
+                    <Edit2 size={16} className="text-slate-500" />
                   </button>
                   {tieneRol('SUPERADMINISTRADOR') && (
-                    <button onClick={() => { if(window.confirm('¿Seguro que deseas eliminar este empleado?')) eliminarEmpleado(emp.id); }} className="bg-red-50 hover:bg-red-100 text-red-600 p-3 rounded-xl transition-transform active:scale-95 border border-transparent">
-                      <Trash2 size={20} />
+                    <button onClick={() => { if(window.confirm('¿Seguro que deseas eliminar este empleado?')) eliminarEmpleado(emp.id); }} className="p-2.5 rounded-xl transition-all active:scale-[0.97] bg-rose-50 hover:bg-rose-100 border border-rose-200">
+                      <Trash2 size={16} className="text-rose-500" />
                     </button>
                   )}
                 </div>
               </div>
 
-              {/* === HISTORIAL DE DESEMPEÑO === */}
+              {/* History panel */}
               {empleadoViendoHistorial === emp.id && (
-                <div className="bg-blue-50/50 p-6 animate-in slide-in-from-top-2">
-                  <h4 className="font-bold text-blue-900 mb-4 flex items-center gap-2"><History size={20} /> Historial de Rendimiento</h4>
-                  
+                <div className="p-5 animate-fade-up" style={{ background: 'var(--surface-linen)' }}>
+                  <h4 className="font-semibold text-sm flex items-center gap-2 mb-4" style={{ fontFamily: 'var(--font-heading)', color: 'var(--carbon)' }}>
+                    <History size={16} className="text-blue-600" /> Historial de Rendimiento
+                  </h4>
+
                   {getRegistrosEmpleado(emp.id).length === 0 ? (
-                    <p className="text-slate-500 bg-white p-4 rounded-xl border border-blue-100 text-center">No hay registros guardados para este empleado.</p>
+                    <p className="text-slate-500 bg-white p-4 rounded-xl text-center text-sm" style={{ border: '1px solid var(--border-fiber)' }}>
+                      No hay registros guardados para este empleado.
+                    </p>
                   ) : (
-                    <div className="grid gap-3">
+                    <div className="grid gap-2.5">
                       {getRegistrosEmpleado(emp.id).map(reg => (
-                        <div key={reg.id} className="bg-white p-4 rounded-xl border border-blue-100 flex flex-col gap-4">
-                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                            <div className="flex flex-wrap items-center gap-3">
-                              <div className="bg-blue-100 text-blue-800 font-bold px-3 py-2 rounded-lg w-28 text-center shrink-0">
+                        <div key={reg.id} className="bg-white p-4 rounded-xl flex flex-col gap-3" style={{ border: '1px solid var(--border-fiber)' }}>
+                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <div className="font-bold text-xs px-3 py-1.5 rounded-lg text-blue-800" style={{ background: 'rgba(37,99,235,0.08)' }}>
                                 {reg.fecha}
                               </div>
                               {reg.horaEntrada !== '--:--' ? (
-                                <div className="text-slate-600 text-sm font-medium flex items-center gap-1">
-                                  <Clock size={16} /> {reg.horaEntrada} - {reg.horaSalida}
+                                <div className="text-slate-500 text-xs font-medium flex items-center gap-1">
+                                  <Clock size={14} /> {reg.horaEntrada} - {reg.horaSalida}
                                 </div>
                               ) : (
-                                <span className="text-rose-600 font-bold text-sm bg-rose-50 px-2 py-1 rounded">No Asistió</span>
+                                <span className="text-rose-600 font-semibold text-xs bg-rose-50 px-2 py-1 rounded-lg">No Asistió</span>
                               )}
                             </div>
 
                             {reg.horaEntrada !== '--:--' && (
-                              <div className="flex gap-6 shrink-0">
+                              <div className="flex gap-4 shrink-0">
                                 <div className="text-center">
-                                  <span className="block text-xs text-slate-400 font-bold uppercase">Totales</span>
-                                  <span className="font-extrabold text-slate-700 text-lg">{reg.unidadesTotales}</span>
+                                  <span className="block text-[10px] text-slate-400 font-semibold uppercase">Totales</span>
+                                  <span className="font-bold text-base" style={{ fontFamily: 'var(--font-heading)', color: 'var(--carbon)' }}>{reg.unidadesTotales}</span>
                                 </div>
                                 <div className="text-center">
-                                  <span className="block text-xs text-slate-400 font-bold uppercase">Con Calidad</span>
-                                  <span className="font-extrabold text-emerald-600 text-lg">{reg.unidadesBuenas}</span>
+                                  <span className="block text-[10px] text-emerald-600 font-semibold uppercase">Calidad</span>
+                                  <span className="font-bold text-base text-emerald-600" style={{ fontFamily: 'var(--font-heading)' }}>{reg.unidadesBuenas}</span>
                                 </div>
                               </div>
                             )}
                           </div>
 
                           {reg.horaEntrada !== '--:--' && (reg.producciones?.length ?? 0) > 0 && (
-                            <div className="border-t border-slate-100 pt-3 space-y-2">
-                              <p className="text-xs font-bold text-slate-500 uppercase tracking-wide">
+                            <div className="pt-2 space-y-1.5" style={{ borderTop: '1px solid var(--border-fiber-light)' }}>
+                              <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
                                 Órdenes vinculadas este día
                               </p>
                               {reg.producciones!.map((prod, index) => (
                                 <div
                                   key={`${reg.id}-p-${index}`}
-                                  className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between rounded-lg border border-slate-100 bg-slate-50 px-3 py-2 text-sm"
+                                  className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between rounded-lg px-3 py-2 text-xs"
+                                  style={{ background: 'var(--surface-linen)', border: '1px solid var(--border-fiber-light)' }}
                                 >
-                                  <div className="flex min-w-0 flex-1 flex-col gap-1 sm:flex-row sm:items-center sm:gap-3">
-                                    <span className="font-bold text-slate-600 shrink-0">#{index + 1}</span>
-                                    <span className="truncate font-medium text-slate-800" title={etiquetaOrden(prod.productoId)}>
+                                  <div className="flex min-w-0 flex-1 flex-col gap-1 sm:flex-row sm:items-center sm:gap-2">
+                                    <span className="font-bold text-slate-500 shrink-0">#{index + 1}</span>
+                                    <span className="truncate font-medium" style={{ color: 'var(--carbon)' }} title={etiquetaOrden(prod.productoId)}>
                                       {etiquetaOrden(prod.productoId)}
                                       {prod.pasoId ? ` · ${etiquetaPaso(prod.productoId, prod.pasoId)}` : ''}
                                     </span>
-                                    <span className="text-slate-600 sm:ml-auto">
+                                    <span className="text-slate-500 sm:ml-auto">
                                       <span className="font-semibold">{prod.unidadesTotales}</span> conf. ·{' '}
                                       <span className="font-semibold text-emerald-700">{prod.unidadesBuenas}</span>{' '}
                                       calidad
                                     </span>
                                   </div>
-                                  <button
-                                    type="button"
-                                    onClick={() =>
-                                      setModalOrdenProduccion({ fecha: reg.fecha, indice: index, item: prod })
-                                    }
-                                    className="inline-flex shrink-0 items-center justify-center gap-1.5 self-start rounded-lg border border-blue-200 bg-white px-3 py-1.5 text-xs font-bold text-blue-700 hover:bg-blue-50 sm:self-center"
-                                  >
-                                    <FileText size={14} /> Ver orden
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => cargarRegistroParaEdicion(reg)}
-                                    className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-800"
-                                  >
-                                    <Edit2 size={14} /> Editar
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      if (window.confirm('¿Eliminar esta evaluación?')) eliminarRegistro(reg.id);
-                                    }}
-                                    className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-bold text-red-700"
-                                  >
-                                    <Trash2 size={14} /> Eliminar
-                                  </button>
+                                  <div className="flex gap-1.5 shrink-0">
+                                    <button
+                                      type="button"
+                                      onClick={() => setModalOrdenProduccion({ fecha: reg.fecha, indice: index, item: prod })}
+                                      className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[10px] font-semibold text-blue-700 hover:bg-blue-50 border border-blue-200 bg-white"
+                                    >
+                                      <FileText size={12} /> Ver
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => cargarRegistroParaEdicion(reg)}
+                                      className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[10px] font-semibold border bg-white"
+                                      style={{ color: 'var(--accent-copper)', borderColor: 'rgba(196,139,63,0.3)' }}
+                                    >
+                                      <Edit2 size={12} /> Editar
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => { if (window.confirm('¿Eliminar esta evaluación?')) eliminarRegistro(reg.id); }}
+                                      className="inline-flex items-center gap-1 rounded-lg border border-rose-200 bg-white px-2.5 py-1 text-[10px] font-semibold text-rose-600"
+                                    >
+                                      <Trash2 size={12} /> Eliminar
+                                    </button>
+                                  </div>
                                 </div>
                               ))}
                             </div>
@@ -523,68 +563,66 @@ export const Empleados = () => {
                 </div>
               )}
 
-              {/* === FORMULARIO DE CALIFICACIÓN DIARIA === */}
+              {/* Evaluation form */}
               {empleadoCalificando === emp.id && (
-                <form onSubmit={guardarCalificacion} className="bg-amber-50/50 p-6 animate-in slide-in-from-top-2">
-                  <h4 className="font-bold text-amber-900 mb-4 flex items-center gap-2">
-                    <Star size={20} /> {registroEditando ? 'Editar evaluación' : 'Registrar trabajo de hoy'}
+                <form onSubmit={guardarCalificacion} className="p-5 animate-fade-up" style={{ background: 'rgba(196,139,63,0.04)' }}>
+                  <h4 className="font-semibold text-sm flex items-center gap-2 mb-4" style={{ fontFamily: 'var(--font-heading)', color: 'var(--carbon)' }}>
+                    <Star size={16} style={{ color: 'var(--accent-copper)' }} />
+                    {registroEditando ? 'Editar evaluación' : 'Registrar trabajo de hoy'}
                   </h4>
-                  
+
                   <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 items-start">
-                    
-                    <div className="flex flex-col gap-2">
-                      <label className="block text-sm font-semibold text-amber-800">Fecha del registro</label>
-                      <input type="date" value={calificacionFecha} onChange={e=>setCalificacionFecha(e.target.value)} className="w-full bg-white border border-amber-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-amber-500" required max={new Date().toISOString().split('T')[0]} />
+                    <div className="flex flex-col gap-1.5">
+                      <label className="block text-xs font-medium text-slate-500" style={{ fontFamily: 'var(--font-heading)' }}>Fecha del registro</label>
+                      <input type="date" value={calificacionFecha} onChange={e=>setCalificacionFecha(e.target.value)} className="w-full bg-white rounded-xl px-3 py-2.5 text-sm" style={{ border: '1px solid var(--border-fiber)' }} required max={new Date().toISOString().split('T')[0]} />
                     </div>
-                    
-                    <div className="flex flex-col gap-2">
-                      <label className="block text-sm font-semibold text-amber-800">¿Asistió a trabajar?</label>
-                      <button 
-                        type="button" 
+
+                    <div className="flex flex-col gap-1.5">
+                      <label className="block text-xs font-medium text-slate-500" style={{ fontFamily: 'var(--font-heading)' }}>¿Asistió a trabajar?</label>
+                      <button
+                        type="button"
                         onClick={() => setCalificacionAsistencia(!calificacionAsistencia)}
-                        className={`w-full py-3 px-4 rounded-xl font-bold flex items-center justify-center gap-2 border-2 transition-colors ${calificacionAsistencia ? 'bg-emerald-100 border-emerald-500 text-emerald-700' : 'bg-rose-100 border-rose-500 text-rose-700'}`}
+                        className={`w-full py-2.5 px-4 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 border-2 transition-colors ${calificacionAsistencia ? 'bg-emerald-50 border-emerald-400 text-emerald-700' : 'bg-rose-50 border-rose-400 text-rose-700'}`}
                       >
-                        {calificacionAsistencia ? <><CheckCircle2 size={20} /> Sí asistió</> : 'Faltó hoy'}
+                        {calificacionAsistencia ? <><CheckCircle2 size={18} /> Sí asistió</> : 'Faltó hoy'}
                       </button>
                     </div>
 
                     {calificacionAsistencia && (
-                      <div className="lg:col-span-2 grid grid-cols-2 gap-4 bg-white p-4 rounded-2xl border border-amber-200">
-                        <div className="col-span-2 border-b border-slate-100 pb-3 mb-1">
-                          <p className="text-sm font-bold text-slate-500 mb-3 uppercase tracking-wider">⏱️ Asistencia y Horario</p>
+                      <div className="lg:col-span-2 grid grid-cols-2 gap-4 bg-white p-4 rounded-2xl" style={{ border: '1px solid var(--border-fiber)' }}>
+                        <div className="col-span-2 pb-3 mb-1" style={{ borderBottom: '1px solid var(--border-fiber-light)' }}>
+                          <p className="text-xs font-semibold text-slate-400 mb-3 uppercase tracking-wider">⏱️ Horario</p>
                           <div className="grid grid-cols-2 gap-4">
                             <div>
-                              <label className="block text-xs font-semibold text-slate-500 mb-1">Hora de Entrada</label>
-                              <input type="time" value={calificacionHoraEntrada} onChange={e=>setCalificacionHoraEntrada(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-lg" required />
+                              <label className="block text-[10px] font-medium text-slate-400 mb-1">Entrada</label>
+                              <input type="time" value={calificacionHoraEntrada} onChange={e=>setCalificacionHoraEntrada(e.target.value)} className="w-full rounded-xl px-3 py-2 text-sm" style={inputStyle} required />
                             </div>
                             <div>
-                              <label className="block text-xs font-semibold text-slate-500 mb-1">Hora de Salida</label>
-                              <input type="time" value={calificacionHoraSalida} onChange={e=>setCalificacionHoraSalida(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-lg" required />
+                              <label className="block text-[10px] font-medium text-slate-400 mb-1">Salida</label>
+                              <input type="time" value={calificacionHoraSalida} onChange={e=>setCalificacionHoraSalida(e.target.value)} className="w-full rounded-xl px-3 py-2 text-sm" style={inputStyle} required />
                             </div>
                           </div>
                         </div>
 
                         <div className="col-span-2 pt-1">
                           <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                            <p className="text-sm font-bold uppercase tracking-wider text-slate-500">
-                              ✂️ Vincular a orden y acción de producción
-                            </p>
+                            <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">✂️ Vincular a orden</p>
                             <button
                               type="button"
                               onClick={agregarProduccion}
                               disabled={productos.length === 0}
-                              className="rounded-lg border border-teal-200 bg-teal-50 px-3 py-1.5 text-xs font-bold text-teal-700 hover:bg-teal-100 disabled:cursor-not-allowed disabled:opacity-50"
+                              className="rounded-lg px-3 py-1.5 text-[10px] font-semibold disabled:opacity-50 transition-colors"
+                              style={{ color: 'var(--accent-copper)', border: '1px solid rgba(196,139,63,0.25)', background: 'rgba(196,139,63,0.06)' }}
                             >
                               + Agregar otra orden
                             </button>
                           </div>
                           {productos.length === 0 ? (
-                            <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-                              No hay órdenes en Producción. Crea una orden allí para poder evaluar el trabajo del empleado
-                              vinculado a esa confección.
+                            <p className="rounded-xl px-4 py-3 text-xs" style={{ background: 'var(--surface-linen)', border: '1px solid var(--border-fiber)', color: 'var(--carbon)' }}>
+                              No hay órdenes en Producción. Crea una orden allí primero.
                             </p>
                           ) : (
-                          <div className="space-y-3">
+                          <div className="space-y-2.5">
                             {calificacionProducciones.map((prod, index) => {
                               const clavesOtros = calificacionProducciones
                                 .filter((_, i) => i !== index)
@@ -596,23 +634,21 @@ export const Empleados = () => {
                                 ? unidadesDisponiblesPaso(prod.productoId, prod.pasoId, registroEditando ?? undefined)
                                 : null;
                               return (
-                              <div key={`prod-${index}`} className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                              <div key={`prod-${index}`} className="rounded-xl p-3" style={{ background: 'var(--surface-linen)', border: '1px solid var(--border-fiber-light)' }}>
                                 <div className="mb-2 flex items-center justify-between">
-                                  <p className="text-xs font-bold uppercase text-slate-600">Línea {index + 1}</p>
+                                  <p className="text-[10px] font-semibold uppercase text-slate-500">Línea {index + 1}</p>
                                   <button
                                     type="button"
                                     onClick={() => quitarProduccion(index)}
-                                    className="inline-flex items-center gap-1 text-xs font-bold text-rose-600 disabled:opacity-40"
+                                    className="inline-flex items-center gap-1 text-[10px] font-semibold text-rose-500 disabled:opacity-40"
                                     disabled={calificacionProducciones.length === 1}
                                   >
-                                    <MinusCircle size={14} /> Quitar línea
+                                    <MinusCircle size={12} /> Quitar
                                   </button>
                                 </div>
-                                <div className="space-y-3">
+                                <div className="space-y-2.5">
                                   <div>
-                                    <label className="mb-1 block text-xs font-semibold text-slate-500">
-                                      Orden de producción
-                                    </label>
+                                    <label className="mb-1 block text-[10px] font-medium text-slate-400">Orden de producción</label>
                                     <select
                                       value={prod.productoId}
                                       onChange={(e) => {
@@ -620,7 +656,8 @@ export const Empleados = () => {
                                         actualizarProduccion(index, 'pasoId', '');
                                       }}
                                       required
-                                      className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium"
+                                      className="w-full rounded-xl bg-white px-3 py-2 text-xs font-medium"
+                                      style={{ border: '1px solid var(--border-fiber)' }}
                                     >
                                       <option value="">Selecciona una orden…</option>
                                       {productos.map((p) => (
@@ -631,22 +668,19 @@ export const Empleados = () => {
                                     </select>
                                   </div>
                                   <div>
-                                    <label className="mb-1 block text-xs font-semibold text-slate-500">
-                                      Acción de la orden
-                                    </label>
+                                    <label className="mb-1 block text-[10px] font-medium text-slate-400">Acción de la orden</label>
                                     {prod.productoId && pasosOrden.length === 0 && (
-                                      <p className="mb-2 text-xs text-rose-700 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2">
-                                        Esta orden no tiene acciones guardadas. En Producción, edítala, asigna acciones del catálogo y guarda.
+                                      <p className="mb-2 text-[10px] text-rose-600 bg-rose-50 border border-rose-200 rounded-lg px-3 py-1.5">
+                                        Esta orden no tiene acciones. Edítala en Producción.
                                       </p>
                                     )}
                                     <select
                                       value={prod.pasoId}
-                                      onChange={(e) =>
-                                        actualizarProduccion(index, 'pasoId', e.target.value)
-                                      }
+                                      onChange={(e) => actualizarProduccion(index, 'pasoId', e.target.value)}
                                       required
                                       disabled={!prod.productoId || pasosOrden.length === 0}
-                                      className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium disabled:opacity-50"
+                                      className="w-full rounded-xl bg-white px-3 py-2 text-xs font-medium disabled:opacity-50"
+                                      style={{ border: '1px solid var(--border-fiber)' }}
                                     >
                                       <option value="">Selecciona la acción…</option>
                                       {pasosOrden.map((ps, pi) => {
@@ -663,53 +697,35 @@ export const Empleados = () => {
                                       })}
                                     </select>
                                     {disponible != null && prod.pasoId && (
-                                      <p className="mt-1 text-xs text-teal-700">
-                                        Disponibles para esta acción: <strong>{disponible}</strong> de {ordenSel?.cantidad ?? 0}
+                                      <p className="mt-1 text-[10px]" style={{ color: 'var(--accent-copper)' }}>
+                                        Disponibles: <strong>{disponible}</strong> de {ordenSel?.cantidad ?? 0}
                                       </p>
                                     )}
                                   </div>
-                                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:items-end">
+                                  <div className="grid grid-cols-2 gap-2.5">
                                     <div className="flex flex-col">
-                                      <label
-                                        className="mb-1 block min-h-[2.5rem] text-xs font-semibold leading-snug text-slate-500"
-                                        title="Unidades confeccionadas de esta orden en el día"
-                                      >
-                                        Confeccionadas
-                                        <span className="block text-[10px] font-normal normal-case text-slate-400">
-                                          (subtotal del día)
-                                        </span>
-                                      </label>
+                                      <label className="mb-1 block text-[10px] font-medium text-slate-400">Confeccionadas</label>
                                       <input
                                         type="number"
                                         min={0}
                                         max={disponible ?? undefined}
                                         value={prod.unidadesTotales || ''}
-                                        onChange={(e) =>
-                                          actualizarProduccion(index, 'unidadesTotales', Number(e.target.value))
-                                        }
+                                        onChange={(e) => actualizarProduccion(index, 'unidadesTotales', Number(e.target.value))}
                                         required
-                                        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-lg font-bold"
+                                        className="w-full rounded-xl bg-white px-3 py-2 text-sm font-bold"
+                                        style={{ border: '1px solid var(--border-fiber)' }}
                                       />
                                     </div>
                                     <div className="flex flex-col">
-                                      <label
-                                        className="mb-1 block min-h-[2.5rem] text-xs font-semibold leading-snug text-emerald-600"
-                                        title="Unidades con calidad aceptada"
-                                      >
-                                        Calidad
-                                        <span className="block text-[10px] font-normal normal-case text-emerald-600/80">
-                                          (subtotal del día)
-                                        </span>
-                                      </label>
+                                      <label className="mb-1 block text-[10px] font-medium text-emerald-600">Calidad</label>
                                       <input
                                         type="number"
                                         min={0}
                                         value={prod.unidadesBuenas || ''}
-                                        onChange={(e) =>
-                                          actualizarProduccion(index, 'unidadesBuenas', Number(e.target.value))
-                                        }
+                                        onChange={(e) => actualizarProduccion(index, 'unidadesBuenas', Number(e.target.value))}
                                         required
-                                        className="w-full rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-lg font-bold text-emerald-700"
+                                        className="w-full rounded-xl bg-emerald-50/50 px-3 py-2 text-sm font-bold text-emerald-700"
+                                        style={{ border: '1px solid rgba(22,163,74,0.2)' }}
                                       />
                                     </div>
                                   </div>
@@ -719,14 +735,14 @@ export const Empleados = () => {
                             })}
                           </div>
                           )}
-                          <div className="mt-3 rounded-xl bg-white border border-amber-200 px-4 py-3 grid grid-cols-2 gap-4">
-                            <p className="text-sm text-slate-600">
+                          <div className="mt-3 rounded-xl bg-white px-4 py-3 grid grid-cols-2 gap-4 text-xs" style={{ border: '1px solid var(--border-fiber)' }}>
+                            <p className="text-slate-600">
                               Total confeccionadas:{' '}
-                              <span className="font-bold text-slate-800">
+                              <span className="font-bold" style={{ color: 'var(--carbon)' }}>
                                 {calificacionProducciones.reduce((acc, p) => acc + Number(p.unidadesTotales || 0), 0)}
                               </span>
                             </p>
-                            <p className="text-sm text-emerald-700">
+                            <p className="text-emerald-700">
                               Total calidad:{' '}
                               <span className="font-bold">
                                 {calificacionProducciones.reduce((acc, p) => acc + Number(p.unidadesBuenas || 0), 0)}
@@ -738,21 +754,24 @@ export const Empleados = () => {
                     )}
                   </div>
 
-                  <div className="mt-6 flex justify-end">
-                    <div className="flex gap-2">
-                      {(registroEditando || empleadoCalificando) && (
-                        <button
-                          type="button"
-                          onClick={cancelarCalificacion}
-                          className="px-6 py-4 rounded-xl font-bold border border-amber-300 text-amber-800"
-                        >
-                          Cancelar
-                        </button>
-                      )}
-                    <button type="submit" className="w-full md:w-auto bg-amber-500 hover:bg-amber-600 text-white px-8 py-4 rounded-xl font-bold text-lg shadow-md active:scale-95 transition-transform">
+                  <div className="mt-5 flex justify-end gap-2">
+                    {(registroEditando || empleadoCalificando) && (
+                      <button
+                        type="button"
+                        onClick={cancelarCalificacion}
+                        className="px-5 py-2.5 rounded-xl font-semibold text-sm"
+                        style={{ border: '1px solid var(--border-fiber)', color: 'var(--carbon)' }}
+                      >
+                        Cancelar
+                      </button>
+                    )}
+                    <button
+                      type="submit"
+                      className="w-full md:w-auto px-6 py-2.5 rounded-xl font-semibold text-sm text-white active:scale-[0.97] transition-all"
+                      style={{ background: 'var(--accent-copper)', boxShadow: 'var(--shadow-copper)' }}
+                    >
                       {registroEditando ? 'Actualizar evaluación' : 'Guardar evaluación'}
                     </button>
-                    </div>
                   </div>
                 </form>
               )}

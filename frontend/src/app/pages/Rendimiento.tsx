@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { AlertTriangle, TrendingUp } from 'lucide-react';
+import { AlertTriangle, TrendingUp, Gauge, ShieldCheck, Clock, Activity } from 'lucide-react';
 import {
   Bar,
   BarChart,
@@ -9,6 +9,7 @@ import {
   LineChart,
   Pie,
   PieChart,
+  Cell,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -23,9 +24,9 @@ const HORAS_PLAN_DIA = 9;
 const formatearPorcentaje = (valor: number) => `${valor.toFixed(1)}%`;
 
 const getSemaforoClasses = (estado: 'verde' | 'amarillo' | 'rojo') => {
-  if (estado === 'verde') return 'bg-emerald-50 text-emerald-700 border-emerald-200';
-  if (estado === 'amarillo') return 'bg-amber-50 text-amber-700 border-amber-200';
-  return 'bg-rose-50 text-rose-700 border-rose-200';
+  if (estado === 'verde') return { bg: 'rgba(22,163,74,0.06)', border: 'rgba(22,163,74,0.2)', text: '#15803d' };
+  if (estado === 'amarillo') return { bg: 'rgba(217,119,6,0.06)', border: 'rgba(217,119,6,0.2)', text: '#b45309' };
+  return { bg: 'rgba(225,29,72,0.06)', border: 'rgba(225,29,72,0.2)', text: '#be123c' };
 };
 
 const getEstadoByThreshold = (
@@ -61,6 +62,8 @@ const fechaHaceDias = (dias: number) => {
   date.setDate(date.getDate() - dias);
   return date.toISOString().slice(0, 10);
 };
+
+const PIE_COLORS = ['#c48b3f', '#2563eb', '#16a34a', '#d97706', '#7c3aed', '#e11d48'];
 
 export const Rendimiento = () => {
   const { registros, empleados, productos } = useAppContext();
@@ -106,18 +109,16 @@ export const Rendimiento = () => {
     const defectos = Math.max(total - buenas, 0);
     const horasAsistidas = registrosFiltrados.reduce((acc, r) => acc + horasTrabajadas(r.horaEntrada, r.horaSalida), 0);
     const horasPlanificadas = registrosFiltrados.length * HORAS_PLAN_DIA;
-    
-    // Cálculo dinámico de horas productivas usando la meta de cada paso
+
     let horasProductivasEstimadas = 0;
     for (const r of registrosFiltrados) {
       for (const prod of (r.producciones || [])) {
         const producto = productos.find(p => p.id === prod.productoId);
         let paso = producto?.pasos?.find(ps => ps.id === prod.pasoId);
-        // Fallback heurístico para registros viejos con IDs corruptos
         if (!paso && producto?.pasos?.length === 1) {
           paso = producto.pasos[0];
         }
-        const meta = paso?.metaUnidadesHora || 12; // Fallback final
+        const meta = paso?.metaUnidadesHora || 12;
         horasProductivasEstimadas += (Number(prod.unidadesBuenas) || 0) / meta;
       }
     }
@@ -130,18 +131,9 @@ export const Rendimiento = () => {
     const ausentismo = horasPlanificadas > 0 ? ((horasPlanificadas - horasAsistidas) / horasPlanificadas) * 100 : 0;
 
     return {
-      total,
-      buenas,
-      defectos,
-      horasAsistidas,
-      horasPlanificadas,
-      horasProductivasEstimadas,
-      eficiencia,
-      fpy,
-      defectosRate,
-      retrabajoRate,
-      asistenciaEfectiva,
-      ausentismo,
+      total, buenas, defectos, horasAsistidas, horasPlanificadas,
+      horasProductivasEstimadas, eficiencia, fpy, defectosRate,
+      retrabajoRate, asistenciaEfectiva, ausentismo,
     };
   }, [registrosFiltrados, productos]);
 
@@ -153,13 +145,12 @@ export const Rendimiento = () => {
         const buenas = registrosEmpleado.reduce((acc, r) => acc + r.unidadesBuenas, 0);
         const horas = registrosEmpleado.reduce((acc, r) => acc + horasTrabajadas(r.horaEntrada, r.horaSalida), 0);
         const defectos = Math.max(total - buenas, 0);
-        
+
         let horasProductivasEmpleado = 0;
         for (const r of registrosEmpleado) {
           for (const prod of (r.producciones || [])) {
             const producto = productos.find(p => p.id === prod.productoId);
             let paso = producto?.pasos?.find(ps => ps.id === prod.pasoId);
-            // Fallback heurístico para registros viejos con IDs corruptos
             if (!paso && producto?.pasos?.length === 1) {
               paso = producto.pasos[0];
             }
@@ -167,7 +158,7 @@ export const Rendimiento = () => {
             horasProductivasEmpleado += (Number(prod.unidadesBuenas) || 0) / meta;
           }
         }
-        
+
         const eficiencia = horas > 0 ? (horasProductivasEmpleado / horas) * 100 : 0;
 
         return {
@@ -199,12 +190,7 @@ export const Rendimiento = () => {
       .reduce((acc, p) => acc + p.cantidad, 0);
     const backlogDias = capacidadDiaria > 0 ? backlogUnidades / capacidadDiaria : 0;
 
-    return {
-      cumplimientoDespacho,
-      capacidadDiaria,
-      backlogDias,
-      backlogUnidades,
-    };
+    return { cumplimientoDespacho, capacidadDiaria, backlogDias, backlogUnidades };
   }, [dataDiaria, productos]);
 
   const indiceRiesgo = Math.min(
@@ -224,117 +210,158 @@ export const Rendimiento = () => {
       valor: formatearPorcentaje(resumen.eficiencia),
       estado: getEstadoByThreshold(resumen.eficiencia, 90, 80),
       accion: 'Revisar balance de carga y soporte a operarios con menor ratio.',
+      icon: Gauge,
     },
     {
       metrica: 'Tasa de defectos',
       valor: formatearPorcentaje(resumen.defectosRate),
       estado: getEstadoByThresholdInverse(resumen.defectosRate, 3, 5),
       accion: 'Aplicar checklist de calidad y auditar causas de retrabajo.',
+      icon: ShieldCheck,
     },
     {
       metrica: 'Cumplimiento de despacho (OTD)',
       valor: formatearPorcentaje(capacidadDespacho.cumplimientoDespacho),
       estado: getEstadoByThreshold(capacidadDespacho.cumplimientoDespacho, 95, 90),
       accion: 'Priorizar pedidos vencidos y reasignar capacidad diaria.',
+      icon: Clock,
     },
     {
       metrica: 'Ausentismo',
       valor: formatearPorcentaje(resumen.ausentismo),
       estado: getEstadoByThresholdInverse(resumen.ausentismo, 5, 10),
       accion: 'Validar turnos, puntualidad y cobertura de reemplazos.',
+      icon: Activity,
     },
   ];
 
+  const metricCards = [
+    { label: 'Eficiencia global', value: formatearPorcentaje(resumen.eficiencia), sub: 'Meta sugerida: 90%', icon: Gauge, gradient: 'from-[var(--accent-copper)] to-[var(--accent-copper-bright)]' },
+    { label: 'FPY (calidad primera)', value: formatearPorcentaje(resumen.fpy), sub: `${resumen.buenas} buenas de ${resumen.total}`, icon: ShieldCheck, gradient: 'from-emerald-500 to-emerald-600' },
+    { label: 'Horas efectivas', value: formatearPorcentaje(resumen.asistenciaEfectiva), sub: `${resumen.horasAsistidas.toFixed(1)} h asistidas`, icon: Clock, gradient: 'from-blue-500 to-blue-600' },
+    { label: 'Índice de riesgo', value: `${indiceRiesgo.toFixed(0)}/100`, sub: 'Eficiencia + calidad + asistencia', icon: AlertTriangle, gradient: 'from-violet-500 to-violet-600' },
+  ];
+
+  const tooltipStyle = {
+    borderRadius: '12px',
+    border: '1px solid var(--border-fiber)',
+    boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
+    fontSize: '12px',
+    fontFamily: 'var(--font-body)',
+  };
+
   return (
-    <div className="animate-in fade-in duration-300">
+    <div className="animate-fade-up">
+      {/* Header */}
       <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
-          <h1 className="text-3xl font-extrabold text-teal-900 flex items-center gap-3">
-            Desempeño operativo <TrendingUp className="text-purple-500" />
+          <div className="flex items-center gap-3 mb-1">
+            <div className="w-10 h-1 rounded-full" style={{ background: 'var(--accent-copper)' }} />
+            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400" style={{ fontFamily: 'var(--font-heading)' }}>
+              Analítica
+            </span>
+          </div>
+          <h1
+            className="text-3xl font-bold flex items-center gap-3"
+            style={{ fontFamily: 'var(--font-heading)', color: 'var(--carbon)' }}
+          >
+            Desempeño operativo
+            <div className="w-9 h-9 rounded-lg bg-violet-100 flex items-center justify-center">
+              <TrendingUp size={18} className="text-violet-600" />
+            </div>
           </h1>
-          <p className="text-slate-500 mt-2">
+          <p className="text-slate-500 mt-1.5 text-sm">
             Vista ejecutiva de productividad, calidad, asistencia y despacho.
           </p>
         </div>
 
-        <div className="flex gap-3">
-          <select
-            value={periodo}
-            onChange={(e) => setPeriodo(e.target.value as Periodo)}
-            className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700"
-          >
-            <option value="7d">Ultimos 7 dias</option>
-            <option value="30d">Ultimos 30 dias</option>
-          </select>
+        <div className="flex gap-2">
+          {(['7d', '30d'] as Periodo[]).map((p) => (
+            <button
+              key={p}
+              onClick={() => setPeriodo(p)}
+              className={`px-3.5 py-2 rounded-lg text-xs font-semibold transition-all ${
+                periodo === p
+                  ? 'text-white shadow-sm'
+                  : 'text-slate-500 hover:bg-[var(--surface-linen)]'
+              }`}
+              style={periodo === p ? { background: 'var(--accent-copper)' } : { border: '1px solid var(--border-fiber)' }}
+            >
+              {p === '7d' ? '7 días' : '30 días'}
+            </button>
+          ))}
           <select
             value={empleadoSeleccionado}
             onChange={(e) => setEmpleadoSeleccionado(e.target.value)}
-            className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700"
+            className="rounded-lg px-3 py-2 text-xs font-medium"
+            style={{ border: '1px solid var(--border-fiber)', background: 'var(--surface-silk)', color: 'var(--carbon)' }}
           >
             <option value="todos">Todo el equipo</option>
             {empleados.map((emp) => (
-              <option key={emp.id} value={emp.id}>
-                {emp.nombre}
-              </option>
+              <option key={emp.id} value={emp.id}>{emp.nombre}</option>
             ))}
           </select>
         </div>
       </div>
 
+      {/* Metric cards */}
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4 mb-6">
-        <div className="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
-          <p className="text-slate-500 text-sm">Eficiencia global</p>
-          <p className="text-3xl font-extrabold text-slate-900 mt-1">{formatearPorcentaje(resumen.eficiencia)}</p>
-          <p className="text-xs mt-2 text-slate-500">Meta sugerida: 90%</p>
-        </div>
-        <div className="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
-          <p className="text-slate-500 text-sm">FPY (calidad a la primera)</p>
-          <p className="text-3xl font-extrabold text-slate-900 mt-1">{formatearPorcentaje(resumen.fpy)}</p>
-          <p className="text-xs mt-2 text-slate-500">{resumen.buenas} buenas de {resumen.total} totales</p>
-        </div>
-        <div className="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
-          <p className="text-slate-500 text-sm">Horas efectivas</p>
-          <p className="text-3xl font-extrabold text-slate-900 mt-1">{formatearPorcentaje(resumen.asistenciaEfectiva)}</p>
-          <p className="text-xs mt-2 text-slate-500">{resumen.horasAsistidas.toFixed(1)} h asistidas</p>
-        </div>
-        <div className="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
-          <p className="text-slate-500 text-sm">Indice de riesgo de atraso</p>
-          <p className="text-3xl font-extrabold text-slate-900 mt-1">{indiceRiesgo.toFixed(0)}/100</p>
-          <p className="text-xs mt-2 text-slate-500">Combina eficiencia, calidad, asistencia y backlog</p>
-        </div>
+        {metricCards.map((card, i) => (
+          <div key={card.label} className={`card-premium-static rounded-2xl p-5 animate-fade-up stagger-${i + 1}`}>
+            <div className="flex items-start justify-between mb-3">
+              <p className="text-xs font-medium text-slate-500" style={{ fontFamily: 'var(--font-heading)' }}>{card.label}</p>
+              <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${card.gradient} flex items-center justify-center`}>
+                <card.icon size={16} className="text-white" />
+              </div>
+            </div>
+            <p className="text-2xl font-bold tabular-nums" style={{ fontFamily: 'var(--font-heading)', color: 'var(--carbon)' }}>
+              {card.value}
+            </p>
+            <p className="text-[11px] mt-1 text-slate-400">{card.sub}</p>
+          </div>
+        ))}
       </div>
 
+      {/* Charts row */}
       <div className="grid gap-4 lg:grid-cols-3 mb-6">
-        <div className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm lg:col-span-2">
-          <h2 className="text-lg font-bold text-slate-800 mb-4">Produccion diaria y defectos</h2>
-          <div className="h-72">
+        <div className="card-premium-static rounded-2xl p-5 lg:col-span-2">
+          <h2 className="text-sm font-bold mb-4" style={{ fontFamily: 'var(--font-heading)', color: 'var(--carbon)' }}>
+            Producción diaria y defectos
+          </h2>
+          <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={dataDiaria}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                <XAxis dataKey="dia" axisLine={false} tickLine={false} tick={{ fill: '#64748b' }} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b' }} />
-                <Tooltip />
-                <Legend />
-                <Line type="monotone" dataKey="total" name="Total" stroke="#14b8a6" strokeWidth={3} dot={false} />
-                <Line type="monotone" dataKey="buenas" name="Buenas" stroke="#2563eb" strokeWidth={2} dot={false} />
-                <Line type="monotone" dataKey="defectos" name="Defectos" stroke="#f43f5e" strokeWidth={2} dot={false} />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e8e2d9" />
+                <XAxis dataKey="dia" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 11 }} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 11 }} />
+                <Tooltip contentStyle={tooltipStyle} />
+                <Legend wrapperStyle={{ fontSize: '11px' }} />
+                <Line type="monotone" dataKey="total" name="Total" stroke="#c48b3f" strokeWidth={2.5} dot={false} />
+                <Line type="monotone" dataKey="buenas" name="Buenas" stroke="#16a34a" strokeWidth={2} dot={false} />
+                <Line type="monotone" dataKey="defectos" name="Defectos" stroke="#e11d48" strokeWidth={2} dot={false} strokeDasharray="4 4" />
               </LineChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        <div className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-bold text-slate-800 mb-4">Defectos por trabajador</h2>
-          <div className="h-72">
+        <div className="card-premium-static rounded-2xl p-5">
+          <h2 className="text-sm font-bold mb-4" style={{ fontFamily: 'var(--font-heading)', color: 'var(--carbon)' }}>
+            Defectos por trabajador
+          </h2>
+          <div className="h-64">
             {defectosPareto.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Pie data={defectosPareto} dataKey="value" nameKey="name" innerRadius={50} outerRadius={90} fill="#f43f5e" />
-                  <Tooltip />
+                  <Pie data={defectosPareto} dataKey="value" nameKey="name" innerRadius={45} outerRadius={85} paddingAngle={3}>
+                    {defectosPareto.map((_, index) => (
+                      <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip contentStyle={tooltipStyle} />
                 </PieChart>
               </ResponsiveContainer>
             ) : (
-              <div className="h-full flex items-center justify-center text-slate-500 text-sm">
+              <div className="h-full flex items-center justify-center text-slate-400 text-xs">
                 No hay defectos registrados en el periodo.
               </div>
             )}
@@ -342,58 +369,72 @@ export const Rendimiento = () => {
         </div>
       </div>
 
+      {/* Rankings + Capacity */}
       <div className="grid gap-4 lg:grid-cols-3 mb-6">
-        <div className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm lg:col-span-2">
-          <h2 className="text-lg font-bold text-slate-800 mb-4">Ranking de eficiencia por trabajador</h2>
-          <div className="h-72">
+        <div className="card-premium-static rounded-2xl p-5 lg:col-span-2">
+          <h2 className="text-sm font-bold mb-4" style={{ fontFamily: 'var(--font-heading)', color: 'var(--carbon)' }}>
+            Ranking de eficiencia por trabajador
+          </h2>
+          <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={productividadPorEmpleado}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                <XAxis dataKey="nombre" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b' }} />
-                <Tooltip formatter={(value: number) => `${value.toFixed(1)}%`} />
-                <Bar dataKey="eficiencia" name="Eficiencia %" fill="#7c3aed" radius={[8, 8, 0, 0]} />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e8e2d9" />
+                <XAxis dataKey="nombre" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 11 }} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 11 }} />
+                <Tooltip contentStyle={tooltipStyle} formatter={(value: number) => `${value.toFixed(1)}%`} />
+                <Bar dataKey="eficiencia" name="Eficiencia %" fill="#c48b3f" radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
-        <div className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-bold text-slate-800 mb-4">Capacidad y despacho</h2>
-          <div className="space-y-4 text-sm">
-            <div className="rounded-2xl bg-slate-50 p-4">
-              <p className="text-slate-500">OTD (despachos a tiempo)</p>
-              <p className="text-2xl font-bold text-slate-900">{formatearPorcentaje(capacidadDespacho.cumplimientoDespacho)}</p>
-            </div>
-            <div className="rounded-2xl bg-slate-50 p-4">
-              <p className="text-slate-500">Capacidad diaria estimada</p>
-              <p className="text-2xl font-bold text-slate-900">{capacidadDespacho.capacidadDiaria.toFixed(0)} und/dia</p>
-            </div>
-            <div className="rounded-2xl bg-slate-50 p-4">
-              <p className="text-slate-500">Backlog pendiente</p>
-              <p className="text-2xl font-bold text-slate-900">{capacidadDespacho.backlogDias.toFixed(1)} dias</p>
-              <p className="text-xs text-slate-500 mt-1">{capacidadDespacho.backlogUnidades} unidades en cola</p>
-            </div>
+
+        <div className="card-premium-static rounded-2xl p-5">
+          <h2 className="text-sm font-bold mb-4" style={{ fontFamily: 'var(--font-heading)', color: 'var(--carbon)' }}>
+            Capacidad y despacho
+          </h2>
+          <div className="space-y-3">
+            {[
+              { label: 'OTD (a tiempo)', value: formatearPorcentaje(capacidadDespacho.cumplimientoDespacho) },
+              { label: 'Capacidad diaria', value: `${capacidadDespacho.capacidadDiaria.toFixed(0)} und/día` },
+              { label: 'Backlog pendiente', value: `${capacidadDespacho.backlogDias.toFixed(1)} días`, sub: `${capacidadDespacho.backlogUnidades} unidades en cola` },
+            ].map((item) => (
+              <div key={item.label} className="rounded-xl p-4" style={{ background: 'var(--surface-linen)' }}>
+                <p className="text-xs text-slate-500">{item.label}</p>
+                <p className="text-xl font-bold mt-0.5" style={{ fontFamily: 'var(--font-heading)', color: 'var(--carbon)' }}>{item.value}</p>
+                {item.sub && <p className="text-[10px] text-slate-400 mt-0.5">{item.sub}</p>}
+              </div>
+            ))}
           </div>
         </div>
       </div>
 
-      <div className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-          <AlertTriangle size={18} className="text-amber-600" /> Alertas accionables
+      {/* Alerts */}
+      <div className="card-premium-static rounded-2xl p-5">
+        <h2 className="text-sm font-bold mb-4 flex items-center gap-2" style={{ fontFamily: 'var(--font-heading)', color: 'var(--carbon)' }}>
+          <AlertTriangle size={16} style={{ color: 'var(--accent-copper)' }} /> Alertas accionables
         </h2>
-        <div className="grid gap-3">
-          {alertas.map((alerta) => (
-            <div
-              key={alerta.metrica}
-              className={`rounded-2xl border px-4 py-3 ${getSemaforoClasses(alerta.estado)}`}
-            >
-              <div className="flex flex-col gap-1 md:flex-row md:items-center md:justify-between">
-                <p className="font-semibold">{alerta.metrica}</p>
-                <p className="font-bold">{alerta.valor}</p>
+        <div className="grid gap-2.5">
+          {alertas.map((alerta) => {
+            const colors = getSemaforoClasses(alerta.estado);
+            return (
+              <div
+                key={alerta.metrica}
+                className="rounded-xl px-4 py-3 flex flex-col gap-1 md:flex-row md:items-center md:justify-between"
+                style={{
+                  background: colors.bg,
+                  border: `1px solid ${colors.border}`,
+                  borderLeft: `3px solid ${colors.text}`,
+                }}
+              >
+                <div className="flex items-center gap-2">
+                  <alerta.icon size={16} style={{ color: colors.text }} />
+                  <p className="text-sm font-semibold" style={{ color: colors.text }}>{alerta.metrica}</p>
+                </div>
+                <p className="text-sm font-bold" style={{ color: colors.text }}>{alerta.valor}</p>
+                <p className="text-xs text-slate-500 md:max-w-xs">{alerta.accion}</p>
               </div>
-              <p className="text-sm mt-1">{alerta.accion}</p>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>

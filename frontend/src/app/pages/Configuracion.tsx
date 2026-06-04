@@ -6,27 +6,12 @@ type Tab = 'accionesProduccion' | 'cargos' | 'areas' | 'accionesAseo' | 'empresa
 
 export const Configuracion = () => {
   const {
-    accionesProduccion,
-    cargos,
-    areasTrabajo,
-    accionesAseo,
-    empresas,
-    productos,
-    agregarAccionProduccion,
-    editarAccionProduccion,
-    eliminarAccionProduccion,
-    agregarCargo,
-    editarCargo,
-    eliminarCargo,
-    agregarArea,
-    editarArea,
-    eliminarArea,
-    agregarAccionAseo,
-    editarAccionAseo,
-    eliminarAccionAseo,
-    agregarEmpresa,
-    editarEmpresa,
-    eliminarEmpresa,
+    accionesProduccion, cargos, areasTrabajo, accionesAseo, empresas, productos,
+    agregarAccionProduccion, editarAccionProduccion, eliminarAccionProduccion,
+    agregarCargo, editarCargo, eliminarCargo,
+    agregarArea, editarArea, eliminarArea,
+    agregarAccionAseo, editarAccionAseo, eliminarAccionAseo,
+    agregarEmpresa, editarEmpresa, eliminarEmpresa,
   } = useAppContext();
 
   const [tab, setTab] = useState<Tab>('accionesProduccion');
@@ -34,11 +19,7 @@ export const Configuracion = () => {
   const [secuencia, setSecuencia] = useState('');
   const [editando, setEditando] = useState<string | null>(null);
   const [empresaForm, setEmpresaForm] = useState<Omit<Empresa, 'id'>>({
-    razonSocial: '',
-    telefono: '',
-    correo: '',
-    direccion: '',
-    estado: 'Sin ordenes',
+    razonSocial: '', telefono: '', correo: '', direccion: '', estado: 'Sin ordenes',
   });
   const [empresaEditando, setEmpresaEditando] = useState<string | null>(null);
 
@@ -52,30 +33,17 @@ export const Configuracion = () => {
 
   const listaActual = (): CatalogoItem[] => {
     switch (tab) {
-      case 'accionesProduccion':
-        return accionesProduccion;
-      case 'cargos':
-        return cargos;
-      case 'areas':
-        return areasTrabajo;
-      case 'accionesAseo':
-        return accionesAseo;
-      case 'empresas':
-        return [];
+      case 'accionesProduccion': return accionesProduccion;
+      case 'cargos': return cargos;
+      case 'areas': return areasTrabajo;
+      case 'accionesAseo': return accionesAseo;
+      case 'empresas': return [];
     }
   };
 
   const resetForm = () => {
-    setNombre('');
-    setSecuencia('');
-    setEditando(null);
-    setEmpresaForm({
-      razonSocial: '',
-      telefono: '',
-      correo: '',
-      direccion: '',
-      estado: 'Sin ordenes',
-    });
+    setNombre(''); setSecuencia(''); setEditando(null);
+    setEmpresaForm({ razonSocial: '', telefono: '', correo: '', direccion: '', estado: 'Sin ordenes' });
     setEmpresaEditando(null);
   };
 
@@ -84,19 +52,13 @@ export const Configuracion = () => {
     if (tab === 'empresas') {
       if (!empresaForm.razonSocial?.trim()) return alert('La razón social es obligatoria.');
       if (empresaForm.correo && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(empresaForm.correo)) return alert('El correo electrónico no tiene un formato válido.');
-      if (empresaForm.telefono && !/^[0-9+\- ]{7,15}$/.test(empresaForm.telefono)) return alert('El teléfono tiene un formato inválido. Usa entre 7 y 15 números, espacios, + o -.');
+      if (empresaForm.telefono && !/^[0-9+\- ]{7,15}$/.test(empresaForm.telefono)) return alert('El teléfono tiene un formato inválido.');
       if (empresaEditando) {
         editarEmpresa(empresaEditando, { ...empresaForm, razonSocial: empresaForm.razonSocial.trim() });
       } else {
         agregarEmpresa({ ...empresaForm, razonSocial: empresaForm.razonSocial.trim() });
       }
-      setEmpresaForm({
-        razonSocial: '',
-        telefono: '',
-        correo: '',
-        direccion: '',
-        estado: 'Sin ordenes',
-      });
+      setEmpresaForm({ razonSocial: '', telefono: '', correo: '', direccion: '', estado: 'Sin ordenes' });
       setEmpresaEditando(null);
       return;
     }
@@ -104,50 +66,25 @@ export const Configuracion = () => {
     if (!nombre.trim()) return alert('El nombre es obligatorio');
 
     if (editando) {
-      if (editando.startsWith('tmp-')) {
-        return alert('Este ítem aún se está guardando. Espera un momento.');
-      }
+      if (editando.startsWith('tmp-')) return alert('Este ítem aún se está guardando.');
       const actual = listaActual().find((i) => i.id === editando);
-      if (!actual) {
-        resetForm();
-        return alert('El ítem ya no existe. Actualiza la página.');
-      }
+      if (!actual) { resetForm(); return alert('El ítem ya no existe.'); }
 
       const updates: Partial<CatalogoItem> = { nombre: nombre.trim() };
 
       switch (tab) {
-        case 'accionesProduccion':
-          editarAccionProduccion(editando, updates);
-          break;
-        case 'cargos':
-          editarCargo(editando, updates);
-          break;
-        case 'areas':
-          editarArea(editando, updates);
-          break;
-        case 'accionesAseo':
-          editarAccionAseo(editando, updates);
-          break;
+        case 'accionesProduccion': editarAccionProduccion(editando, updates); break;
+        case 'cargos': editarCargo(editando, updates); break;
+        case 'areas': editarArea(editando, updates); break;
+        case 'accionesAseo': editarAccionAseo(editando, updates); break;
       }
     } else {
-      const nuevo: Omit<CatalogoItem, 'id'> = {
-        nombre: nombre.trim(),
-        activa: true,
-      };
-
+      const nuevo: Omit<CatalogoItem, 'id'> = { nombre: nombre.trim(), activa: true };
       switch (tab) {
-        case 'accionesProduccion':
-          agregarAccionProduccion(nuevo);
-          break;
-        case 'cargos':
-          agregarCargo(nuevo);
-          break;
-        case 'areas':
-          agregarArea(nuevo);
-          break;
-        case 'accionesAseo':
-          agregarAccionAseo(nuevo);
-          break;
+        case 'accionesProduccion': agregarAccionProduccion(nuevo); break;
+        case 'cargos': agregarCargo(nuevo); break;
+        case 'areas': agregarArea(nuevo); break;
+        case 'accionesAseo': agregarAccionAseo(nuevo); break;
       }
     }
     resetForm();
@@ -155,9 +92,7 @@ export const Configuracion = () => {
 
   const iniciarEdicion = (item: CatalogoItem) => {
     if (tab === 'empresas') return;
-    if (item.id.startsWith('tmp-')) {
-      return alert('Espera a que termine de guardarse este ítem.');
-    }
+    if (item.id.startsWith('tmp-')) return alert('Espera a que termine de guardarse.');
     setEditando(item.id);
     setNombre(item.nombre);
     setSecuencia(item.orden != null ? String(item.orden) : '');
@@ -169,46 +104,27 @@ export const Configuracion = () => {
       eliminarEmpresa(id);
       if (empresaEditando === id) {
         setEmpresaEditando(null);
-        setEmpresaForm({
-          razonSocial: '',
-          telefono: '',
-          correo: '',
-          direccion: '',
-          estado: 'Sin ordenes',
-        });
+        setEmpresaForm({ razonSocial: '', telefono: '', correo: '', direccion: '', estado: 'Sin ordenes' });
       }
       return;
     }
-
     if (id.startsWith('tmp-')) return;
     if (!window.confirm('¿Eliminar este ítem del catálogo?')) return;
     switch (tab) {
-      case 'accionesProduccion':
-        eliminarAccionProduccion(id);
-        break;
-      case 'cargos':
-        eliminarCargo(id);
-        break;
-      case 'areas':
-        eliminarArea(id);
-        break;
-      case 'accionesAseo':
-        eliminarAccionAseo(id);
-        break;
+      case 'accionesProduccion': eliminarAccionProduccion(id); break;
+      case 'cargos': eliminarCargo(id); break;
+      case 'areas': eliminarArea(id); break;
+      case 'accionesAseo': eliminarAccionAseo(id); break;
     }
     if (editando === id) resetForm();
   };
 
   const iniciarEdicionEmpresa = (empresa: Empresa) => {
-    if (empresa.id.startsWith('tmp-')) {
-      return alert('Espera a que termine de guardarse esta empresa.');
-    }
+    if (empresa.id.startsWith('tmp-')) return alert('Espera a que termine de guardarse.');
     setEmpresaEditando(empresa.id);
     setEmpresaForm({
-      razonSocial: empresa.razonSocial ?? '',
-      telefono: empresa.telefono ?? '',
-      correo: empresa.correo ?? '',
-      direccion: empresa.direccion ?? '',
+      razonSocial: empresa.razonSocial ?? '', telefono: empresa.telefono ?? '',
+      correo: empresa.correo ?? '', direccion: empresa.direccion ?? '',
       estado: empresa.estado ?? 'Sin ordenes',
     });
   };
@@ -216,80 +132,78 @@ export const Configuracion = () => {
   const pendientesEmpresa = (razonSocial: string) =>
     productos.filter((p) => p.empresa === razonSocial && p.estado !== 'Terminado').length;
 
-  return (
-    <div className="animate-in fade-in duration-300">
-      <h1 className="text-3xl font-extrabold text-teal-900 flex items-center gap-3 mb-2">
-        Configuración <Settings className="text-slate-500" />
-      </h1>
-      <p className="text-slate-500 mb-6">
-        Catálogos maestros. Aquí también puedes gestionar empresas y revisar sus órdenes pendientes.
-      </p>
+  const inputStyle = {
+    background: 'var(--surface-linen)',
+    border: '1px solid var(--border-fiber)',
+    color: 'var(--carbon)',
+  };
 
-      <div className="flex flex-wrap gap-2 mb-6">
+  return (
+    <div className="animate-fade-up">
+      {/* Header */}
+      <div className="mb-6">
+        <div className="flex items-center gap-3 mb-1">
+          <div className="w-10 h-1 rounded-full" style={{ background: 'var(--accent-copper)' }} />
+          <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400" style={{ fontFamily: 'var(--font-heading)' }}>
+            Sistema
+          </span>
+        </div>
+        <h1
+          className="text-3xl font-bold flex items-center gap-3"
+          style={{ fontFamily: 'var(--font-heading)', color: 'var(--carbon)' }}
+        >
+          Configuración
+          <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: 'var(--surface-linen)' }}>
+            <Settings size={18} className="text-slate-500" />
+          </div>
+        </h1>
+        <p className="text-slate-500 mt-1.5 text-sm">
+          Catálogos maestros. Gestiona empresas y revisa sus órdenes pendientes.
+        </p>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex flex-wrap gap-1.5 mb-6 p-1 rounded-xl" style={{ background: 'var(--surface-linen)' }}>
         {tabs.map((t) => (
           <button
             key={t.id}
             type="button"
-            onClick={() => {
-              setTab(t.id);
-              resetForm();
-            }}
-            className={`px-4 py-2 rounded-xl font-bold text-sm transition-colors ${
-              tab === t.id ? 'bg-teal-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+            onClick={() => { setTab(t.id); resetForm(); }}
+            className={`px-4 py-2 rounded-lg font-semibold text-xs transition-all ${
+              tab === t.id
+                ? 'text-white shadow-sm'
+                : 'text-slate-500 hover:text-[var(--carbon)]'
             }`}
+            style={tab === t.id ? { background: 'var(--accent-copper)' } : {}}
           >
             {t.label}
           </button>
         ))}
       </div>
 
-      <form onSubmit={guardar} className="bg-white p-5 rounded-2xl border border-slate-200 mb-6 flex flex-wrap gap-3 items-end">
+      {/* Form */}
+      <form onSubmit={guardar} className="card-premium-static p-5 rounded-2xl mb-6 flex flex-wrap gap-3 items-end">
         {tab === 'empresas' ? (
           <>
-            <div className="flex-1 min-w-[220px]">
-              <label className="block text-sm font-semibold text-slate-600 mb-1">Razón social</label>
-              <input
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2"
-                value={empresaForm.razonSocial ?? ''}
-                onChange={(e) => setEmpresaForm((p) => ({ ...p, razonSocial: e.target.value }))}
-                required
-              />
+            <div className="flex-1 min-w-[200px]">
+              <label className="block text-xs font-medium text-slate-500 mb-1" style={{ fontFamily: 'var(--font-heading)' }}>Razón social</label>
+              <input className="w-full rounded-xl px-4 py-2.5 text-sm" style={inputStyle} value={empresaForm.razonSocial ?? ''} onChange={(e) => setEmpresaForm((p) => ({ ...p, razonSocial: e.target.value }))} required />
+            </div>
+            <div className="min-w-[150px]">
+              <label className="block text-xs font-medium text-slate-500 mb-1" style={{ fontFamily: 'var(--font-heading)' }}>Teléfono</label>
+              <input type="tel" className="w-full rounded-xl px-4 py-2.5 text-sm" style={inputStyle} value={empresaForm.telefono ?? ''} onChange={(e) => setEmpresaForm((p) => ({ ...p, telefono: e.target.value }))} pattern="[0-9+\- ]{7,15}" title="7-15 caracteres" />
+            </div>
+            <div className="min-w-[200px]">
+              <label className="block text-xs font-medium text-slate-500 mb-1" style={{ fontFamily: 'var(--font-heading)' }}>Correo</label>
+              <input type="email" className="w-full rounded-xl px-4 py-2.5 text-sm" style={inputStyle} value={empresaForm.correo ?? ''} onChange={(e) => setEmpresaForm((p) => ({ ...p, correo: e.target.value }))} />
+            </div>
+            <div className="min-w-[200px]">
+              <label className="block text-xs font-medium text-slate-500 mb-1" style={{ fontFamily: 'var(--font-heading)' }}>Dirección</label>
+              <input className="w-full rounded-xl px-4 py-2.5 text-sm" style={inputStyle} value={empresaForm.direccion ?? ''} onChange={(e) => setEmpresaForm((p) => ({ ...p, direccion: e.target.value }))} />
             </div>
             <div className="min-w-[160px]">
-              <label className="block text-sm font-semibold text-slate-600 mb-1">Teléfono</label>
-              <input
-                type="tel"
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2"
-                value={empresaForm.telefono ?? ''}
-                onChange={(e) => setEmpresaForm((p) => ({ ...p, telefono: e.target.value }))}
-                pattern="[0-9+\-\ ]{7,15}"
-                title="Entre 7 y 15 caracteres. Solo números, +, - o espacios"
-              />
-            </div>
-            <div className="min-w-[220px]">
-              <label className="block text-sm font-semibold text-slate-600 mb-1">Correo</label>
-              <input
-                type="email"
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2"
-                value={empresaForm.correo ?? ''}
-                onChange={(e) => setEmpresaForm((p) => ({ ...p, correo: e.target.value }))}
-              />
-            </div>
-            <div className="min-w-[220px]">
-              <label className="block text-sm font-semibold text-slate-600 mb-1">Dirección</label>
-              <input
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2"
-                value={empresaForm.direccion ?? ''}
-                onChange={(e) => setEmpresaForm((p) => ({ ...p, direccion: e.target.value }))}
-              />
-            </div>
-            <div className="min-w-[180px]">
-              <label className="block text-sm font-semibold text-slate-600 mb-1">Estado</label>
-              <select
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2"
-                value={empresaForm.estado ?? 'Sin ordenes'}
-                onChange={(e) => setEmpresaForm((p) => ({ ...p, estado: e.target.value }))}
-              >
+              <label className="block text-xs font-medium text-slate-500 mb-1" style={{ fontFamily: 'var(--font-heading)' }}>Estado</label>
+              <select className="w-full rounded-xl px-4 py-2.5 text-sm" style={inputStyle} value={empresaForm.estado ?? 'Sin ordenes'} onChange={(e) => setEmpresaForm((p) => ({ ...p, estado: e.target.value }))}>
                 <option value="Sin ordenes">Sin ordenes</option>
                 <option value="Ordenes pendientes">Ordenes pendientes</option>
                 <option value="Inactiva">Inactiva</option>
@@ -297,39 +211,29 @@ export const Configuracion = () => {
             </div>
           </>
         ) : (
-          <>
-        <div className="flex-1 min-w-[200px]">
-          <label className="block text-sm font-semibold text-slate-600 mb-1">Nombre</label>
-          <input
-            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2"
-            value={nombre}
-            onChange={(e) => setNombre(e.target.value)}
-            required
-          />
-        </div>
-          </>
+          <div className="flex-1 min-w-[200px]">
+            <label className="block text-xs font-medium text-slate-500 mb-1" style={{ fontFamily: 'var(--font-heading)' }}>Nombre</label>
+            <input className="w-full rounded-xl px-4 py-2.5 text-sm" style={inputStyle} value={nombre} onChange={(e) => setNombre(e.target.value)} required />
+          </div>
         )}
-        <button type="submit" className="bg-teal-600 text-white px-5 py-2 rounded-xl font-bold flex items-center gap-2">
-          {editando || empresaEditando ? (
-            <>
-              <Edit2 size={18} /> Actualizar
-            </>
-          ) : (
-            <>
-              <Plus size={18} /> Agregar
-            </>
-          )}
+        <button
+          type="submit"
+          className="px-5 py-2.5 rounded-xl font-semibold text-sm text-white flex items-center gap-2 transition-all active:scale-[0.97]"
+          style={{ background: 'var(--accent-copper)', boxShadow: 'var(--shadow-copper)' }}
+        >
+          {editando || empresaEditando ? <><Edit2 size={16} /> Actualizar</> : <><Plus size={16} /> Agregar</>}
         </button>
         {(editando || empresaEditando) && (
-          <button type="button" onClick={resetForm} className="text-slate-500 px-3 py-2">
+          <button type="button" onClick={resetForm} className="text-slate-500 px-3 py-2 text-sm font-medium">
             Cancelar
           </button>
         )}
       </form>
 
+      {/* List */}
       <ul className="space-y-2">
         {tab !== 'empresas' && listaActual().length === 0 ? (
-          <li className="text-center py-8 text-slate-500 bg-white rounded-2xl border border-dashed">
+          <li className="text-center py-8 text-slate-400 rounded-2xl border-2 border-dashed text-sm" style={{ background: 'var(--surface-silk)', borderColor: 'var(--border-fiber)' }}>
             Sin ítems en este catálogo
           </li>
         ) : tab === 'empresas' ? (
@@ -338,41 +242,32 @@ export const Configuracion = () => {
             return (
               <li
                 key={item.id}
-                className={`bg-white border rounded-xl px-4 py-3 flex items-center justify-between ${
-                  empresaEditando === item.id ? 'border-teal-400 ring-2 ring-teal-100' : 'border-slate-200'
+                className={`card-premium-static rounded-xl px-4 py-3 flex items-center justify-between ${
+                  empresaEditando === item.id ? 'ring-2 ring-[var(--accent-copper-glow)]' : ''
                 }`}
+                style={empresaEditando === item.id ? { borderColor: 'var(--accent-copper)' } : {}}
               >
                 <div>
-                  <p className="font-semibold text-slate-800">{item.razonSocial}</p>
-                  <p className="text-xs text-slate-500">
+                  <p className="font-semibold text-sm" style={{ fontFamily: 'var(--font-heading)', color: 'var(--carbon)' }}>{item.razonSocial}</p>
+                  <p className="text-[11px] text-slate-500 mt-0.5">
                     {item.telefono || 'Sin teléfono'} · {item.correo || 'Sin correo'}
                   </p>
-                  <p className="text-xs text-slate-500">{item.direccion || 'Sin dirección'}</p>
-                  <div className="flex gap-2 mt-1">
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">
-                      Estado: {item.estado || 'Sin ordenes'}
+                  <p className="text-[11px] text-slate-500">{item.direccion || 'Sin dirección'}</p>
+                  <div className="flex gap-2 mt-1.5">
+                    <span className="text-[10px] px-2 py-0.5 rounded-md" style={{ background: 'var(--surface-linen)', color: 'var(--carbon)' }}>
+                      {item.estado || 'Sin ordenes'}
                     </span>
-                    <span className={`text-xs px-2 py-0.5 rounded-full ${pendientes > 0 ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-700'}`}>
+                    <span className={`text-[10px] px-2 py-0.5 rounded-md ${pendientes > 0 ? 'bg-amber-50 text-amber-800' : 'bg-emerald-50 text-emerald-700'}`}>
                       Pendientes: {pendientes}
                     </span>
                   </div>
                 </div>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => iniciarEdicionEmpresa(item)}
-                    disabled={item.id.startsWith('tmp-')}
-                    className="p-2 bg-slate-100 rounded-lg text-slate-600 disabled:opacity-40"
-                  >
-                    <Edit2 size={18} />
+                <div className="flex gap-1.5">
+                  <button type="button" onClick={() => iniciarEdicionEmpresa(item)} disabled={item.id.startsWith('tmp-')} className="p-2 rounded-lg transition-colors hover:bg-[var(--surface-linen)] disabled:opacity-40" style={{ border: '1px solid var(--border-fiber)' }}>
+                    <Edit2 size={16} className="text-slate-500" />
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => eliminar(item.id)}
-                    disabled={item.id.startsWith('tmp-')}
-                    className="p-2 bg-red-50 rounded-lg text-red-600 disabled:opacity-40"
-                  >
-                    <Trash2 size={18} />
+                  <button type="button" onClick={() => eliminar(item.id)} disabled={item.id.startsWith('tmp-')} className="p-2 rounded-lg bg-rose-50 hover:bg-rose-100 border border-rose-200 disabled:opacity-40">
+                    <Trash2 size={16} className="text-rose-500" />
                   </button>
                 </div>
               </li>
@@ -384,32 +279,23 @@ export const Configuracion = () => {
             .map((item) => (
               <li
                 key={item.id}
-                className={`bg-white border rounded-xl px-4 py-3 flex items-center justify-between ${
-                  editando === item.id ? 'border-teal-400 ring-2 ring-teal-100' : 'border-slate-200'
+                className={`card-premium-static rounded-xl px-4 py-3 flex items-center justify-between ${
+                  editando === item.id ? 'ring-2 ring-[var(--accent-copper-glow)]' : ''
                 }`}
+                style={editando === item.id ? { borderColor: 'var(--accent-copper)' } : {}}
               >
-                <span className="font-semibold text-slate-800">
+                <span className="font-medium text-sm" style={{ color: 'var(--carbon)' }}>
                   {item.nombre}
                   {item.orden != null && tab === 'accionesProduccion' && (
-                    <span className="text-slate-400 font-normal ml-2">(paso {item.orden})</span>
+                    <span className="text-slate-400 font-normal ml-2 text-xs">(paso {item.orden})</span>
                   )}
                 </span>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => iniciarEdicion(item)}
-                    disabled={item.id.startsWith('tmp-')}
-                    className="p-2 bg-slate-100 rounded-lg text-slate-600 disabled:opacity-40"
-                  >
-                    <Edit2 size={18} />
+                <div className="flex gap-1.5">
+                  <button type="button" onClick={() => iniciarEdicion(item)} disabled={item.id.startsWith('tmp-')} className="p-2 rounded-lg transition-colors hover:bg-[var(--surface-linen)] disabled:opacity-40" style={{ border: '1px solid var(--border-fiber)' }}>
+                    <Edit2 size={16} className="text-slate-500" />
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => eliminar(item.id)}
-                    disabled={item.id.startsWith('tmp-')}
-                    className="p-2 bg-red-50 rounded-lg text-red-600 disabled:opacity-40"
-                  >
-                    <Trash2 size={18} />
+                  <button type="button" onClick={() => eliminar(item.id)} disabled={item.id.startsWith('tmp-')} className="p-2 rounded-lg bg-rose-50 hover:bg-rose-100 border border-rose-200 disabled:opacity-40">
+                    <Trash2 size={16} className="text-rose-500" />
                   </button>
                 </div>
               </li>

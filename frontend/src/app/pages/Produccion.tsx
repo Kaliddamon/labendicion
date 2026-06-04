@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAppContext, Producto } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
-import { Search, Plus, Package, Edit2, Trash2, X } from 'lucide-react';
+import { Search, Plus, Package, Edit2, Trash2, X, Scissors } from 'lucide-react';
 import { AccessibleButton } from '../components/ui/accessible/AccessibleButton';
 import { AccessibleInput } from '../components/ui/accessible/AccessibleInput';
 import { AccessibleCardSelector } from '../components/ui/accessible/AccessibleCardSelector';
@@ -11,11 +11,9 @@ export const Produccion = () => {
   const { tieneRol } = useAuth();
   const [busqueda, setBusqueda] = useState('');
 
-  // Estado para el formulario (Crear/Editar)
   const [mostrarForm, setMostrarForm] = useState(false);
   const [productoEditando, setProductoEditando] = useState<string | null>(null);
 
-  // Campos del formulario
   const [nombre, setNombre] = useState('');
   const [cantidad, setCantidad] = useState('');
   const [empresa, setEmpresa] = useState('');
@@ -155,13 +153,20 @@ export const Produccion = () => {
 
   const getEstadoBadge = (estado: Producto['estado']) => {
     switch (estado) {
-      case 'Terminado': return 'bg-emerald-100 text-emerald-800 border border-emerald-200';
-      case 'En proceso': return 'bg-amber-100 text-amber-800 border border-amber-200';
-      case 'Pendiente': return 'bg-slate-100 text-slate-700 border border-slate-200';
+      case 'Terminado': return 'bg-emerald-50 text-emerald-700 border border-emerald-200';
+      case 'En proceso': return 'bg-amber-50 text-amber-700 border border-amber-200';
+      case 'Pendiente': return 'bg-slate-100 text-slate-600 border border-slate-200';
     }
   };
 
-  // Opciones para AccesibleCardSelector
+  const getEstadoBorderColor = (estado: Producto['estado']) => {
+    switch (estado) {
+      case 'Terminado': return '#16a34a';
+      case 'En proceso': return '#d97706';
+      case 'Pendiente': return '#94a3b8';
+    }
+  };
+
   const opcionesEstado = [
     { value: 'Pendiente', label: 'Pendiente', colorHint: 'slate' as const },
     { value: 'En proceso', label: 'En proceso', colorHint: 'amber' as const },
@@ -169,41 +174,60 @@ export const Produccion = () => {
   ];
 
   return (
-    <div className="animate-in fade-in duration-300 pb-12">
+    <div className="animate-fade-up pb-12">
+      {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold text-slate-800 flex items-center gap-3">
-            Producción <Package className="text-blue-500" />
+          <div className="flex items-center gap-3 mb-1">
+            <div className="w-10 h-1 rounded-full" style={{ background: 'var(--accent-copper)' }} />
+            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400" style={{ fontFamily: 'var(--font-heading)' }}>
+              Órdenes
+            </span>
+          </div>
+          <h1
+            className="text-3xl font-bold flex items-center gap-3"
+            style={{ fontFamily: 'var(--font-heading)', color: 'var(--carbon)' }}
+          >
+            Producción
+            <div className="w-9 h-9 rounded-lg bg-blue-100 flex items-center justify-center">
+              <Scissors size={18} className="text-blue-600" />
+            </div>
           </h1>
-          <p className="text-slate-500 mt-2 text-lg">Controla lo que estamos confeccionando</p>
+          <p className="text-slate-500 mt-1.5 text-sm">Controla lo que estamos confeccionando</p>
         </div>
 
         {!mostrarForm && (
           <AccessibleButton onClick={() => setMostrarForm(true)}>
-            <Plus size={24} /> NUEVA ORDEN
+            <Plus size={20} /> Nueva orden
           </AccessibleButton>
         )}
       </div>
 
+      {/* Form */}
       {mostrarForm && (
-        <form onSubmit={handleGuardar} className="bg-white p-6 md:p-8 rounded-[2rem] shadow-sm border border-slate-200 mb-8 slide-in-from-top-4 animate-in">
-          <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-100">
-            <h2 className="text-2xl font-bold text-slate-800">
+        <form onSubmit={handleGuardar} className="card-premium-static p-6 md:p-8 rounded-2xl mb-8 animate-fade-up">
+          <div className="flex justify-between items-center mb-6 pb-4" style={{ borderBottom: '1px solid var(--border-fiber)' }}>
+            <h2
+              className="text-xl font-bold"
+              style={{ fontFamily: 'var(--font-heading)', color: 'var(--carbon)' }}
+            >
               {productoEditando ? 'Editar Orden' : 'Crear Nueva Orden'}
             </h2>
             <button
               type="button"
               onClick={resetForm}
-              className="p-3 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-full transition-colors"
+              className="p-2.5 rounded-xl transition-colors hover:bg-[var(--surface-linen)] text-slate-400 hover:text-slate-600"
             >
-              <X size={24} />
+              <X size={20} />
             </button>
           </div>
 
           <div className="grid md:grid-cols-2 gap-8 mb-8">
-            {/* Sección Izquierda: Datos Básicos */}
-            <div className="space-y-6">
-              <h3 className="text-xl font-bold text-slate-700 bg-slate-50 p-3 rounded-xl">1. Información Básica</h3>
+            {/* Left */}
+            <div className="space-y-5">
+              <div className="px-3 py-2 rounded-xl" style={{ background: 'var(--surface-linen)', fontFamily: 'var(--font-heading)' }}>
+                <span className="text-sm font-semibold" style={{ color: 'var(--carbon)' }}>1. Información Básica</span>
+              </div>
 
               <AccessibleInput
                 label="¿Qué vamos a confeccionar?"
@@ -246,9 +270,11 @@ export const Produccion = () => {
               />
             </div>
 
-            {/* Sección Derecha: Estado y Fechas */}
-            <div className="space-y-6">
-              <h3 className="text-xl font-bold text-slate-700 bg-slate-50 p-3 rounded-xl">2. Fechas y Estado</h3>
+            {/* Right */}
+            <div className="space-y-5">
+              <div className="px-3 py-2 rounded-xl" style={{ background: 'var(--surface-linen)', fontFamily: 'var(--font-heading)' }}>
+                <span className="text-sm font-semibold" style={{ color: 'var(--carbon)' }}>2. Fechas y Estado</span>
+              </div>
 
               <AccessibleCardSelector
                 label="Estado actual"
@@ -277,17 +303,19 @@ export const Produccion = () => {
             </div>
           </div>
 
-          {/* Sección Inferior: Acciones/Pasos */}
-          <div className="bg-slate-50 p-6 rounded-[1.5rem] mb-8 border border-slate-100">
-            <h3 className="text-xl font-bold text-slate-700 mb-2">3. Pasos de Producción</h3>
-            <p className="text-slate-500 mb-4 text-sm">¿Qué procesos se deben realizar para esta orden?</p>
+          {/* Steps section */}
+          <div className="p-6 rounded-2xl mb-8" style={{ background: 'var(--surface-linen)', border: '1px solid var(--border-fiber-light)' }}>
+            <div className="px-3 py-2 rounded-xl mb-1" style={{ fontFamily: 'var(--font-heading)' }}>
+              <span className="text-sm font-semibold" style={{ color: 'var(--carbon)' }}>3. Pasos de Producción</span>
+            </div>
+            <p className="text-slate-500 mb-4 text-xs px-3">¿Qué procesos se deben realizar para esta orden?</p>
 
             {accionesValidas.length === 0 ? (
-              <p className="text-lg text-amber-800 bg-amber-100 border border-amber-200 rounded-xl px-4 py-4 mb-2 font-medium">
+              <p className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 font-medium">
                 ⚠️ No hay acciones configuradas en el sistema.
               </p>
             ) : (
-              <div className="flex flex-col sm:flex-row gap-3 mb-6 items-end">
+              <div className="flex flex-col sm:flex-row gap-3 mb-5 items-end">
                 <div className="flex-[2]">
                   <AccessibleInput
                     label="Proceso"
@@ -301,8 +329,8 @@ export const Produccion = () => {
                   />
                 </div>
                 <div className="flex-[1]">
-                  <AccessibleInput 
-                    label="Meta Unidades / Hora"
+                  <AccessibleInput
+                    label="Meta Und/Hora"
                     inputMode="numeric"
                     placeholder="Ej. 25"
                     value={metaHoraPaso}
@@ -313,26 +341,27 @@ export const Produccion = () => {
                   type="button"
                   variant="secondary"
                   onClick={agregarPasoAOrden}
-                  className="mb-1"
+                  className="mb-0.5"
                 >
-                  <Plus size={20} /> Asignar
+                  <Plus size={18} /> Asignar
                 </AccessibleButton>
               </div>
             )}
 
-            <div className="space-y-3">
+            <div className="space-y-2">
               {pasos.length === 0 && (
-                <div className="text-center py-6 border-2 border-dashed border-slate-300 rounded-xl text-slate-400">
+                <div className="text-center py-6 border-2 border-dashed rounded-xl text-slate-400 text-sm" style={{ borderColor: 'var(--border-fiber)' }}>
                   Ningún paso asignado todavía
                 </div>
               )}
               {pasos.map((p, idx) => (
-                <div key={idx} className="flex items-center justify-between bg-white border border-slate-200 rounded-xl px-5 py-4 shadow-sm">
-                  <div className="flex items-center gap-3 text-lg font-bold text-slate-700 flex-1">
+                <div key={idx} className="flex items-center justify-between bg-white border rounded-xl px-4 py-3" style={{ borderColor: 'var(--border-fiber)' }}>
+                  <div className="flex items-center gap-3 text-sm font-semibold flex-1" style={{ color: 'var(--carbon)' }}>
                     <div className="flex items-center gap-2">
                       <input
                         type="number"
-                        className="w-20 px-2 py-1 text-center bg-slate-100 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-teal-500 focus:bg-white transition-colors"
+                        className="w-16 px-2 py-1.5 text-center rounded-lg text-sm transition-colors"
+                        style={{ background: 'var(--surface-linen)', border: '1px solid var(--border-fiber)' }}
                         value={p.metaUnidadesHora ?? ''}
                         onChange={(e) => {
                           const val = Number(e.target.value);
@@ -341,99 +370,113 @@ export const Produccion = () => {
                         placeholder="Meta"
                         title="Meta de unidades por hora"
                       />
-                      <span className="text-sm text-slate-500 font-normal">und/hr</span>
+                      <span className="text-xs text-slate-400 font-normal">und/hr</span>
                     </div>
                     <span className="ml-2">{p.descripcion}</span>
                   </div>
                   <button
                     type="button"
-                    onClick={() => {
-                      setPasos(prev => prev.filter((_, i) => i !== idx));
-                    }}
-                    className="p-3 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg active:scale-95 transition-all"
+                    onClick={() => { setPasos(prev => prev.filter((_, i) => i !== idx)); }}
+                    className="p-2 bg-rose-50 text-rose-500 hover:bg-rose-100 rounded-lg active:scale-95 transition-all"
                     title="Eliminar paso"
                   >
-                    <Trash2 size={24} />
+                    <Trash2 size={18} />
                   </button>
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="flex gap-4">
+          <div className="flex gap-3">
             <AccessibleButton type="button" variant="ghost" onClick={resetForm} className="flex-1 md:flex-none hidden md:flex">
               Cancelar
             </AccessibleButton>
-            <AccessibleButton type="submit" variant="primary" className="flex-1 !bg-amber-500 hover:!bg-amber-600 !text-white text-xl !h-16">
+            <AccessibleButton type="submit" variant="primary" className="flex-1 text-base !min-h-[56px]">
               {productoEditando ? 'Guardar Cambios' : 'Crear Orden'}
             </AccessibleButton>
           </div>
         </form>
       )}
 
+      {/* Search & List */}
       {!mostrarForm && (
         <>
-          <div className="relative mb-6">
-            <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400" size={28} />
+          <div className="relative mb-5">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
             <input
               type="text"
               placeholder="Buscar órdenes por nombre o empresa..."
-              className="w-full bg-white border-2 border-slate-200 rounded-[1.5rem] pl-16 pr-6 py-5 text-xl font-medium shadow-sm focus:outline-none focus:border-teal-500 transition-colors"
+              className="w-full rounded-xl pl-12 pr-5 py-3.5 text-sm font-medium transition-all"
+              style={{
+                background: 'var(--surface-silk)',
+                border: '1px solid var(--border-fiber)',
+                boxShadow: 'var(--shadow-sm)',
+              }}
               value={busqueda}
               onChange={e => setBusqueda(e.target.value)}
             />
           </div>
 
-          <div className="grid gap-5">
+          <div className="grid gap-4">
             {productosFiltrados.length === 0 ? (
-              <div className="text-center py-16 bg-white rounded-[2rem] border border-dashed border-slate-300 text-slate-500">
-                <Package size={64} className="mx-auto mb-4 opacity-50" />
-                <p className="text-xl font-medium">No se encontraron órdenes.</p>
+              <div className="text-center py-16 rounded-2xl border-2 border-dashed text-slate-400" style={{ background: 'var(--surface-silk)', borderColor: 'var(--border-fiber)' }}>
+                <div className="w-16 h-16 rounded-2xl mx-auto mb-4 flex items-center justify-center" style={{ background: 'var(--surface-linen)' }}>
+                  <Package size={28} className="opacity-50" />
+                </div>
+                <p className="text-base font-medium" style={{ color: 'var(--carbon)' }}>No se encontraron órdenes.</p>
+                <p className="text-sm mt-1 text-slate-400">Crea una nueva orden para comenzar</p>
               </div>
             ) : (
               productosFiltrados.map((prod) => (
-                <div key={prod.id} className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-200 flex flex-col lg:flex-row lg:items-center justify-between gap-6 hover:shadow-md transition-shadow">
-
-                  <div className="flex items-start md:items-center gap-6 flex-1">
-                    <div className="bg-slate-50 text-slate-700 w-20 h-20 rounded-2xl flex flex-col items-center justify-center font-extrabold text-2xl border-2 border-slate-100 shrink-0">
-                      <span className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Cant</span>
+                <div
+                  key={prod.id}
+                  className="card-premium p-5 rounded-2xl flex flex-col lg:flex-row lg:items-center justify-between gap-5"
+                  style={{ borderLeft: `3px solid ${getEstadoBorderColor(prod.estado)}` }}
+                >
+                  <div className="flex items-start md:items-center gap-5 flex-1">
+                    <div
+                      className="w-16 h-16 rounded-xl flex flex-col items-center justify-center font-bold text-lg shrink-0"
+                      style={{ background: 'var(--surface-linen)', color: 'var(--carbon)', fontFamily: 'var(--font-heading)' }}
+                    >
+                      <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-wider mb-0.5">Cant</span>
                       {formatMonto(prod.cantidad)}
                     </div>
 
-                    <div className="flex-1">
-                      <h3 className="font-extrabold text-slate-800 text-2xl">{prod.nombre}</h3>
-                      <p className="text-slate-500 font-medium text-lg mt-1">{prod.empresa}</p>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-bold text-lg truncate" style={{ fontFamily: 'var(--font-heading)', color: 'var(--carbon)' }}>
+                        {prod.nombre}
+                      </h3>
+                      <p className="text-slate-500 font-medium text-sm mt-0.5">{prod.empresa}</p>
 
-                      <div className="flex flex-wrap items-center gap-3 mt-4">
-                        <span className={`px-4 py-2 rounded-xl text-sm font-bold uppercase tracking-wide ${getEstadoBadge(prod.estado)}`}>
+                      <div className="flex flex-wrap items-center gap-2 mt-3">
+                        <span className={`px-3 py-1 rounded-lg text-xs font-semibold uppercase tracking-wide ${getEstadoBadge(prod.estado)}`}>
                           {prod.estado}
                         </span>
-                        <span className="text-sm font-bold text-slate-700 bg-slate-100 px-4 py-2 rounded-xl border border-slate-200">
-                          Ganancia: ${formatMonto(prod.ganancia)}
+                        <span className="text-xs font-semibold px-3 py-1 rounded-lg" style={{ background: 'var(--surface-linen)', color: 'var(--carbon)', border: '1px solid var(--border-fiber)' }}>
+                          ${formatMonto(prod.ganancia)}
                         </span>
                       </div>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-3 lg:w-auto w-full border-t lg:border-t-0 pt-5 lg:pt-0">
+                  <div className="flex items-center gap-2 lg:w-auto w-full border-t lg:border-t-0 pt-4 lg:pt-0" style={{ borderColor: 'var(--border-fiber)' }}>
                     <AccessibleButton
                       variant="secondary"
                       onClick={() => iniciarEdicion(prod)}
-                      className="flex-1 lg:flex-none !px-4"
+                      className="flex-1 lg:flex-none !px-4 !min-h-[44px] !text-sm"
                     >
-                      <Edit2 size={24} /> Editar
+                      <Edit2 size={16} /> Editar
                     </AccessibleButton>
                     {tieneRol('SUPERADMINISTRADOR') && (
                       <AccessibleButton
                         variant="danger"
                         onClick={() => { if (window.confirm('¿Seguro que deseas eliminar esta orden permanentemente?')) eliminarProducto(prod.id); }}
-                        className="flex-1 lg:flex-none !px-4"
+                        className="flex-1 lg:flex-none !px-4 !min-h-[44px] !text-sm"
                       >
-                        <Trash2 size={24} /> Eliminar
+                        <Trash2 size={16} /> Eliminar
                       </AccessibleButton>
                     )}
                   </div>
-
                 </div>
               ))
             )}
