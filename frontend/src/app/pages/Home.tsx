@@ -165,8 +165,8 @@ export const Home = () => {
       <div
         className="rounded-2xl p-6 mb-6 animate-fade-up stagger-1"
         style={{
-          background: 'linear-gradient(135deg, var(--indigo-deep) 0%, #0f172a 100%)',
-          boxShadow: '0 8px 32px rgba(15, 23, 42, 0.15)',
+          background: 'linear-gradient(135deg, var(--indigo-deep) 0%, #1a1a2e 100%)',
+          boxShadow: '0 8px 32px rgba(26, 26, 46, 0.15)',
         }}
       >
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
@@ -281,8 +281,8 @@ export const Home = () => {
               <AreaChart data={dataSemanal}>
                 <defs>
                   <linearGradient id="gradTotal" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#c48b3f" stopOpacity={0.2} />
-                    <stop offset="95%" stopColor="#c48b3f" stopOpacity={0.02} />
+                    <stop offset="5%" stopColor="#d4a012" stopOpacity={0.2} />
+                    <stop offset="95%" stopColor="#d4a012" stopOpacity={0.02} />
                   </linearGradient>
                   <linearGradient id="gradBuenas" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#16a34a" stopOpacity={0.15} />
@@ -319,11 +319,11 @@ export const Home = () => {
                   type="monotone"
                   dataKey="total"
                   name="Total"
-                  stroke="#c48b3f"
+                  stroke="#d4a012"
                   strokeWidth={2.5}
                   fill="url(#gradTotal)"
                   dot={false}
-                  activeDot={{ r: 5, strokeWidth: 2, fill: '#c48b3f', stroke: '#fff' }}
+                  activeDot={{ r: 5, strokeWidth: 2, fill: '#d4a012', stroke: '#fff' }}
                 />
                 <Area
                   type="monotone"

@@ -171,7 +171,7 @@ export const Configuracion = () => {
             onClick={() => { setTab(t.id); resetForm(); }}
             className={`px-4 py-2 rounded-lg font-semibold text-xs transition-all ${
               tab === t.id
-                ? 'text-white shadow-sm'
+                ? 'text-[#1a1a2e] shadow-sm'
                 : 'text-slate-500 hover:text-[var(--carbon)]'
             }`}
             style={tab === t.id ? { background: 'var(--accent-copper)' } : {}}
@@ -218,7 +218,7 @@ export const Configuracion = () => {
         )}
         <button
           type="submit"
-          className="px-5 py-2.5 rounded-xl font-semibold text-sm text-white flex items-center gap-2 transition-all active:scale-[0.97]"
+          className="px-5 py-2.5 rounded-xl font-semibold text-sm text-[#1a1a2e] flex items-center gap-2 transition-all active:scale-[0.97]"
           style={{ background: 'var(--accent-copper)', boxShadow: 'var(--shadow-copper)' }}
         >
           {editando || empresaEditando ? <><Edit2 size={16} /> Actualizar</> : <><Plus size={16} /> Agregar</>}

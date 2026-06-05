@@ -28,9 +28,9 @@ export const AccessibleButton: React.FC<AccessibleButtonProps> = ({
 
   const variants = {
     primary: [
-      "bg-[var(--accent-copper)] hover:bg-[var(--accent-copper-bright)] text-white",
-      "shadow-[0_2px_8px_rgba(196,139,63,0.3)]",
-      "hover:shadow-[0_4px_16px_rgba(196,139,63,0.35)]",
+      "bg-[var(--accent-copper)] hover:bg-[var(--accent-copper-bright)] text-[#1a1a2e]",
+      "shadow-[0_2px_8px_rgba(212,160,18,0.3)]",
+      "hover:shadow-[0_4px_16px_rgba(212,160,18,0.35)]",
       "focus-visible:ring-[var(--accent-copper)]",
     ].join(' '),
     secondary: [

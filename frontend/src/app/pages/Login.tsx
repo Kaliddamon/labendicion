@@ -48,8 +48,8 @@ export const Login = () => {
         <div className="absolute inset-0 bg-gradient-to-br from-[var(--carbon)] via-[var(--indigo-deep)] to-[var(--indigo-deep)]" style={{ opacity: 0.7 }} />
 
         {/* Decorative elements */}
-        <div className="absolute top-1/4 -left-20 w-96 h-96 rounded-full" style={{ background: 'radial-gradient(circle, rgba(196,139,63,0.12) 0%, transparent 70%)' }} />
-        <div className="absolute bottom-1/4 right-10 w-72 h-72 rounded-full" style={{ background: 'radial-gradient(circle, rgba(196,139,63,0.08) 0%, transparent 70%)' }} />
+        <div className="absolute top-1/4 -left-20 w-96 h-96 rounded-full" style={{ background: 'radial-gradient(circle, rgba(212,160,18,0.12) 0%, transparent 70%)' }} />
+        <div className="absolute bottom-1/4 right-10 w-72 h-72 rounded-full" style={{ background: 'radial-gradient(circle, rgba(212,160,18,0.08) 0%, transparent 70%)' }} />
 
         {/* Content */}
         <div className="relative z-10 flex flex-col justify-center px-12 xl:px-20">
@@ -80,8 +80,8 @@ export const Login = () => {
                   style={{
                     animationDelay: `${0.2 + i * 0.1}s`,
                     color: 'var(--accent-copper-bright)',
-                    borderColor: 'rgba(196, 139, 63, 0.25)',
-                    background: 'rgba(196, 139, 63, 0.08)',
+                    borderColor: 'rgba(212, 160, 18, 0.25)',
+                    background: 'rgba(212, 160, 18, 0.08)',
                   }}
                 >
                   {feat}

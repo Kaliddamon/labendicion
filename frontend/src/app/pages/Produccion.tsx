@@ -391,7 +391,7 @@ export const Produccion = () => {
             <AccessibleButton type="button" variant="ghost" onClick={resetForm} className="flex-1 md:flex-none hidden md:flex">
               Cancelar
             </AccessibleButton>
-            <AccessibleButton type="submit" variant="primary" className="flex-1 text-base !min-h-[56px]">
+            <AccessibleButton type="submit" variant="primary" className="flex-1 text-base text-[#1a1a2e] !min-h-[56px]">
               {productoEditando ? 'Guardar Cambios' : 'Crear Orden'}
             </AccessibleButton>
           </div>

@@ -97,7 +97,7 @@ export const Aseo = () => {
 
         <button
           onClick={() => crearNuevoRegistro()}
-          className="px-5 py-3 rounded-xl font-semibold text-sm flex items-center gap-2 text-white transition-all active:scale-[0.97]"
+          className="px-5 py-3 rounded-xl font-semibold text-sm flex items-center gap-2 text-[#1a1a2e] transition-all active:scale-[0.97]"
           style={{ background: 'var(--accent-copper)', boxShadow: 'var(--shadow-copper)' }}
         >
           <Plus size={20} /> Nuevo Registro
@@ -143,8 +143,8 @@ export const Aseo = () => {
           className="text-xs font-semibold px-3.5 py-1.5 rounded-lg transition-colors"
           style={{
             color: 'var(--accent-copper)',
-            background: 'rgba(196,139,63,0.08)',
-            border: '1px solid rgba(196,139,63,0.15)',
+            background: 'rgba(212,160,18,0.08)',
+            border: '1px solid rgba(212,160,18,0.15)',
           }}
         >
           {verHistorico ? 'Ocultar histórico' : 'Ver histórico'}
@@ -211,7 +211,7 @@ export const Aseo = () => {
                               onClick={() => toggleAccion(accion)}
                               className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition-colors border ${
                                 editAcciones.includes(accion)
-                                  ? 'text-white border-transparent'
+                                  ? 'text-[#1a1a2e] border-transparent'
                                   : 'text-slate-600 border-[var(--border-fiber)] hover:bg-[var(--surface-linen)]'
                               }`}
                               style={editAcciones.includes(accion) ? { background: 'var(--accent-copper)' } : {}}
@@ -226,7 +226,7 @@ export const Aseo = () => {
                             <span className="text-slate-400 italic text-xs">Sin acciones</span>
                           ) : (
                             entry.acciones.map((accion, i) => (
-                              <span key={i} className="px-2.5 py-1 rounded-lg text-[11px] font-medium" style={{ background: 'rgba(196,139,63,0.1)', color: 'var(--accent-copper)' }}>
+                              <span key={i} className="px-2.5 py-1 rounded-lg text-[11px] font-medium" style={{ background: 'rgba(212,160,18,0.1)', color: 'var(--accent-copper)' }}>
                                 {accion}
                               </span>
                             ))

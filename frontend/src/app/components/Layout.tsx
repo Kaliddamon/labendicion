@@ -39,11 +39,11 @@ export const Layout = () => {
         className={[
           'order-2 z-50 flex shrink-0 justify-center',
           'fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom,0px))] max-w-lg mx-auto',
-          'rounded-2xl border border-teal-700/20 bg-teal-800/95 p-2 shadow-2xl backdrop-blur-md',
+          'rounded-2xl border border-[#1a3a5c]/20 bg-[#1a3a5c]/95 p-2 shadow-2xl backdrop-blur-md',
           'md:static md:inset-auto md:mx-0 md:max-w-none md:min-h-dvh md:w-[5.25rem] md:flex-col md:justify-start md:rounded-none md:border-0 md:border-r md:border-slate-200 md:bg-white md:p-3 md:shadow-sm md:backdrop-blur-none lg:w-28',
         ].join(' ')}
       >
-        <div className="hidden md:flex md:flex-col md:items-center md:pt-6 md:pb-4 text-teal-600">
+        <div className="hidden md:flex md:flex-col md:items-center md:pt-6 md:pb-4 text-[#1a3a5c]">
           <img src="/logo.png" alt="Logo Taller" className="w-32 h-32 object-contain shrink-0" />
           <span className="mt-2 text-center text-[10px] font-bold uppercase tracking-widest leading-tight">
             Taller
@@ -61,8 +61,8 @@ export const Layout = () => {
                   'flex shrink-0 flex-col items-center justify-center rounded-xl transition-all duration-200',
                   'h-14 w-[4.25rem] sm:w-16 md:h-[4.25rem] md:w-full md:max-w-[4.5rem] md:mx-auto',
                   isActive
-                    ? 'bg-amber-400 text-teal-900 shadow-inner md:bg-teal-50 md:text-teal-700 md:shadow-md'
-                    : 'text-teal-50 hover:bg-teal-700/50 md:text-slate-500 md:hover:bg-slate-100 md:hover:text-teal-700',
+                    ? 'bg-[#e8b830] text-[#1a1a2e] shadow-inner md:bg-[#1a3a5c]/8 md:text-[#1a3a5c] md:shadow-md'
+                    : 'text-blue-100 hover:bg-[#1a3a5c]/50 md:text-slate-500 md:hover:bg-slate-100 md:hover:text-[#1a3a5c]',
                 ].join(' ')
               }
             >

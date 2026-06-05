@@ -63,7 +63,7 @@ const fechaHaceDias = (dias: number) => {
   return date.toISOString().slice(0, 10);
 };
 
-const PIE_COLORS = ['#c48b3f', '#2563eb', '#16a34a', '#d97706', '#7c3aed', '#e11d48'];
+const PIE_COLORS = ['#d4a012', '#2563eb', '#16a34a', '#d97706', '#7c3aed', '#e11d48'];
 
 export const Rendimiento = () => {
   const { registros, empleados, productos } = useAppContext();
@@ -282,7 +282,7 @@ export const Rendimiento = () => {
               onClick={() => setPeriodo(p)}
               className={`px-3.5 py-2 rounded-lg text-xs font-semibold transition-all ${
                 periodo === p
-                  ? 'text-white shadow-sm'
+                  ? 'text-[#1a1a2e] shadow-sm'
                   : 'text-slate-500 hover:bg-[var(--surface-linen)]'
               }`}
               style={periodo === p ? { background: 'var(--accent-copper)' } : { border: '1px solid var(--border-fiber)' }}
@@ -336,7 +336,7 @@ export const Rendimiento = () => {
                 <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 11 }} />
                 <Tooltip contentStyle={tooltipStyle} />
                 <Legend wrapperStyle={{ fontSize: '11px' }} />
-                <Line type="monotone" dataKey="total" name="Total" stroke="#c48b3f" strokeWidth={2.5} dot={false} />
+                <Line type="monotone" dataKey="total" name="Total" stroke="#d4a012" strokeWidth={2.5} dot={false} />
                 <Line type="monotone" dataKey="buenas" name="Buenas" stroke="#16a34a" strokeWidth={2} dot={false} />
                 <Line type="monotone" dataKey="defectos" name="Defectos" stroke="#e11d48" strokeWidth={2} dot={false} strokeDasharray="4 4" />
               </LineChart>
@@ -382,7 +382,7 @@ export const Rendimiento = () => {
                 <XAxis dataKey="nombre" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 11 }} />
                 <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 11 }} />
                 <Tooltip contentStyle={tooltipStyle} formatter={(value: number) => `${value.toFixed(1)}%`} />
-                <Bar dataKey="eficiencia" name="Eficiencia %" fill="#c48b3f" radius={[6, 6, 0, 0]} />
+                <Bar dataKey="eficiencia" name="Eficiencia %" fill="#d4a012" radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>

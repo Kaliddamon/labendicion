@@ -336,7 +336,7 @@ export const Empleados = () => {
           className={`px-5 py-3 rounded-xl font-semibold text-sm flex items-center gap-2 transition-all active:scale-[0.97] ${
             mostrarFormEmpleado
               ? 'bg-[var(--surface-linen)] text-[var(--carbon)] border border-[var(--border-fiber)]'
-              : 'bg-[var(--accent-copper)] hover:bg-[var(--accent-copper-bright)] text-white shadow-[0_2px_8px_rgba(196,139,63,0.3)]'
+              : 'bg-[var(--accent-copper)] hover:bg-[var(--accent-copper-bright)] text-[#1a1a2e] shadow-[0_2px_8px_rgba(212,160,18,0.3)]'
           }`}
         >
           {mostrarFormEmpleado ? 'Cancelar' : <><Plus size={20} /> Nuevo Empleado</>}
@@ -384,7 +384,7 @@ export const Empleados = () => {
               </select>
             </div>
           </div>
-          <button type="submit" className="w-full md:w-auto px-6 py-3 rounded-xl font-semibold text-sm text-white active:scale-[0.97] transition-all" style={{ background: 'var(--accent-copper)', boxShadow: 'var(--shadow-copper)' }}>
+          <button type="submit" className="w-full md:w-auto px-6 py-3 rounded-xl font-semibold text-sm text-[#1a1a2e] active:scale-[0.97] transition-all" style={{ background: 'var(--accent-copper)', boxShadow: 'var(--shadow-copper)' }}>
             Guardar Empleado
           </button>
         </form>
@@ -540,7 +540,7 @@ export const Empleados = () => {
                                       type="button"
                                       onClick={() => cargarRegistroParaEdicion(reg)}
                                       className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[10px] font-semibold border bg-white"
-                                      style={{ color: 'var(--accent-copper)', borderColor: 'rgba(196,139,63,0.3)' }}
+                                      style={{ color: 'var(--accent-copper)', borderColor: 'rgba(212,160,18,0.3)' }}
                                     >
                                       <Edit2 size={12} /> Editar
                                     </button>
@@ -565,7 +565,7 @@ export const Empleados = () => {
 
               {/* Evaluation form */}
               {empleadoCalificando === emp.id && (
-                <form onSubmit={guardarCalificacion} className="p-5 animate-fade-up" style={{ background: 'rgba(196,139,63,0.04)' }}>
+                <form onSubmit={guardarCalificacion} className="p-5 animate-fade-up" style={{ background: 'rgba(212,160,18,0.04)' }}>
                   <h4 className="font-semibold text-sm flex items-center gap-2 mb-4" style={{ fontFamily: 'var(--font-heading)', color: 'var(--carbon)' }}>
                     <Star size={16} style={{ color: 'var(--accent-copper)' }} />
                     {registroEditando ? 'Editar evaluación' : 'Registrar trabajo de hoy'}
@@ -612,7 +612,7 @@ export const Empleados = () => {
                               onClick={agregarProduccion}
                               disabled={productos.length === 0}
                               className="rounded-lg px-3 py-1.5 text-[10px] font-semibold disabled:opacity-50 transition-colors"
-                              style={{ color: 'var(--accent-copper)', border: '1px solid rgba(196,139,63,0.25)', background: 'rgba(196,139,63,0.06)' }}
+                              style={{ color: 'var(--accent-copper)', border: '1px solid rgba(212,160,18,0.25)', background: 'rgba(212,160,18,0.06)' }}
                             >
                               + Agregar otra orden
                             </button>
@@ -767,7 +767,7 @@ export const Empleados = () => {
                     )}
                     <button
                       type="submit"
-                      className="w-full md:w-auto px-6 py-2.5 rounded-xl font-semibold text-sm text-white active:scale-[0.97] transition-all"
+                      className="w-full md:w-auto px-6 py-2.5 rounded-xl font-semibold text-sm text-[#1a1a2e] active:scale-[0.97] transition-all"
                       style={{ background: 'var(--accent-copper)', boxShadow: 'var(--shadow-copper)' }}
                     >
                       {registroEditando ? 'Actualizar evaluación' : 'Guardar evaluación'}
