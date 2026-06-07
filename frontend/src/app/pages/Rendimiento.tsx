@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { AlertTriangle, TrendingUp, Gauge, ShieldCheck, Clock, Activity } from 'lucide-react';
 import {
   Bar,
@@ -16,6 +16,7 @@ import {
   YAxis,
 } from 'recharts';
 import { useAppContext } from '../context/AppContext';
+import { useAuth } from '../context/AuthContext';
 
 type Periodo = '7d' | '30d';
 
@@ -67,8 +68,18 @@ const PIE_COLORS = ['#d4a012', '#2563eb', '#16a34a', '#d97706', '#7c3aed', '#e11
 
 export const Rendimiento = () => {
   const { registros, empleados, productos } = useAppContext();
+  const { user, tieneRol } = useAuth();
   const [periodo, setPeriodo] = useState<Periodo>('7d');
   const [empleadoSeleccionado, setEmpleadoSeleccionado] = useState<string>('todos');
+
+  const esAdmin = tieneRol('SUPERADMINISTRADOR') || tieneRol('ADMINISTRADOR');
+  const empleadoUsuarioId = useMemo(() => empleados.find(e => e.email === user?.email)?.id, [empleados, user]);
+
+  useEffect(() => {
+    if (!esAdmin && empleadoUsuarioId) {
+      setEmpleadoSeleccionado(empleadoUsuarioId);
+    }
+  }, [esAdmin, empleadoUsuarioId]);
 
   const diasPeriodo = periodo === '7d' ? 7 : 30;
   const fechaMinima = fechaHaceDias(diasPeriodo - 1);
@@ -79,9 +90,13 @@ export const Rendimiento = () => {
   );
 
   const registrosFiltrados = useMemo(() => {
+    if (!esAdmin) {
+      if (!empleadoUsuarioId) return [];
+      return registrosPeriodo.filter((r) => r.empleadoId === empleadoUsuarioId);
+    }
     if (empleadoSeleccionado === 'todos') return registrosPeriodo;
     return registrosPeriodo.filter((r) => r.empleadoId === empleadoSeleccionado);
-  }, [empleadoSeleccionado, registrosPeriodo]);
+  }, [empleadoSeleccionado, registrosPeriodo, esAdmin, empleadoUsuarioId]);
 
   const dataDiaria = useMemo(() => {
     const agrupado = registrosFiltrados.reduce((acc, reg) => {
@@ -138,7 +153,8 @@ export const Rendimiento = () => {
   }, [registrosFiltrados, productos]);
 
   const productividadPorEmpleado = useMemo(() => {
-    return empleados
+    const empleadosAMostrar = esAdmin ? empleados : empleados.filter(e => e.id === empleadoUsuarioId);
+    return empleadosAMostrar
       .map((emp) => {
         const registrosEmpleado = registrosPeriodo.filter((r) => r.empleadoId === emp.id);
         const total = registrosEmpleado.reduce((acc, r) => acc + r.unidadesTotales, 0);
@@ -290,17 +306,19 @@ export const Rendimiento = () => {
               {p === '7d' ? '7 días' : '30 días'}
             </button>
           ))}
-          <select
-            value={empleadoSeleccionado}
-            onChange={(e) => setEmpleadoSeleccionado(e.target.value)}
-            className="rounded-lg px-3 py-2 text-xs font-medium"
-            style={{ border: '1px solid var(--border-fiber)', background: 'var(--surface-silk)', color: 'var(--carbon)' }}
-          >
-            <option value="todos">Todo el equipo</option>
-            {empleados.map((emp) => (
-              <option key={emp.id} value={emp.id}>{emp.nombre}</option>
-            ))}
-          </select>
+          {esAdmin && (
+            <select
+              value={empleadoSeleccionado}
+              onChange={(e) => setEmpleadoSeleccionado(e.target.value)}
+              className="rounded-lg px-3 py-2 text-xs font-medium"
+              style={{ border: '1px solid var(--border-fiber)', background: 'var(--surface-silk)', color: 'var(--carbon)' }}
+            >
+              <option value="todos">Todo el equipo</option>
+              {empleados.map((emp) => (
+                <option key={emp.id} value={emp.id}>{emp.nombre}</option>
+              ))}
+            </select>
+          )}
         </div>
       </div>
 
@@ -369,74 +387,78 @@ export const Rendimiento = () => {
         </div>
       </div>
 
-      {/* Rankings + Capacity */}
-      <div className="grid gap-4 lg:grid-cols-3 mb-6">
-        <div className="card-premium-static rounded-2xl p-5 lg:col-span-2">
-          <h2 className="text-sm font-bold mb-4" style={{ fontFamily: 'var(--font-heading)', color: 'var(--carbon)' }}>
-            Ranking de eficiencia por trabajador
-          </h2>
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={productividadPorEmpleado}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e8e2d9" />
-                <XAxis dataKey="nombre" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 11 }} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 11 }} />
-                <Tooltip contentStyle={tooltipStyle} formatter={(value: number) => `${value.toFixed(1)}%`} />
-                <Bar dataKey="eficiencia" name="Eficiencia %" fill="#d4a012" radius={[6, 6, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        <div className="card-premium-static rounded-2xl p-5">
-          <h2 className="text-sm font-bold mb-4" style={{ fontFamily: 'var(--font-heading)', color: 'var(--carbon)' }}>
-            Capacidad y despacho
-          </h2>
-          <div className="space-y-3">
-            {[
-              { label: 'OTD (a tiempo)', value: formatearPorcentaje(capacidadDespacho.cumplimientoDespacho) },
-              { label: 'Capacidad diaria', value: `${capacidadDespacho.capacidadDiaria.toFixed(0)} und/día` },
-              { label: 'Backlog pendiente', value: `${capacidadDespacho.backlogDias.toFixed(1)} días`, sub: `${capacidadDespacho.backlogUnidades} unidades en cola` },
-            ].map((item) => (
-              <div key={item.label} className="rounded-xl p-4" style={{ background: 'var(--surface-linen)' }}>
-                <p className="text-xs text-slate-500">{item.label}</p>
-                <p className="text-xl font-bold mt-0.5" style={{ fontFamily: 'var(--font-heading)', color: 'var(--carbon)' }}>{item.value}</p>
-                {item.sub && <p className="text-[10px] text-slate-400 mt-0.5">{item.sub}</p>}
+      {/* Rankings + Capacity (Only Admins) */}
+      {esAdmin && (
+        <>
+          <div className="grid gap-4 lg:grid-cols-3 mb-6">
+            <div className="card-premium-static rounded-2xl p-5 lg:col-span-2">
+              <h2 className="text-sm font-bold mb-4" style={{ fontFamily: 'var(--font-heading)', color: 'var(--carbon)' }}>
+                Ranking de eficiencia por trabajador
+              </h2>
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={productividadPorEmpleado}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e8e2d9" />
+                    <XAxis dataKey="nombre" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 11 }} />
+                    <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 11 }} />
+                    <Tooltip contentStyle={tooltipStyle} formatter={(value: number) => `${value.toFixed(1)}%`} />
+                    <Bar dataKey="eficiencia" name="Eficiencia %" fill="#d4a012" radius={[6, 6, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
               </div>
-            ))}
-          </div>
-        </div>
-      </div>
+            </div>
 
-      {/* Alerts */}
-      <div className="card-premium-static rounded-2xl p-5">
-        <h2 className="text-sm font-bold mb-4 flex items-center gap-2" style={{ fontFamily: 'var(--font-heading)', color: 'var(--carbon)' }}>
-          <AlertTriangle size={16} style={{ color: 'var(--accent-copper)' }} /> Alertas accionables
-        </h2>
-        <div className="grid gap-2.5">
-          {alertas.map((alerta) => {
-            const colors = getSemaforoClasses(alerta.estado);
-            return (
-              <div
-                key={alerta.metrica}
-                className="rounded-xl px-4 py-3 flex flex-col gap-1 md:flex-row md:items-center md:justify-between"
-                style={{
-                  background: colors.bg,
-                  border: `1px solid ${colors.border}`,
-                  borderLeft: `3px solid ${colors.text}`,
-                }}
-              >
-                <div className="flex items-center gap-2">
-                  <alerta.icon size={16} style={{ color: colors.text }} />
-                  <p className="text-sm font-semibold" style={{ color: colors.text }}>{alerta.metrica}</p>
-                </div>
-                <p className="text-sm font-bold" style={{ color: colors.text }}>{alerta.valor}</p>
-                <p className="text-xs text-slate-500 md:max-w-xs">{alerta.accion}</p>
+            <div className="card-premium-static rounded-2xl p-5">
+              <h2 className="text-sm font-bold mb-4" style={{ fontFamily: 'var(--font-heading)', color: 'var(--carbon)' }}>
+                Capacidad y despacho
+              </h2>
+              <div className="space-y-3">
+                {[
+                  { label: 'OTD (a tiempo)', value: formatearPorcentaje(capacidadDespacho.cumplimientoDespacho) },
+                  { label: 'Capacidad diaria', value: `${capacidadDespacho.capacidadDiaria.toFixed(0)} und/día` },
+                  { label: 'Backlog pendiente', value: `${capacidadDespacho.backlogDias.toFixed(1)} días`, sub: `${capacidadDespacho.backlogUnidades} unidades en cola` },
+                ].map((item) => (
+                  <div key={item.label} className="rounded-xl p-4" style={{ background: 'var(--surface-linen)' }}>
+                    <p className="text-xs text-slate-500">{item.label}</p>
+                    <p className="text-xl font-bold mt-0.5" style={{ fontFamily: 'var(--font-heading)', color: 'var(--carbon)' }}>{item.value}</p>
+                    {item.sub && <p className="text-[10px] text-slate-400 mt-0.5">{item.sub}</p>}
+                  </div>
+                ))}
               </div>
-            );
-          })}
-        </div>
-      </div>
+            </div>
+          </div>
+
+          {/* Alerts */}
+          <div className="card-premium-static rounded-2xl p-5">
+            <h2 className="text-sm font-bold mb-4 flex items-center gap-2" style={{ fontFamily: 'var(--font-heading)', color: 'var(--carbon)' }}>
+              <AlertTriangle size={16} style={{ color: 'var(--accent-copper)' }} /> Alertas accionables
+            </h2>
+            <div className="grid gap-2.5">
+              {alertas.map((alerta) => {
+                const colors = getSemaforoClasses(alerta.estado);
+                return (
+                  <div
+                    key={alerta.metrica}
+                    className="rounded-xl px-4 py-3 flex flex-col gap-1 md:flex-row md:items-center md:justify-between"
+                    style={{
+                      background: colors.bg,
+                      border: `1px solid ${colors.border}`,
+                      borderLeft: `3px solid ${colors.text}`,
+                    }}
+                  >
+                    <div className="flex items-center gap-2">
+                      <alerta.icon size={16} style={{ color: colors.text }} />
+                      <p className="text-sm font-semibold" style={{ color: colors.text }}>{alerta.metrica}</p>
+                    </div>
+                    <p className="text-sm font-bold" style={{ color: colors.text }}>{alerta.valor}</p>
+                    <p className="text-xs text-slate-500 md:max-w-xs">{alerta.accion}</p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 };

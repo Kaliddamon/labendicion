@@ -36,6 +36,8 @@ public class Empleado {
     private String telefono;
     private String fechaIngreso;
     
+    private String email;
+    
     @Pattern(regexp = "^(Activo|Inactivo)$", message = "El estado debe ser Activo o Inactivo")
     private String estado;
 }

@@ -40,6 +40,7 @@ export const Empleados = () => {
   const [cargo, setCargo] = useState('');
   const [documento, setDocumento] = useState('');
   const [telefono, setTelefono] = useState('');
+  const [email, setEmail] = useState('');
   const [fechaIngreso, setFechaIngreso] = useState('');
   const [estado, setEstado] = useState<'Activo'|'Inactivo'>('Activo');
 
@@ -62,13 +63,13 @@ export const Empleados = () => {
   } | null>(null);
 
   const resetFormEmpleado = () => {
-    setNombre(''); setCargo(''); setDocumento(''); setTelefono('');
+    setNombre(''); setCargo(''); setDocumento(''); setTelefono(''); setEmail('');
     setFechaIngreso(''); setEstado('Activo'); setEmpleadoEditando(null); setMostrarFormEmpleado(false);
   };
 
   const iniciarEdicion = (emp: Empleado) => {
     setNombre(emp.nombre); setCargo(emp.cargo?.id || ''); setDocumento(emp.documento);
-    setTelefono(emp.telefono); setFechaIngreso(emp.fechaIngreso); setEstado(emp.estado);
+    setTelefono(emp.telefono); setEmail(emp.email || ''); setFechaIngreso(emp.fechaIngreso); setEstado(emp.estado);
     setEmpleadoEditando(emp.id); setMostrarFormEmpleado(true);
     setEmpleadoCalificando(null);
     setEmpleadoViendoHistorial(null);
@@ -92,9 +93,9 @@ export const Empleados = () => {
 
     const cargoObj = cargo ? { id: cargo, nombre: cargos.find(c => c.id === cargo)?.nombre || '' } : null;
     if (empleadoEditando) {
-      editarEmpleado(empleadoEditando, { nombre, cargo: cargoObj, documento, telefono, fechaIngreso, estado });
+      editarEmpleado(empleadoEditando, { nombre, cargo: cargoObj, documento, telefono, email, fechaIngreso, estado });
     } else {
-      agregarEmpleado({ nombre, cargo: cargoObj, documento, telefono, fechaIngreso, estado });
+      agregarEmpleado({ nombre, cargo: cargoObj, documento, telefono, email, fechaIngreso, estado });
     }
     resetFormEmpleado();
   };
@@ -373,6 +374,10 @@ export const Empleados = () => {
               <input type="tel" className="w-full rounded-xl px-4 py-3 text-sm" style={inputStyle} value={telefono} onChange={e=>setTelefono(e.target.value)} pattern="[0-9+\- ]{7,15}" title="Entre 7 y 15 caracteres" />
             </div>
             <div>
+              <label className="block text-xs font-medium text-slate-500 mb-1.5" style={{ fontFamily: 'var(--font-heading)' }}>Correo Electrónico</label>
+              <input type="email" className="w-full rounded-xl px-4 py-3 text-sm" style={inputStyle} value={email} onChange={e=>setEmail(e.target.value)} />
+            </div>
+            <div>
               <label className="block text-xs font-medium text-slate-500 mb-1.5" style={{ fontFamily: 'var(--font-heading)' }}>Fecha de Ingreso</label>
               <input type="date" className="w-full rounded-xl px-4 py-3 text-sm" style={inputStyle} value={fechaIngreso} onChange={e=>setFechaIngreso(e.target.value)} max={new Date().toISOString().split('T')[0]} />
             </div>
@@ -426,6 +431,11 @@ export const Empleados = () => {
                       <span className="text-xs px-2.5 py-1 rounded-lg" style={{ background: 'var(--surface-linen)', color: 'var(--carbon)', border: '1px solid var(--border-fiber)' }}>
                         📞 {emp.telefono || 'Sin teléfono'}
                       </span>
+                      {emp.email && (
+                        <span className="text-xs px-2.5 py-1 rounded-lg" style={{ background: 'var(--surface-linen)', color: 'var(--carbon)', border: '1px solid var(--border-fiber)' }}>
+                          📧 {emp.email}
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>

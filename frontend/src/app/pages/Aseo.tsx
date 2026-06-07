@@ -95,13 +95,15 @@ export const Aseo = () => {
           <p className="text-slate-500 mt-1.5 text-sm">Mantengamos nuestro taller impecable</p>
         </div>
 
-        <button
-          onClick={() => crearNuevoRegistro()}
-          className="px-5 py-3 rounded-xl font-semibold text-sm flex items-center gap-2 text-[#1a1a2e] transition-all active:scale-[0.97]"
-          style={{ background: 'var(--accent-copper)', boxShadow: 'var(--shadow-copper)' }}
-        >
-          <Plus size={20} /> Nuevo Registro
-        </button>
+        {(tieneRol('ADMINISTRADOR') || tieneRol('SUPERADMINISTRADOR')) && (
+          <button
+            onClick={() => crearNuevoRegistro()}
+            className="px-5 py-3 rounded-xl font-semibold text-sm flex items-center gap-2 text-[#1a1a2e] transition-all active:scale-[0.97]"
+            style={{ background: 'var(--accent-copper)', boxShadow: 'var(--shadow-copper)' }}
+          >
+            <Plus size={20} /> Nuevo Registro
+          </button>
+        )}
       </div>
 
       {/* Progress card */}
@@ -170,7 +172,9 @@ export const Aseo = () => {
                   <th className="px-5 py-3.5 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500" style={{ fontFamily: 'var(--font-heading)' }}>Empleado</th>
                   <th className="px-5 py-3.5 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500" style={{ fontFamily: 'var(--font-heading)' }}>Acciones</th>
                   <th className="px-5 py-3.5 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500" style={{ fontFamily: 'var(--font-heading)' }}>Áreas</th>
-                  <th className="px-5 py-3.5 text-center text-[11px] font-semibold uppercase tracking-wider text-slate-500" style={{ fontFamily: 'var(--font-heading)' }}>Opciones</th>
+                  {(tieneRol('ADMINISTRADOR') || tieneRol('SUPERADMINISTRADOR')) && (
+                    <th className="px-5 py-3.5 text-center text-[11px] font-semibold uppercase tracking-wider text-slate-500" style={{ fontFamily: 'var(--font-heading)' }}>Opciones</th>
+                  )}
                 </tr>
               </thead>
               <tbody>
@@ -267,37 +271,39 @@ export const Aseo = () => {
                       )}
                     </td>
 
-                    <td className="px-5 py-4 text-center">
-                      {editandoEntry === entry.id ? (
-                        <div className="flex justify-center gap-1.5">
+                    {(tieneRol('ADMINISTRADOR') || tieneRol('SUPERADMINISTRADOR')) && (
+                      <td className="px-5 py-4 text-center">
+                        {editandoEntry === entry.id ? (
+                          <div className="flex justify-center gap-1.5">
+                            <button
+                              onClick={() => guardarEdicion(ultimoRegistro!.id, entry.id)}
+                              className="p-2 rounded-lg transition-colors hover:bg-emerald-50"
+                              style={{ border: '1px solid rgba(22,163,74,0.2)' }}
+                              title="Guardar"
+                            >
+                              <Check size={16} className="text-emerald-600" />
+                            </button>
+                            <button
+                              onClick={cancelarEdicion}
+                              className="p-2 rounded-lg transition-colors hover:bg-rose-50"
+                              style={{ border: '1px solid rgba(225,29,72,0.15)' }}
+                              title="Cancelar"
+                            >
+                              <X size={16} className="text-rose-500" />
+                            </button>
+                          </div>
+                        ) : (
                           <button
-                            onClick={() => guardarEdicion(ultimoRegistro!.id, entry.id)}
-                            className="p-2 rounded-lg transition-colors hover:bg-emerald-50"
-                            style={{ border: '1px solid rgba(22,163,74,0.2)' }}
-                            title="Guardar"
+                            onClick={() => iniciarEdicion(entry)}
+                            className="p-2 rounded-lg transition-colors hover:bg-[var(--surface-linen)]"
+                            style={{ border: '1px solid var(--border-fiber)' }}
+                            title="Editar"
                           >
-                            <Check size={16} className="text-emerald-600" />
+                            <Edit2 size={16} className="text-slate-500" />
                           </button>
-                          <button
-                            onClick={cancelarEdicion}
-                            className="p-2 rounded-lg transition-colors hover:bg-rose-50"
-                            style={{ border: '1px solid rgba(225,29,72,0.15)' }}
-                            title="Cancelar"
-                          >
-                            <X size={16} className="text-rose-500" />
-                          </button>
-                        </div>
-                      ) : (
-                        <button
-                          onClick={() => iniciarEdicion(entry)}
-                          className="p-2 rounded-lg transition-colors hover:bg-[var(--surface-linen)]"
-                          style={{ border: '1px solid var(--border-fiber)' }}
-                          title="Editar"
-                        >
-                          <Edit2 size={16} className="text-slate-500" />
-                        </button>
-                      )}
-                    </td>
+                        )}
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>

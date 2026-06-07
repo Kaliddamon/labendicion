@@ -36,6 +36,7 @@ export interface Empleado {
   cargo: { id: string; nombre: string } | null;
   documento: string;
   telefono: string;
+  email?: string;
   fechaIngreso: string;
   estado: 'Activo' | 'Inactivo';
 }
