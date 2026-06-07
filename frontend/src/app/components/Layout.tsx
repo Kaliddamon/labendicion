@@ -51,8 +51,8 @@ export const Layout = () => {
       >
         {/* Logo Section */}
         <div className={`flex items-center pt-6 pb-4 px-3 ${isHovered ? 'justify-start' : 'justify-center'} overflow-hidden whitespace-nowrap`}>
-          <div className="w-10 h-10 shrink-0 bg-white/10 rounded-xl flex items-center justify-center border border-white/5 shadow-inner">
-            <Sparkles className="text-amber-400" size={20} />
+          <div className="w-10 h-10 shrink-0 bg-white rounded-xl flex items-center justify-center p-1 shadow-md">
+            <img src="/logo.png" alt="Logo Taller" className="w-full h-full object-contain" />
           </div>
           <div className={`ml-3 transition-opacity duration-300 ${isHovered ? 'opacity-100' : 'opacity-0 w-0'}`}>
             <span className="block text-sm font-bold tracking-widest text-white uppercase" style={{ fontFamily: 'var(--font-heading)' }}>
