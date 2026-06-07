@@ -51,14 +51,14 @@ export const Layout = () => {
       >
         {/* Logo Section */}
         <div className={`flex items-center pt-6 pb-4 px-3 ${isHovered ? 'justify-start' : 'justify-center'} overflow-hidden whitespace-nowrap`}>
-          <div className="w-10 h-10 shrink-0 bg-white rounded-xl flex items-center justify-center p-1 shadow-md">
+          <div className={`shrink-0 bg-white rounded-xl flex items-center justify-center p-1 shadow-md transition-all duration-300 ${isHovered ? 'w-14 h-14' : 'w-10 h-10'}`}>
             <img src="/logo.png" alt="Logo Taller" className="w-full h-full object-contain" />
           </div>
           <div className={`ml-3 transition-opacity duration-300 ${isHovered ? 'opacity-100' : 'opacity-0 w-0'}`}>
-            <span className="block text-sm font-bold tracking-widest text-white uppercase" style={{ fontFamily: 'var(--font-heading)' }}>
+            <span className="block text-base font-bold tracking-widest text-white uppercase" style={{ fontFamily: 'var(--font-heading)' }}>
               Taller
             </span>
-            <span className="block text-[10px] text-blue-200 tracking-wider">La Bendición</span>
+            <span className="block text-xs text-blue-200 tracking-wider">La Bendición</span>
           </div>
         </div>
 
