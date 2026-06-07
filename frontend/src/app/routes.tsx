@@ -30,7 +30,6 @@ export const router = createBrowserRouter([
       { path: "empleados", Component: () => <ProtectedRoute requiredRoles={['SUPERADMINISTRADOR', 'ADMINISTRADOR']}><Empleados /></ProtectedRoute> },
       { path: "aseo", Component: () => <ProtectedRoute requiredRoles={['SUPERADMINISTRADOR', 'ADMINISTRADOR', 'TRABAJADOR']}><Aseo /></ProtectedRoute> },
       { path: "rendimiento", Component: () => <ProtectedRoute requiredRoles={['SUPERADMINISTRADOR', 'ADMINISTRADOR', 'TRABAJADOR']}><Rendimiento /></ProtectedRoute> },
-      { path: "roles", Component: () => <ProtectedRoute requiredRoles={['SUPERADMINISTRADOR', 'ADMINISTRADOR']}><GestionarRoles /></ProtectedRoute> },
       { path: "configuracion", Component: () => <ProtectedRoute requiredRoles={['SUPERADMINISTRADOR', 'ADMINISTRADOR']}><Configuracion /></ProtectedRoute> },
       { path: "mensajes", Component: () => <ProtectedRoute requiredRoles={['SUPERADMINISTRADOR', 'ADMINISTRADOR']}><MensajesContacto /></ProtectedRoute> },
     ],

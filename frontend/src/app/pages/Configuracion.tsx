@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useAppContext, CatalogoItem, Empresa } from '../context/AppContext';
 import { Settings, Plus, Trash2, Edit2 } from 'lucide-react';
+import { GestionarRoles } from '../components/GestionarRoles';
 
-type Tab = 'accionesProduccion' | 'cargos' | 'areas' | 'accionesAseo' | 'empresas';
+type Tab = 'accionesProduccion' | 'cargos' | 'areas' | 'accionesAseo' | 'empresas' | 'roles';
 
 export const Configuracion = () => {
   const {
@@ -29,6 +30,7 @@ export const Configuracion = () => {
     { id: 'areas', label: 'Áreas de trabajo' },
     { id: 'accionesAseo', label: 'Acciones de aseo' },
     { id: 'empresas', label: 'Empresas' },
+    { id: 'roles', label: 'Gestión de roles' },
   ];
 
   const listaActual = (): CatalogoItem[] => {
@@ -38,6 +40,7 @@ export const Configuracion = () => {
       case 'areas': return areasTrabajo;
       case 'accionesAseo': return accionesAseo;
       case 'empresas': return [];
+      case 'roles': return [];
     }
   };
 
@@ -181,8 +184,12 @@ export const Configuracion = () => {
         ))}
       </div>
 
-      {/* Form */}
-      <form onSubmit={guardar} className="card-premium-static p-5 rounded-2xl mb-6 flex flex-wrap gap-3 items-end">
+      {tab === 'roles' ? (
+        <GestionarRoles />
+      ) : (
+        <>
+          {/* Form */}
+          <form onSubmit={guardar} className="card-premium-static p-5 rounded-2xl mb-6 flex flex-wrap gap-3 items-end">
         {tab === 'empresas' ? (
           <>
             <div className="flex-1 min-w-[200px]">
@@ -302,6 +309,8 @@ export const Configuracion = () => {
             ))
         )}
       </ul>
+        </>
+      )}
     </div>
   );
 };

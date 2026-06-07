@@ -190,7 +190,8 @@ export const Aseo = () => {
                     <td className="px-5 py-4">
                       <button
                         onClick={() => toggleRegistroAseoEntry(ultimoRegistro!.id, entry.id)}
-                        className="active:scale-[0.92] transition-transform"
+                        className={`transition-transform ${(!tieneRol('ADMINISTRADOR') && !tieneRol('SUPERADMINISTRADOR')) ? 'cursor-default opacity-80' : 'active:scale-[0.92]'}`}
+                        disabled={!tieneRol('ADMINISTRADOR') && !tieneRol('SUPERADMINISTRADOR')}
                       >
                         {entry.completada ? (
                           <CheckCircle2 size={24} style={{ color: 'var(--status-success)' }} />
