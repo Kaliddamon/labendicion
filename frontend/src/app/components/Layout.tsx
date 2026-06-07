@@ -51,8 +51,13 @@ export const Layout = () => {
       >
         {/* Logo Section */}
         <div className={`flex items-center pt-6 pb-4 px-3 ${isHovered ? 'justify-start' : 'justify-center'} overflow-hidden whitespace-nowrap`}>
-          <div className={`shrink-0 bg-white rounded-xl flex items-center justify-center p-1 shadow-md transition-all duration-300 ${isHovered ? 'w-14 h-14' : 'w-10 h-10'}`}>
-            <img src="/logo.png" alt="Logo Taller" className="w-full h-full object-contain" />
+          <div className={`shrink-0 flex items-center justify-center transition-all duration-300 ${isHovered ? 'w-14 h-14' : 'w-10 h-10'}`}>
+            <img 
+              src="/logo.png" 
+              alt="Logo Taller" 
+              className="w-full h-full object-contain drop-shadow-[0_2px_10px_rgba(255,255,255,0.3)] transition-transform duration-300"
+              style={{ filter: 'brightness(0) invert(1)' }}
+            />
           </div>
           <div className={`ml-3 transition-opacity duration-300 ${isHovered ? 'opacity-100' : 'opacity-0 w-0'}`}>
             <span className="block text-base font-bold tracking-widest text-white uppercase" style={{ fontFamily: 'var(--font-heading)' }}>
