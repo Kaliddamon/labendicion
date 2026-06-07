@@ -50,8 +50,8 @@ export const Layout = () => {
         `}
       >
         {/* Logo Section */}
-        <div className={`flex items-center pt-6 pb-4 px-3 ${isHovered ? 'justify-start' : 'justify-center'} overflow-hidden whitespace-nowrap`}>
-          <div className={`shrink-0 flex items-center justify-center transition-all duration-300 ${isHovered ? 'w-14 h-14' : 'w-10 h-10'}`}>
+        <div className={`flex pt-6 pb-4 px-3 overflow-hidden whitespace-nowrap transition-all duration-300 ${isHovered ? 'flex-col items-center text-center mt-2' : 'items-center justify-center'}`}>
+          <div className={`shrink-0 flex items-center justify-center transition-all duration-300 ${isHovered ? 'w-24 h-24 mb-3' : 'w-10 h-10'}`}>
             <img 
               src="/logo.png" 
               alt="Logo Taller" 
@@ -59,11 +59,11 @@ export const Layout = () => {
               style={{ filter: 'brightness(0) invert(1)' }}
             />
           </div>
-          <div className={`ml-3 transition-opacity duration-300 ${isHovered ? 'opacity-100' : 'opacity-0 w-0'}`}>
-            <span className="block text-base font-bold tracking-widest text-white uppercase" style={{ fontFamily: 'var(--font-heading)' }}>
+          <div className={`transition-all duration-300 flex flex-col items-center justify-center ${isHovered ? 'opacity-100' : 'opacity-0 h-0 overflow-hidden'}`}>
+            <span className="block text-xl font-bold tracking-[0.2em] text-white uppercase leading-none" style={{ fontFamily: 'var(--font-heading)' }}>
               Taller
             </span>
-            <span className="block text-xs text-blue-200 tracking-wider">La Bendición</span>
+            <span className="block text-[11px] font-medium text-blue-200/80 tracking-[0.25em] uppercase mt-2">La Bendición</span>
           </div>
         </div>
 
