@@ -15,6 +15,7 @@ interface ConfirmOptions {
   description: string;
   confirmText?: string;
   cancelText?: string;
+  requireInput?: string;
 }
 
 interface ConfirmContextType {
@@ -35,9 +36,11 @@ export const ConfirmProvider: React.FC<{ children: ReactNode }> = ({ children })
   const [open, setOpen] = useState(false);
   const [options, setOptions] = useState<ConfirmOptions | null>(null);
   const [resolver, setResolver] = useState<{ resolve: (value: boolean) => void } | null>(null);
+  const [inputValue, setInputValue] = useState('');
 
   const confirm = useCallback((opts: ConfirmOptions) => {
     setOptions(opts);
+    setInputValue('');
     setOpen(true);
     return new Promise<boolean>((resolve) => {
       setResolver({ resolve });
@@ -65,11 +68,30 @@ export const ConfirmProvider: React.FC<{ children: ReactNode }> = ({ children })
             <AlertDialogTitle>{options?.title}</AlertDialogTitle>
             <AlertDialogDescription>{options?.description}</AlertDialogDescription>
           </AlertDialogHeader>
+          {options?.requireInput && (
+            <div className="py-3">
+              <p className="text-sm font-medium text-slate-700 mb-2">
+                Escribe <strong className="text-slate-900 select-all">{options.requireInput}</strong> para confirmar:
+              </p>
+              <input
+                type="text"
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500"
+                autoComplete="off"
+                autoCorrect="off"
+              />
+            </div>
+          )}
           <AlertDialogFooter>
             <AlertDialogCancel onClick={handleCancel}>
               {options?.cancelText || 'Cancelar'}
             </AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirm} className="bg-rose-600 hover:bg-rose-700 focus:ring-rose-500">
+            <AlertDialogAction 
+              onClick={handleConfirm} 
+              disabled={options?.requireInput ? inputValue !== options.requireInput : false}
+              className="bg-rose-600 hover:bg-rose-700 focus:ring-rose-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
               {options?.confirmText || 'Aceptar'}
             </AlertDialogAction>
           </AlertDialogFooter>

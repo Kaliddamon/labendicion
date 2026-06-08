@@ -58,6 +58,9 @@ public class FrontendController {
     private AccionProduccionRepository accionProduccionRepo;
 
     @Autowired
+    private org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
+
+    @Autowired
     private CargoEmpleadoRepository cargoRepo;
 
     @Autowired
@@ -539,13 +542,29 @@ public class FrontendController {
     }
 
     @DeleteMapping("/empleados/{id}")
-    public ResponseEntity<Void> eliminarEmpleado(@PathVariable String id) {
+    @Transactional
+    public ResponseEntity<?> eliminarEmpleado(@PathVariable String id) {
         if (!empleadoRepo.existsById(id)) return ResponseEntity.notFound().build();
-        Empleado emp = empleadoRepo.findById(id).orElseThrow();
-        emp.setEstado("Inactivo");
-        empleadoRepo.save(emp);
-        eventService.emitAsync("EMPLEADO_ACTUALIZADO", emp);
-        return ResponseEntity.noContent().build();
+        
+        try {
+            // Eliminación manual en cascada (bypass JPA para evitar cargar miles de objetos)
+            // Se eliminan registros dependientes de este empleado en varias tablas
+            jdbcTemplate.update("DELETE FROM registro_aseo_entry WHERE empleado_id = ?", id);
+            jdbcTemplate.update("DELETE FROM asignacion_aseo WHERE empleado_id = ?", id);
+            jdbcTemplate.update("DELETE FROM entregado_por_empleado WHERE empleado_id = ?", id);
+            jdbcTemplate.update("DELETE FROM evaluacion_empleado WHERE empleado_id = ?", id);
+            jdbcTemplate.update("DELETE FROM produccion_registro WHERE empleado_id = ?", id);
+            jdbcTemplate.update("DELETE FROM registro WHERE empleado_id = ?", id);
+
+            // Borrado físico del empleado
+            empleadoRepo.deleteById(id);
+            eventService.emitAsync("EMPLEADO_ELIMINADO", Map.of("id", id));
+            return ResponseEntity.noContent().build();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("Error eliminando empleado: " + e.getMessage());
+        }
     }
 
     @PostMapping("/registros")

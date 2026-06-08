@@ -469,7 +469,7 @@ export const Empleados = () => {
                     <Edit2 size={16} className="text-slate-500" />
                   </button>
                   {tieneRol('SUPERADMINISTRADOR') && (
-                    <button onClick={async () => { if(await confirm({ title: '¿Eliminar empleado?', description: '¿Seguro que deseas eliminar este empleado?', confirmText: 'Eliminar' })) eliminarEmpleado(emp.id); }} className="p-2.5 rounded-xl transition-all active:scale-[0.97] bg-rose-50 hover:bg-rose-100 border border-rose-200">
+                    <button onClick={async () => { if(await confirm({ title: '¿Eliminar empleado?', description: '¿Seguro que deseas eliminar este empleado definitivamente? Se borrará todo su historial asociado.', confirmText: 'Eliminar definitivamente', requireInput: emp.nombre })) eliminarEmpleado(emp.id); }} className="p-2.5 rounded-xl transition-all active:scale-[0.97] bg-rose-50 hover:bg-rose-100 border border-rose-200">
                       <Trash2 size={16} className="text-rose-500" />
                     </button>
                   )}
