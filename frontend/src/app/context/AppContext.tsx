@@ -1,4 +1,5 @@
 import React, { createContext, useEffect, useState, useContext, ReactNode } from 'react';
+import { getColombiaDateString, getColombiaIsoString } from '../utils/dateUtils';
 
 // === MODELOS (Entidades) ===
 
@@ -309,7 +310,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   // Empleados
   const agregarEmpleado = (emp: Omit<Empleado, 'id'>) => {
     const tmpId = `tmp-emp-${Date.now()}`;
-    const tmpEmp: Empleado = { id: tmpId, fechaIngreso: new Date().toISOString(), estado: 'Activo', ...emp } as Empleado;
+    const tmpEmp: Empleado = { id: tmpId, fechaIngreso: getColombiaIsoString(), estado: 'Activo', ...emp } as Empleado;
     setEmpleados((prev) => [tmpEmp, ...prev]);
 
     request<Empleado>('/empleados', {
@@ -487,7 +488,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       : [];
     const tmp: RegistroAseo = { 
       id: tmpId, 
-      fecha: new Date().toISOString().split('T')[0], 
+      fecha: getColombiaDateString(), 
       entries: entriesAUsar, 
       ...(payload as any) 
     } as RegistroAseo;

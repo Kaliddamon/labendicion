@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router';
 import { Scissors, Users, Sparkles, TrendingUp, ArrowRight, AlertTriangle, Clock } from 'lucide-react';
+import { getColombiaDateString } from '../utils/dateUtils';
 import {
   Area,
   AreaChart,
@@ -47,7 +48,7 @@ export const Home = () => {
     const hoy = new Date();
     const hace7 = new Date();
     hace7.setDate(hoy.getDate() - 6);
-    const fechaMin = hace7.toISOString().slice(0, 10);
+    const fechaMin = getColombiaDateString(hace7);
 
     const registrosSemana = registros.filter((r) => r.fecha >= fechaMin);
 
@@ -68,7 +69,7 @@ export const Home = () => {
     for (let i = 6; i >= 0; i--) {
       const d = new Date();
       d.setDate(hoy.getDate() - i);
-      const key = d.toISOString().slice(0, 10);
+      const key = getColombiaDateString(d);
       const entry = agrupado[key];
       dias.push({
         dia: diasSemana[d.getDay()],

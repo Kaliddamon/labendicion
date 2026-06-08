@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAppContext, RegistroAseo, RegistroAseoEntry } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 import { Sparkles, CheckCircle2, Circle, Plus, Trash2, Check, X, Edit2 } from 'lucide-react';
+import { getColombiaDateString } from '../utils/dateUtils';
 
 export const Aseo = () => {
   const {
@@ -27,7 +28,7 @@ export const Aseo = () => {
     ? Math.round((tareasMostradas.filter(t => t.completada).length / tareasMostradas.length) * 100)
     : 0;
 
-  const hoy = new Date().toISOString().split('T')[0];
+  const hoy = getColombiaDateString();
   const yaExisteHoy = ultimoRegistro ? ultimoRegistro.fecha.startsWith(hoy) : false;
 
   const crearNuevoRegistro = () => {

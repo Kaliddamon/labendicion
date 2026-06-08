@@ -1,5 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { AlertTriangle, TrendingUp, Gauge, ShieldCheck, Clock, Activity } from 'lucide-react';
+import { getColombiaDateString } from '../utils/dateUtils';
 import {
   Bar,
   BarChart,
@@ -61,7 +62,7 @@ const horasTrabajadas = (entrada: string, salida: string) => {
 const fechaHaceDias = (dias: number) => {
   const date = new Date();
   date.setDate(date.getDate() - dias);
-  return date.toISOString().slice(0, 10);
+  return getColombiaDateString(date);
 };
 
 const PIE_COLORS = ['#d4a012', '#2563eb', '#16a34a', '#d97706', '#7c3aed', '#e11d48'];
@@ -213,7 +214,7 @@ export const Rendimiento = () => {
     .filter((emp) => emp.value > 0);
 
   const capacidadDespacho = useMemo(() => {
-    const hoy = new Date().toISOString().slice(0, 10);
+    const hoy = getColombiaDateString();
     const pedidosConVencimiento = productos.filter((p) => p.fechaTerminacion <= hoy);
     const pedidosTerminados = pedidosConVencimiento.filter((p) => p.estado === 'Terminado').length;
     const cumplimientoDespacho =

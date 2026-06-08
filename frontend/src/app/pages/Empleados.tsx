@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useAppContext, Empleado, ProduccionRegistro } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
-import { Users, Plus, Star, ClipboardList, Trash2, Edit2, CheckCircle2, History, Clock, MinusCircle, FileText } from 'lucide-react';
+import { Search, Plus, Edit2, Trash2, X, Users, PackageSearch, Save, ArrowRight, UserCircle, Star, BadgeCheck, CheckCircle2, Circle, ClipboardList, History, Clock, MinusCircle, FileText } from 'lucide-react';
+import { getColombiaDateString } from '../utils/dateUtils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
 
 export const Empleados = () => {
@@ -46,7 +47,7 @@ export const Empleados = () => {
 
   const [empleadoCalificando, setEmpleadoCalificando] = useState<string | null>(null);
   const [registroEditando, setRegistroEditando] = useState<string | null>(null);
-  const [calificacionFecha, setCalificacionFecha] = useState(new Date().toISOString().split('T')[0]);
+  const [calificacionFecha, setCalificacionFecha] = useState(getColombiaDateString());
   const [calificacionHoraEntrada, setCalificacionHoraEntrada] = useState('08:00');
   const [calificacionHoraSalida, setCalificacionHoraSalida] = useState('17:00');
   const [calificacionAsistencia, setCalificacionAsistencia] = useState(true);
@@ -82,7 +83,7 @@ export const Empleados = () => {
     if (!cargo) return alert('El cargo es obligatorio. Por favor selecciona uno.');
 
     if (fechaIngreso) {
-      const hoy = new Date().toISOString().split('T')[0];
+      const hoy = getColombiaDateString();
       if (fechaIngreso > hoy) return alert('La fecha de ingreso no puede ser una fecha futura.');
     }
 
@@ -105,7 +106,7 @@ export const Empleados = () => {
     setEmpleadoCalificando(null);
     setCalificacionProducciones([crearLineaProduccionVacia()]);
     setCalificacionAsistencia(true);
-    setCalificacionFecha(new Date().toISOString().split('T')[0]);
+    setCalificacionFecha(getColombiaDateString());
     setCalificacionHoraEntrada('08:00');
     setCalificacionHoraSalida('17:00');
   };
@@ -152,7 +153,7 @@ export const Empleados = () => {
     if (!empleadoCalificando) return;
 
     if (calificacionAsistencia) {
-      const hoy = new Date().toISOString().split('T')[0];
+      const hoy = getColombiaDateString();
       if (calificacionFecha > hoy) {
         return alert('No se puede registrar una evaluación con fecha futura.');
       }
@@ -379,7 +380,7 @@ export const Empleados = () => {
             </div>
             <div>
               <label className="block text-xs font-medium text-slate-500 mb-1.5" style={{ fontFamily: 'var(--font-heading)' }}>Fecha de Ingreso</label>
-              <input type="date" className="w-full rounded-xl px-4 py-3 text-sm" style={inputStyle} value={fechaIngreso} onChange={e=>setFechaIngreso(e.target.value)} max={new Date().toISOString().split('T')[0]} />
+              <input type="date" className="w-full rounded-xl px-4 py-3 text-sm" style={inputStyle} value={fechaIngreso} onChange={e=>setFechaIngreso(e.target.value)} max={getColombiaDateString()} />
             </div>
             <div>
               <label className="block text-xs font-medium text-slate-500 mb-1.5" style={{ fontFamily: 'var(--font-heading)' }}>Estado</label>
@@ -584,7 +585,7 @@ export const Empleados = () => {
                   <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 items-start">
                     <div className="flex flex-col gap-1.5">
                       <label className="block text-xs font-medium text-slate-500" style={{ fontFamily: 'var(--font-heading)' }}>Fecha del registro</label>
-                      <input type="date" value={calificacionFecha} onChange={e=>setCalificacionFecha(e.target.value)} className="w-full bg-white rounded-xl px-3 py-2.5 text-sm" style={{ border: '1px solid var(--border-fiber)' }} required max={new Date().toISOString().split('T')[0]} />
+                      <input type="date" value={calificacionFecha} onChange={e=>setCalificacionFecha(e.target.value)} className="w-full bg-white rounded-xl px-3 py-2.5 text-sm" style={{ border: '1px solid var(--border-fiber)' }} required max={getColombiaDateString()} />
                     </div>
 
                     <div className="flex flex-col gap-1.5">

@@ -37,7 +37,7 @@ public class RegistroValidationService {
         if (registro.getFecha() != null && !registro.getFecha().isBlank()) {
             try {
                 LocalDate fechaRegistro = LocalDate.parse(registro.getFecha().split("T")[0]);
-                if (fechaRegistro.isAfter(LocalDate.now())) {
+                if (fechaRegistro.isAfter(LocalDate.now(java.time.ZoneId.of("America/Bogota")))) {
                     return Optional.of("La fecha del registro no puede ser futura.");
                 }
             } catch (Exception ignored) { }

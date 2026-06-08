@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useAppContext, Producto } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
-import { Search, Plus, Package, Edit2, Trash2, X, Scissors } from 'lucide-react';
+import { Package, Search, Filter, Plus, Edit2, Trash2, CheckCircle, PackageSearch, AlertCircle, TrendingUp, X, Check } from 'lucide-react';
+import { getColombiaDateString } from '../utils/dateUtils';
 import { AccessibleButton } from '../components/ui/accessible/AccessibleButton';
 import { AccessibleInput } from '../components/ui/accessible/AccessibleInput';
 import { AccessibleCardSelector } from '../components/ui/accessible/AccessibleCardSelector';
@@ -21,7 +22,7 @@ export const Produccion = () => {
   const [pasos, setPasos] = useState<{ id?: string; accionProduccionId?: string; descripcion: string; metaUnidadesHora?: number }[]>([]);
   const [accionSeleccionada, setAccionSeleccionada] = useState('');
   const [metaHoraPaso, setMetaHoraPaso] = useState('');
-  const [fechaAsignacion, setFechaAsignacion] = useState(new Date().toISOString().split('T')[0]);
+  const [fechaAsignacion, setFechaAsignacion] = useState(getColombiaDateString());
   const [fechaTerminacion, setFechaTerminacion] = useState('');
   const [estado, setEstado] = useState<Producto['estado']>('Pendiente');
 
@@ -52,7 +53,7 @@ export const Produccion = () => {
 
   const resetForm = () => {
     setNombre(''); setCantidad(''); setEmpresa(''); setGanancia('');
-    setFechaAsignacion(new Date().toISOString().split('T')[0]);
+    setFechaAsignacion(getColombiaDateString());
     setFechaTerminacion(''); setEstado('Pendiente');
     setPasos([]);
     setAccionSeleccionada('');

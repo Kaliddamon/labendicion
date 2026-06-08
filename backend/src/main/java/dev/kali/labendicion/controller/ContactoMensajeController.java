@@ -35,7 +35,7 @@ public class ContactoMensajeController {
         }
 
         // Validation: 5 messages per day system-wide
-        LocalDateTime startOfDay = LocalDate.now().atStartOfDay();
+        LocalDateTime startOfDay = LocalDate.now(java.time.ZoneId.of("America/Bogota")).atStartOfDay();
         long messagesToday = repository.countByFechaAfter(startOfDay);
         if (messagesToday >= 5) {
             return ResponseEntity.status(429).body("Se ha alcanzado el límite diario de mensajes recibidos por el sistema. Por favor, intenta mañana.");

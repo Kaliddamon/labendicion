@@ -301,7 +301,7 @@ public class FrontendController {
                         ? body.get("fechaEntregaReal").toString()
                         : null;
                 if (fechaEntrega == null || fechaEntrega.isBlank()) {
-                    fechaEntrega = java.time.LocalDate.now().toString();
+                    fechaEntrega = java.time.LocalDate.now(java.time.ZoneId.of("America/Bogota")).toString();
                 }
                 actual.setFechaEntregaReal(fechaEntrega);
             }
@@ -496,7 +496,7 @@ public class FrontendController {
         if (empleado.getFechaIngreso() != null && !empleado.getFechaIngreso().isBlank()) {
             try {
                 java.time.LocalDate fechaIngreso = java.time.LocalDate.parse(empleado.getFechaIngreso().split("T")[0]);
-                if (fechaIngreso.isAfter(java.time.LocalDate.now())) {
+                if (fechaIngreso.isAfter(java.time.LocalDate.now(java.time.ZoneId.of("America/Bogota")))) {
                     return ResponseEntity.badRequest().body(Map.of("error", "La fecha de ingreso no puede ser futura."));
                 }
             } catch (Exception e) {}
@@ -526,7 +526,7 @@ public class FrontendController {
         if (empleado.getFechaIngreso() != null && !empleado.getFechaIngreso().isBlank()) {
             try {
                 java.time.LocalDate fechaIngreso = java.time.LocalDate.parse(empleado.getFechaIngreso().split("T")[0]);
-                if (fechaIngreso.isAfter(java.time.LocalDate.now())) {
+                if (fechaIngreso.isAfter(java.time.LocalDate.now(java.time.ZoneId.of("America/Bogota")))) {
                     return ResponseEntity.badRequest().body(Map.of("error", "La fecha de ingreso no puede ser futura."));
                 }
             } catch (Exception e) {}
@@ -646,7 +646,7 @@ public class FrontendController {
             String fecha = null;
             if (body != null && body.get("fecha") != null) fecha = body.get("fecha").toString();
             if (fecha == null || fecha.isBlank()) {
-                fecha = java.time.LocalDate.now().toString();
+                fecha = java.time.LocalDate.now(java.time.ZoneId.of("America/Bogota")).toString();
             }
 
             var existente = registroAseoRepo.findByFecha(fecha);
