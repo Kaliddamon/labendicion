@@ -1,4 +1,5 @@
 import React, { createContext, useEffect, useState, useContext, ReactNode } from 'react';
+import { toast } from 'sonner';
 import { getColombiaDateString, getColombiaIsoString } from '../utils/dateUtils';
 
 // === MODELOS (Entidades) ===
@@ -303,7 +304,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       setRegistros(snapshotRegistros);
       const msg = err?.message || '';
       const match = msg.match(/"error"\s*:\s*"([^"]+)"/);
-      alert(match ? match[1] : 'No se pudo eliminar esta orden. Puede que tenga reportes asociados.');
+      toast.error(match ? match[1] : 'No se pudo eliminar esta orden. Puede que tenga reportes asociados.');
     });
   };
 
@@ -502,7 +503,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       .then(async (res) => {
         const data = await res.json().catch(() => ({}));
         if (res.status === 409 && data.registro) {
-          alert('Ya existe un registro de aseo para hoy. Se mostrará el registro existente.');
+          toast.error('Ya existe un registro de aseo para hoy. Se mostrará el registro existente.');
           setRegistrosAseo((prev) => {
             const sinDup = prev.filter((r) => r.id !== data.registro.id && r.id !== tmpId);
             return [data.registro, ...sinDup];
@@ -687,12 +688,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         .then((nuevo) => setter((prev) => prev.map((c) => (c.id === tmpId ? nuevo : c))))
         .catch(() => {
           setter((prev) => prev.filter((c) => c.id !== tmpId));
-          alert('No se pudo guardar el ítem. Verifica que el backend esté en ejecución.');
+          toast.error('No se pudo guardar el ítem. Verifica que el backend esté en ejecución.');
         });
     },
     edit: (id: string, item: Partial<CatalogoItem>) => {
       if (!id || id.startsWith('tmp-')) {
-        alert('Este ítem aún se está guardando. Espera un momento e intenta de nuevo.');
+        toast.error('Este ítem aún se está guardando. Espera un momento e intenta de nuevo.');
         return;
       }
       let snapshot: CatalogoItem | undefined;
@@ -704,7 +705,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         .then((nuevo) => setter((prev) => prev.map((c) => (c.id === id ? nuevo : c))))
         .catch(() => {
           if (snapshot) setter((prev) => prev.map((c) => (c.id === id ? snapshot! : c)));
-          alert('No se pudo actualizar. Si el ítem es antiguo, elimínalo y créalo de nuevo.');
+          toast.error('No se pudo actualizar. Si el ítem es antiguo, elimínalo y créalo de nuevo.');
         });
     },
     remove: (id: string) => {

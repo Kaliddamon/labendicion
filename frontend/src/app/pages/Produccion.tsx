@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useAppContext, Producto } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 import { Package, Search, Filter, Plus, Edit2, Trash2, CheckCircle, PackageSearch, AlertCircle, TrendingUp, X, Check, Scissors } from 'lucide-react';
+import { toast } from 'sonner';
+import { useConfirm } from '../context/ConfirmContext';
 import { getColombiaDateString } from '../utils/dateUtils';
 import { AccessibleButton } from '../components/ui/accessible/AccessibleButton';
 import { AccessibleInput } from '../components/ui/accessible/AccessibleInput';
@@ -11,6 +13,7 @@ export const Produccion = () => {
   const { productos, agregarProducto, editarProducto, eliminarProducto, cambiarEstadoProducto, accionesProduccion, empresas } = useAppContext();
   const { tieneRol } = useAuth();
   const [busqueda, setBusqueda] = useState('');
+  const { confirm } = useConfirm();
 
   const [mostrarForm, setMostrarForm] = useState(false);
   const [productoEditando, setProductoEditando] = useState<string | null>(null);
@@ -63,17 +66,17 @@ export const Produccion = () => {
 
   const agregarPasoAOrden = () => {
     if (!accionSeleccionada || !metaHoraPaso) {
-      alert('Selecciona una acción del catálogo y asigna una meta de unidades por hora.');
+      toast.warning('Selecciona una acción del catálogo y asigna una meta de unidades por hora.');
       return;
     }
     const metaNum = Number(metaHoraPaso);
     if (isNaN(metaNum) || metaNum <= 0) {
-      alert('La meta debe ser un número mayor a cero.');
+      toast.warning('La meta debe ser un número mayor a cero.');
       return;
     }
     const accion = accionesValidas.find((a) => a.id === accionSeleccionada);
     if (!accion) {
-      alert('La acción seleccionada no es válida.');
+      toast.error('La acción seleccionada no es válida.');
       return;
     }
     const yaExiste = pasos.some(
@@ -82,7 +85,7 @@ export const Produccion = () => {
         p.descripcion.toLowerCase() === accion.nombre.toLowerCase()
     );
     if (yaExiste) {
-      return alert('Esa acción ya está asignada a esta orden.');
+      return toast.warning('Esa acción ya está asignada a esta orden.');
     }
     setPasos((prev) => [
       ...prev,
@@ -127,9 +130,9 @@ export const Produccion = () => {
 
   const handleGuardar = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!nombre || !cantidad || !empresa || !ganancia) return alert('Llene todos los campos de información básica');
+    if (!nombre || !cantidad || !empresa || !ganancia) return toast.warning('Llene todos los campos de información básica');
     if (pasos.length === 0) {
-      return alert('Asigna al menos una acción del catálogo a esta orden.');
+      return toast.warning('Asigna al menos una acción del catálogo a esta orden.');
     }
 
     const prodData = {
@@ -471,7 +474,7 @@ export const Produccion = () => {
                     {tieneRol('SUPERADMINISTRADOR') && (
                       <AccessibleButton
                         variant="danger"
-                        onClick={() => { if (window.confirm('¿Seguro que deseas eliminar esta orden permanentemente?')) eliminarProducto(prod.id); }}
+                        onClick={async () => { if (await confirm({ title: '¿Eliminar orden?', description: '¿Seguro que deseas eliminar esta orden permanentemente?', confirmText: 'Eliminar' })) eliminarProducto(prod.id); }}
                         className="flex-1 lg:flex-none !px-4 !min-h-[44px] !text-sm"
                       >
                         <Trash2 size={16} /> Eliminar

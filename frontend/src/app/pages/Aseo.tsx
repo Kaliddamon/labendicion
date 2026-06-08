@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useAppContext, RegistroAseo, RegistroAseoEntry } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 import { Sparkles, CheckCircle2, Circle, Plus, Trash2, Check, X, Edit2 } from 'lucide-react';
+import { toast } from 'sonner';
+import { useConfirm } from '../context/ConfirmContext';
 import { getColombiaDateString } from '../utils/dateUtils';
 
 export const Aseo = () => {
@@ -16,6 +18,7 @@ export const Aseo = () => {
   } = useAppContext();
 
   const { tieneRol } = useAuth();
+  const { confirm } = useConfirm();
 
   const [verHistorico, setVerHistorico] = useState(false);
   const ultimoRegistro: RegistroAseo | null = registrosAseo && registrosAseo.length > 0 ? registrosAseo[0] : null;
@@ -30,12 +33,19 @@ export const Aseo = () => {
 
   const hoy = getColombiaDateString();
   const yaExisteHoy = ultimoRegistro ? ultimoRegistro.fecha.startsWith(hoy) : false;
+  
+  const accionesCatalogo = accionesAseo.filter((a) => a.activa !== false).map((a) => a.nombre);
+  const areasCatalogo = areasTrabajo.filter((a) => a.activa !== false).map((a) => a.nombre);
 
-  const crearNuevoRegistro = () => {
+  const handleCrearRegistroHoy = async () => {
     if (accionesCatalogo.length === 0 || areasCatalogo.length === 0) {
-      return alert('Configura al menos una acción y un área en Configuración antes de crear el registro.');
+      return toast.warning('Configura al menos una acción y un área en Configuración antes de crear el registro.');
     }
-    if (window.confirm('¿Deseas crear el registro de aseo para hoy? Se asignarán automáticamente las mismas tareas del último día.')) {
+    if (await confirm({ 
+      title: '¿Crear registro de aseo?', 
+      description: '¿Deseas crear el registro de aseo para hoy? Se asignarán automáticamente las mismas tareas del último día.',
+      confirmText: 'Crear registro'
+    })) {
       crearRegistroAseo(undefined, ultimoRegistro ? ultimoRegistro.entries : []);
     }
   };
@@ -43,9 +53,6 @@ export const Aseo = () => {
   const [editandoEntry, setEditandoEntry] = useState<string | null>(null);
   const [editAcciones, setEditAcciones] = useState<string[]>([]);
   const [editAreas, setEditAreas] = useState<string[]>([]);
-
-  const accionesCatalogo = accionesAseo.filter((a) => a.activa !== false).map((a) => a.nombre);
-  const areasCatalogo = areasTrabajo.filter((a) => a.activa !== false).map((a) => a.nombre);
 
   const iniciarEdicion = (entry: RegistroAseoEntry) => {
     setEditandoEntry(entry.id);
@@ -69,10 +76,10 @@ export const Aseo = () => {
 
   const guardarEdicion = (registroId: string, entryId: string) => {
     if (editAcciones.length === 0) {
-      return alert('Debes asignar al menos una acción de aseo al empleado.');
+      return toast.warning('Debes asignar al menos una acción de aseo al empleado.');
     }
     if (editAreas.length === 0) {
-      return alert('Debes asignar al menos un área de trabajo al empleado.');
+      return toast.warning('Debes asignar al menos un área de trabajo al empleado.');
     }
     actualizarRegistroAseoEntry(registroId, entryId, editAcciones, editAreas);
     cancelarEdicion();
@@ -103,7 +110,7 @@ export const Aseo = () => {
 
         {(tieneRol('ADMINISTRADOR') || tieneRol('SUPERADMINISTRADOR')) && (
           <button
-            onClick={() => crearNuevoRegistro()}
+            onClick={() => handleCrearRegistroHoy()}
             disabled={yaExisteHoy}
             className={`px-5 py-3 rounded-xl font-semibold text-sm flex items-center gap-2 transition-all ${
               yaExisteHoy
@@ -339,7 +346,7 @@ export const Aseo = () => {
                     <span className="text-xs text-slate-500">{r.entries.length} empleados</span>
                     {tieneRol('SUPERADMIN') && (
                       <button
-                        onClick={() => { if(window.confirm('¿Eliminar este registro?')) eliminarRegistroAseo(r.id); }}
+                        onClick={async () => { if(await confirm({ title: '¿Eliminar registro?', description: '¿Seguro que deseas eliminar este registro de aseo?', confirmText: 'Eliminar' })) eliminarRegistroAseo(r.id); }}
                         className="text-rose-500 hover:text-rose-600 active:scale-95 transition-transform"
                         title="Eliminar"
                       >

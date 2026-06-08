@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useAppContext, CatalogoItem, Empresa } from '../context/AppContext';
-import { Settings, Plus, Trash2, Edit2 } from 'lucide-react';
+import { Settings, Plus, Edit2, Trash2, Search, X, Check, CheckCircle2, Shield, AlertCircle, Eye, Users } from 'lucide-react';
+import { toast } from 'sonner';
+import { useConfirm } from '../context/ConfirmContext';
 import { GestionarRoles } from '../components/GestionarRoles';
 
 type Tab = 'accionesProduccion' | 'cargos' | 'areas' | 'accionesAseo' | 'empresas' | 'roles';
@@ -19,6 +21,7 @@ export const Configuracion = () => {
   const [nombre, setNombre] = useState('');
   const [secuencia, setSecuencia] = useState('');
   const [editando, setEditando] = useState<string | null>(null);
+  const { confirm } = useConfirm();
   const [empresaForm, setEmpresaForm] = useState<Omit<Empresa, 'id'>>({
     razonSocial: '', telefono: '', correo: '', direccion: '', estado: 'Sin ordenes',
   });
@@ -53,9 +56,9 @@ export const Configuracion = () => {
   const guardar = (e: React.FormEvent) => {
     e.preventDefault();
     if (tab === 'empresas') {
-      if (!empresaForm.razonSocial?.trim()) return alert('La razón social es obligatoria.');
-      if (empresaForm.correo && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(empresaForm.correo)) return alert('El correo electrónico no tiene un formato válido.');
-      if (empresaForm.telefono && !/^[0-9+\- ]{7,15}$/.test(empresaForm.telefono)) return alert('El teléfono tiene un formato inválido.');
+      if (!empresaForm.razonSocial?.trim()) return toast.warning('La razón social es obligatoria.');
+      if (empresaForm.correo && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(empresaForm.correo)) return toast.warning('El correo electrónico no tiene un formato válido.');
+      if (empresaForm.telefono && !/^[0-9+\- ]{7,15}$/.test(empresaForm.telefono)) return toast.warning('El teléfono tiene un formato inválido.');
       if (empresaEditando) {
         editarEmpresa(empresaEditando, { ...empresaForm, razonSocial: empresaForm.razonSocial.trim() });
       } else {
@@ -66,12 +69,12 @@ export const Configuracion = () => {
       return;
     }
 
-    if (!nombre.trim()) return alert('El nombre es obligatorio');
+    if (!nombre.trim()) return toast.warning('El nombre es obligatorio');
 
     if (editando) {
-      if (editando.startsWith('tmp-')) return alert('Este ítem aún se está guardando.');
+      if (editando.startsWith('tmp-')) return toast.warning('Este ítem aún se está guardando.');
       const actual = listaActual().find((i) => i.id === editando);
-      if (!actual) { resetForm(); return alert('El ítem ya no existe.'); }
+      if (!actual) { resetForm(); return toast.warning('El ítem ya no existe.'); }
 
       const updates: Partial<CatalogoItem> = { nombre: nombre.trim() };
 
@@ -95,15 +98,15 @@ export const Configuracion = () => {
 
   const iniciarEdicion = (item: CatalogoItem) => {
     if (tab === 'empresas') return;
-    if (item.id.startsWith('tmp-')) return alert('Espera a que termine de guardarse.');
+    if (item.id.startsWith('tmp-')) return toast.warning('Espera a que termine de guardarse.');
     setEditando(item.id);
     setNombre(item.nombre);
     setSecuencia(item.orden != null ? String(item.orden) : '');
   };
 
-  const eliminar = (id: string) => {
+  const eliminar = async (id: string) => {
     if (tab === 'empresas') {
-      if (!window.confirm('¿Eliminar esta empresa?')) return;
+    if (!await confirm({ title: '¿Eliminar empresa?', description: '¿Eliminar esta empresa?', confirmText: 'Eliminar' })) return;
       eliminarEmpresa(id);
       if (empresaEditando === id) {
         setEmpresaEditando(null);
@@ -112,7 +115,7 @@ export const Configuracion = () => {
       return;
     }
     if (id.startsWith('tmp-')) return;
-    if (!window.confirm('¿Eliminar este ítem del catálogo?')) return;
+    if (!await confirm({ title: '¿Eliminar ítem?', description: '¿Eliminar este ítem del catálogo?', confirmText: 'Eliminar' })) return;
     switch (tab) {
       case 'accionesProduccion': eliminarAccionProduccion(id); break;
       case 'cargos': eliminarCargo(id); break;
@@ -123,7 +126,7 @@ export const Configuracion = () => {
   };
 
   const iniciarEdicionEmpresa = (empresa: Empresa) => {
-    if (empresa.id.startsWith('tmp-')) return alert('Espera a que termine de guardarse.');
+    if (empresa.id.startsWith('tmp-')) return toast.warning('Espera a que termine de guardarse.');
     setEmpresaEditando(empresa.id);
     setEmpresaForm({
       razonSocial: empresa.razonSocial ?? '', telefono: empresa.telefono ?? '',

@@ -3,6 +3,8 @@ import { useAppContext, Empleado, ProduccionRegistro } from '../context/AppConte
 import { useAuth } from '../context/AuthContext';
 import { Search, Plus, Edit2, Trash2, X, Users, PackageSearch, Save, ArrowRight, UserCircle, Star, BadgeCheck, CheckCircle2, Circle, ClipboardList, History, Clock, MinusCircle, FileText } from 'lucide-react';
 import { getColombiaDateString } from '../utils/dateUtils';
+import { toast } from 'sonner';
+import { useConfirm } from '../context/ConfirmContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
 
 export const Empleados = () => {
@@ -20,6 +22,7 @@ export const Empleados = () => {
     cargos,
   } = useAppContext();
   const { tieneRol } = useAuth();
+  const { confirm } = useConfirm();
 
   const crearLineaProduccionVacia = (): ProduccionRegistro => ({
     productoId: '',
@@ -78,18 +81,18 @@ export const Empleados = () => {
 
   const guardarEmpleado = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!nombre || !documento) return alert('El nombre y documento son obligatorios');
-    if (!/^[0-9]+$/.test(documento)) return alert('El documento debe contener únicamente números.');
-    if (!cargo) return alert('El cargo es obligatorio. Por favor selecciona uno.');
+    if (!nombre || !documento) return toast.warning('El nombre y documento son obligatorios');
+    if (!/^[0-9]+$/.test(documento)) return toast.warning('El documento debe contener únicamente números.');
+    if (!cargo) return toast.warning('El cargo es obligatorio. Por favor selecciona uno.');
 
     if (fechaIngreso) {
       const hoy = getColombiaDateString();
-      if (fechaIngreso > hoy) return alert('La fecha de ingreso no puede ser una fecha futura.');
+      if (fechaIngreso > hoy) return toast.warning('La fecha de ingreso no puede ser una fecha futura.');
     }
 
     if (telefono) {
       const telefonoValido = /^[0-9+\- ]{7,15}$/.test(telefono);
-      if (!telefonoValido) return alert('El formato del teléfono es inválido. Usa solo números, espacios, + o -, entre 7 y 15 caracteres.');
+      if (!telefonoValido) return toast.warning('El formato del teléfono es inválido. Usa solo números, espacios, + o -, entre 7 y 15 caracteres.');
     }
 
     const cargoObj = cargo ? { id: cargo, nombre: cargos.find(c => c.id === cargo)?.nombre || '' } : null;
@@ -155,34 +158,34 @@ export const Empleados = () => {
     if (calificacionAsistencia) {
       const hoy = getColombiaDateString();
       if (calificacionFecha > hoy) {
-        return alert('No se puede registrar una evaluación con fecha futura.');
+        return toast.warning('No se puede registrar una evaluación con fecha futura.');
       }
 
       if (productos.length === 0) {
-        return alert('Primero crea al menos una orden en la sección Producción.');
+        return toast.warning('Primero crea al menos una orden en la sección Producción.');
       }
       if (calificacionProducciones.length === 0) {
-        return alert('Debes vincular al menos una orden y acción de producción.');
+        return toast.warning('Debes vincular al menos una orden y acción de producción.');
       }
 
       const claves = calificacionProducciones
         .filter((p) => p.productoId && p.pasoId)
         .map((p) => `${p.productoId}:${p.pasoId}`);
       if (new Set(claves).size !== claves.length) {
-        return alert('No puedes repetir la misma acción de la misma orden en dos líneas.');
+        return toast.warning('No puedes repetir la misma acción de la misma orden en dos líneas.');
       }
 
       for (const prod of calificacionProducciones) {
         const orden = productos.find((p) => p.id === prod.productoId);
         const pasoOk = orden?.pasos?.some((ps) => ps.id === prod.pasoId);
         if (!orden || !pasoOk) {
-          return alert('Cada línea debe tener una orden y una acción válida de esa orden.');
+          return toast.warning('Cada línea debe tener una orden y una acción válida de esa orden.');
         }
         if (prod.unidadesTotales <= 0) {
-          return alert('Las unidades confeccionadas deben ser mayores a cero.');
+          return toast.warning('Las unidades confeccionadas deben ser mayores a cero.');
         }
         if (prod.unidadesBuenas > prod.unidadesTotales) {
-          return alert('La calidad no puede superar las unidades confeccionadas.');
+          return toast.warning('La calidad no puede superar las unidades confeccionadas.');
         }
         const disponible = unidadesDisponiblesPaso(
           prod.productoId,
@@ -190,7 +193,7 @@ export const Empleados = () => {
           registroEditando ?? undefined
         );
         if (prod.unidadesTotales > disponible) {
-          return alert(
+          return toast.warning(
             `Para "${etiquetaPaso(prod.productoId, prod.pasoId)}" en ${orden.nombre} solo quedan ${disponible} unidades disponibles (meta: ${orden.cantidad}).`
           );
         }
@@ -223,9 +226,9 @@ export const Empleados = () => {
       setEmpleadoCalificando(null);
       setRegistroEditando(null);
       setCalificacionProducciones([crearLineaProduccionVacia()]);
-      alert('Evaluación guardada correctamente ✅');
+      toast.success('Evaluación guardada correctamente ✅');
     } catch {
-      alert('No se pudo guardar la evaluación. Revisa los datos o intenta de nuevo.');
+      toast.error('No se pudo guardar la evaluación. Revisa los datos o intenta de nuevo.');
     }
   };
 
@@ -466,7 +469,7 @@ export const Empleados = () => {
                     <Edit2 size={16} className="text-slate-500" />
                   </button>
                   {tieneRol('SUPERADMINISTRADOR') && (
-                    <button onClick={() => { if(window.confirm('¿Seguro que deseas eliminar este empleado?')) eliminarEmpleado(emp.id); }} className="p-2.5 rounded-xl transition-all active:scale-[0.97] bg-rose-50 hover:bg-rose-100 border border-rose-200">
+                    <button onClick={async () => { if(await confirm({ title: '¿Eliminar empleado?', description: '¿Seguro que deseas eliminar este empleado?', confirmText: 'Eliminar' })) eliminarEmpleado(emp.id); }} className="p-2.5 rounded-xl transition-all active:scale-[0.97] bg-rose-50 hover:bg-rose-100 border border-rose-200">
                       <Trash2 size={16} className="text-rose-500" />
                     </button>
                   )}
@@ -557,7 +560,7 @@ export const Empleados = () => {
                                     </button>
                                     <button
                                       type="button"
-                                      onClick={() => { if (window.confirm('¿Eliminar esta evaluación?')) eliminarRegistro(reg.id); }}
+                                      onClick={async () => { if (await confirm({ title: '¿Eliminar evaluación?', description: '¿Seguro que deseas eliminar esta evaluación?', confirmText: 'Eliminar' })) eliminarRegistro(reg.id); }}
                                       className="inline-flex items-center gap-1 rounded-lg border border-rose-200 bg-white px-2.5 py-1 text-[10px] font-semibold text-rose-600"
                                     >
                                       <Trash2 size={12} /> Eliminar

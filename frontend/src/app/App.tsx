@@ -4,6 +4,8 @@ import { GoogleOAuthProvider } from '@react-oauth/google';
 import { router } from './routes';
 import { AppProvider } from './context/AppContext';
 import { AuthProvider } from './context/AuthContext';
+import { ConfirmProvider } from './context/ConfirmContext';
+import { Toaster } from 'sonner';
 
 // IMPORTANTE: Obtén tu Google Client ID en https://console.cloud.google.com
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
@@ -16,9 +18,12 @@ export default function App() {
   return (
     <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
       <AuthProvider>
-        <AppProvider>
-          <RouterProvider router={router} />
-        </AppProvider>
+        <ConfirmProvider>
+          <AppProvider>
+            <Toaster position="top-right" richColors />
+            <RouterProvider router={router} />
+          </AppProvider>
+        </ConfirmProvider>
       </AuthProvider>
     </GoogleOAuthProvider>
   );

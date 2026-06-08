@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Mail, Send, Edit2, Trash2, CheckCircle2, Clock } from 'lucide-react';
+import { toast } from 'sonner';
+import { useConfirm } from '../context/ConfirmContext';
 
 interface MiMensaje {
   id: number;
@@ -19,6 +21,7 @@ export const ContactoFormulario = () => {
   const [cargando, setCargando] = useState(true);
   const [editando, setEditando] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const { confirm } = useConfirm();
 
   const fromEnv = import.meta.env.VITE_API_BASE_URL as string | undefined;
   const API_BASE = fromEnv && fromEnv.trim() !== '' ? `${fromEnv.trim()}/api/frontend` : '/api/frontend';
@@ -72,6 +75,7 @@ export const ContactoFormulario = () => {
         const data = await res.json();
         setMiMensaje(data);
         setEditando(false);
+        toast.success('Mensaje guardado correctamente');
       } else {
         const errText = await res.text();
         setErrorMsg(errText || 'Ocurrió un error al enviar el mensaje.');
@@ -85,8 +89,14 @@ export const ContactoFormulario = () => {
   };
 
   const handleDelete = async () => {
-    if (!miMensaje) return;
-    if (!window.confirm('¿Estás seguro de eliminar tu mensaje de contacto?')) return;
+    if (!miMensaje || !user?.email) return;
+    
+    if (!await confirm({ 
+      title: '¿Eliminar mensaje?', 
+      description: '¿Estás seguro de eliminar tu mensaje de contacto? Esta acción no se puede deshacer.',
+      confirmText: 'Sí, eliminar',
+      cancelText: 'Cancelar'
+    })) return;
     
     try {
       const res = await fetch(`${API_BASE}/contacto-mensajes/${miMensaje.id}?email=${encodeURIComponent(user.email)}`, {
@@ -99,11 +109,11 @@ export const ContactoFormulario = () => {
         setEditando(false);
       } else {
         const errText = await res.text();
-        alert(`Error al eliminar: ${errText}`);
+        toast.error(`Error al eliminar: ${errText}`);
       }
     } catch (err) {
       console.error(err);
-      alert('Error de conexión al eliminar.');
+      toast.error('Error de conexión al eliminar.');
     }
   };
 
