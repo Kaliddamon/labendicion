@@ -58,9 +58,6 @@ public class FrontendController {
     private AccionProduccionRepository accionProduccionRepo;
 
     @Autowired
-    private org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
-
-    @Autowired
     private CargoEmpleadoRepository cargoRepo;
 
     @Autowired
@@ -547,14 +544,24 @@ public class FrontendController {
         if (!empleadoRepo.existsById(id)) return ResponseEntity.notFound().build();
         
         try {
-            // Eliminación manual en cascada (bypass JPA para evitar cargar miles de objetos)
-            // Se eliminan registros dependientes de este empleado en varias tablas
-            jdbcTemplate.update("DELETE FROM registro_aseo_entry WHERE empleado_id = ?", id);
-            jdbcTemplate.update("DELETE FROM asignacion_aseo WHERE empleado_id = ?", id);
-            jdbcTemplate.update("DELETE FROM entregado_por_empleado WHERE empleado_id = ?", id);
-            jdbcTemplate.update("DELETE FROM evaluacion_empleado WHERE empleado_id = ?", id);
-            jdbcTemplate.update("DELETE FROM produccion_registro WHERE empleado_id = ?", id);
-            jdbcTemplate.update("DELETE FROM registro WHERE empleado_id = ?", id);
+            // Eliminar registros de producción usando JPA
+            List<dev.kali.labendicion.domain.entity.Registro> registrosAsociados = registroRepo.findAll().stream()
+                .filter(r -> id.equals(r.getEmpleadoId()))
+                .collect(java.util.stream.Collectors.toList());
+            if (!registrosAsociados.isEmpty()) {
+                registroRepo.deleteAll(registrosAsociados);
+            }
+
+            // Eliminar entradas de aseo asociadas al empleado usando JPA
+            List<dev.kali.labendicion.domain.entity.RegistroAseo> aseos = registroAseoRepo.findAll();
+            for (dev.kali.labendicion.domain.entity.RegistroAseo aseo : aseos) {
+                if (aseo.getEntries() != null) {
+                    boolean removido = aseo.getEntries().removeIf(e -> id.equals(e.getEmpleadoId()));
+                    if (removido) {
+                        registroAseoRepo.save(aseo);
+                    }
+                }
+            }
 
             // Borrado físico del empleado
             empleadoRepo.deleteById(id);
