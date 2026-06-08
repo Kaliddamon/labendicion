@@ -9,6 +9,10 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.Optional;
+
 @RestController
 @RequestMapping("/api/frontend/contacto-mensajes")
 public class ContactoMensajeController {
@@ -16,10 +20,55 @@ public class ContactoMensajeController {
     @Autowired
     private ContactoMensajeRepository repository;
 
+    @GetMapping("/mi-mensaje")
+    public ResponseEntity<ContactoMensaje> getMiMensaje(@RequestParam String email) {
+        return repository.findByUsuarioEmail(email)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.noContent().build());
+    }
+
     @PostMapping
-    public ResponseEntity<ContactoMensaje> createMensaje(@RequestBody ContactoMensaje mensaje) {
+    public ResponseEntity<?> createMensaje(@RequestBody ContactoMensaje mensaje) {
+        // Validation: Length <= 200
+        if (mensaje.getMensaje() == null || mensaje.getMensaje().length() > 200) {
+            return ResponseEntity.badRequest().body("El mensaje no puede exceder los 200 caracteres.");
+        }
+
+        // Validation: 5 messages per day system-wide
+        LocalDateTime startOfDay = LocalDate.now().atStartOfDay();
+        long messagesToday = repository.countByFechaAfter(startOfDay);
+        if (messagesToday >= 5) {
+            return ResponseEntity.status(429).body("Se ha alcanzado el límite diario de mensajes recibidos por el sistema. Por favor, intenta mañana.");
+        }
+
+        // Validation: One message per user
+        Optional<ContactoMensaje> existing = repository.findByUsuarioEmail(mensaje.getUsuarioEmail());
+        if (existing.isPresent()) {
+            return ResponseEntity.badRequest().body("Ya tienes un mensaje enviado.");
+        }
+
         ContactoMensaje saved = repository.save(mensaje);
         return ResponseEntity.ok(saved);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<?> updateMensaje(@PathVariable Long id, @RequestBody ContactoMensaje updated) {
+        if (updated.getMensaje() == null || updated.getMensaje().length() > 200) {
+            return ResponseEntity.badRequest().body("El mensaje no puede exceder los 200 caracteres.");
+        }
+        return repository.findById(id).map(mensaje -> {
+            mensaje.setAsunto(updated.getAsunto());
+            mensaje.setMensaje(updated.getMensaje());
+            return ResponseEntity.ok(repository.save(mensaje));
+        }).orElse(ResponseEntity.notFound().build());
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteMensaje(@PathVariable Long id) {
+        return repository.findById(id).map(mensaje -> {
+            repository.delete(mensaje);
+            return ResponseEntity.ok().build();
+        }).orElse(ResponseEntity.notFound().build());
     }
 
     @GetMapping

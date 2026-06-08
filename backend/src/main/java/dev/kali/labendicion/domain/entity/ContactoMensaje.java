@@ -26,6 +26,9 @@ public class ContactoMensaje {
     private String usuarioNombre;
 
     @Column(nullable = false)
+    private String asunto;
+
+    @Column(nullable = false, length = 200)
     private String mensaje;
 
     private LocalDateTime fecha;

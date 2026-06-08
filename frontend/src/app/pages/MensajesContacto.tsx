@@ -5,6 +5,7 @@ interface ContactoMensaje {
   id: number;
   usuarioEmail: string;
   usuarioNombre: string;
+  asunto: string;
   mensaje: string;
   fecha: string;
   leido: boolean;
@@ -97,6 +98,7 @@ export const MensajesContacto = () => {
                       {msg.usuarioEmail}
                     </span>
                   </div>
+                  <h4 className="font-bold text-slate-800 text-sm mt-2 mb-1">{msg.asunto}</h4>
                   <p className="text-sm text-slate-600 leading-relaxed max-w-2xl">{msg.mensaje}</p>
                   <div className="flex items-center gap-1 mt-3 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
                     <Clock size={12} /> {new Date(msg.fecha).toLocaleString()}
