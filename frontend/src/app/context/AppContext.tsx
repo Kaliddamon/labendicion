@@ -139,7 +139,7 @@ interface AppContextType {
 
    // Registros de Aseo
    registrosAseo: RegistroAseo[];
-   crearRegistroAseo: (payload?: object) => void;
+   crearRegistroAseo: (payload?: object, prevEntries?: RegistroAseoEntry[]) => void;
    toggleRegistroAseoEntry: (registroId: string, entryId: string) => void;
    actualizarRegistroAseoEntry: (registroId: string, entryId: string, acciones: string[], areas: string[]) => void;
    eliminarRegistroAseo: (id: string) => void;
@@ -476,9 +476,21 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   };
 
   // Registros de Aseo
-  const crearRegistroAseo = (payload?: object) => {
+  const crearRegistroAseo = (payload?: object, prevEntries?: RegistroAseoEntry[]) => {
     const tmpId = `tmp-aseo-${Date.now()}`;
-    const tmp: RegistroAseo = { id: tmpId, fecha: new Date().toISOString(), entries: [], ...(payload as any) } as RegistroAseo;
+    const entriesAUsar = prevEntries 
+      ? prevEntries.map((e, index) => ({ 
+          ...e, 
+          id: `tmp-entry-${Date.now()}-${index}`, 
+          completada: false 
+        }))
+      : [];
+    const tmp: RegistroAseo = { 
+      id: tmpId, 
+      fecha: new Date().toISOString().split('T')[0], 
+      entries: entriesAUsar, 
+      ...(payload as any) 
+    } as RegistroAseo;
     setRegistrosAseo((prev) => [tmp, ...prev]);
 
     fetch(`${API_BASE}/registros-aseo`, {
@@ -489,6 +501,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       .then(async (res) => {
         const data = await res.json().catch(() => ({}));
         if (res.status === 409 && data.registro) {
+          alert('Ya existe un registro de aseo para hoy. Se mostrará el registro existente.');
           setRegistrosAseo((prev) => {
             const sinDup = prev.filter((r) => r.id !== data.registro.id && r.id !== tmpId);
             return [data.registro, ...sinDup];

@@ -27,11 +27,16 @@ export const Aseo = () => {
     ? Math.round((tareasMostradas.filter(t => t.completada).length / tareasMostradas.length) * 100)
     : 0;
 
+  const hoy = new Date().toISOString().split('T')[0];
+  const yaExisteHoy = ultimoRegistro ? ultimoRegistro.fecha.startsWith(hoy) : false;
+
   const crearNuevoRegistro = () => {
     if (accionesCatalogo.length === 0 || areasCatalogo.length === 0) {
       return alert('Configura al menos una acción y un área en Configuración antes de crear el registro.');
     }
-    crearRegistroAseo();
+    if (window.confirm('¿Deseas crear el registro de aseo para hoy? Se asignarán automáticamente las mismas tareas del último día.')) {
+      crearRegistroAseo(undefined, ultimoRegistro ? ultimoRegistro.entries : []);
+    }
   };
 
   const [editandoEntry, setEditandoEntry] = useState<string | null>(null);
@@ -98,10 +103,17 @@ export const Aseo = () => {
         {(tieneRol('ADMINISTRADOR') || tieneRol('SUPERADMINISTRADOR')) && (
           <button
             onClick={() => crearNuevoRegistro()}
-            className="px-5 py-3 rounded-xl font-semibold text-sm flex items-center gap-2 text-[#1a1a2e] transition-all active:scale-[0.97]"
-            style={{ background: 'var(--accent-copper)', boxShadow: 'var(--shadow-copper)' }}
+            disabled={yaExisteHoy}
+            className={`px-5 py-3 rounded-xl font-semibold text-sm flex items-center gap-2 transition-all ${
+              yaExisteHoy
+                ? 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none'
+                : 'text-[#1a1a2e] active:scale-[0.97]'
+            }`}
+            style={yaExisteHoy ? {} : { background: 'var(--accent-copper)', boxShadow: 'var(--shadow-copper)' }}
+            title={yaExisteHoy ? 'Ya existe un registro para el día de hoy' : 'Crear nuevo registro'}
           >
-            <Plus size={20} /> Nuevo Registro
+            {yaExisteHoy ? <CheckCircle2 size={20} /> : <Plus size={20} />} 
+            {yaExisteHoy ? 'Registro creado' : 'Nuevo Registro'}
           </button>
         )}
       </div>
