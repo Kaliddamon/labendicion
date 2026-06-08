@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAppContext, Producto } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
-import { Package, Search, Filter, Plus, Edit2, Trash2, CheckCircle, PackageSearch, AlertCircle, TrendingUp, X, Check } from 'lucide-react';
+import { Package, Search, Filter, Plus, Edit2, Trash2, CheckCircle, PackageSearch, AlertCircle, TrendingUp, X, Check, Scissors } from 'lucide-react';
 import { getColombiaDateString } from '../utils/dateUtils';
 import { AccessibleButton } from '../components/ui/accessible/AccessibleButton';
 import { AccessibleInput } from '../components/ui/accessible/AccessibleInput';
