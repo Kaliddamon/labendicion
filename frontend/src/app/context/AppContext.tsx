@@ -506,7 +506,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
    const toggleRegistroAseoEntry = (registroId: string, entryId: string) => {
      // Optimistic toggle
-     const snapshot = registrosAseo.map((r) => ({ ...r, entries: r.entries.map((e) => ({ ...e })) }));
      setRegistrosAseo((prev) =>
        prev.map((r) =>
          r.id !== registroId
@@ -521,35 +520,86 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
      request<RegistroAseo>(`/registros-aseo/${registroId}/entries/${entryId}/toggle`, {
        method: 'PATCH',
      })
-       .then((actualizado) => setRegistrosAseo((prev) => prev.map((r) => (r.id === actualizado.id ? actualizado : r))))
+       .then((actualizado) => {
+         setRegistrosAseo((prev) =>
+           prev.map((r) => {
+             if (r.id !== registroId) return r;
+             const serverEntry = actualizado.entries.find((e) => e.id === entryId);
+             if (!serverEntry) return r;
+             return {
+               ...r,
+               entries: r.entries.map((e) => (e.id === entryId ? serverEntry : e)),
+             };
+           })
+         );
+       })
        .catch((err) => {
          console.error('Error toggle registro aseo entry (revirtiendo):', err);
-         setRegistrosAseo(snapshot);
+         // Revert just the toggle optimistically
+         setRegistrosAseo((prev) =>
+           prev.map((r) =>
+             r.id !== registroId
+               ? r
+               : {
+                   ...r,
+                   entries: r.entries.map((e) => (e.id === entryId ? { ...e, completada: !e.completada } : e)),
+                 }
+           )
+         );
        });
    };
 
     const actualizarRegistroAseoEntry = (registroId: string, entryId: string, acciones: string[], areas: string[]) => {
-      const snapshot = registrosAseo.map((r) => ({ ...r, entries: r.entries.map((e) => ({ ...e })) }));
+      // Capturamos el estado original específico para poder revertirlo
+      let originalEntry: RegistroAseoEntry | undefined;
 
       setRegistrosAseo((prev) =>
-        prev.map((r) =>
-          r.id !== registroId
-            ? r
-            : {
-                ...r,
-                entries: r.entries.map((e) => (e.id === entryId ? { ...e, acciones: acciones, areas: areas } : e)),
+        prev.map((r) => {
+          if (r.id !== registroId) return r;
+          return {
+            ...r,
+            entries: r.entries.map((e) => {
+              if (e.id === entryId) {
+                originalEntry = { ...e };
+                return { ...e, acciones: acciones, areas: areas };
               }
-        )
+              return e;
+            }),
+          };
+        })
       );
 
       request<RegistroAseo>(`/registros-aseo/${registroId}/entries/${entryId}`, {
         method: 'PATCH',
         body: JSON.stringify({ acciones, areas }),
       })
-        .then((actualizado) => setRegistrosAseo((prev) => prev.map((r) => (r.id === actualizado.id ? actualizado : r))))
+        .then((actualizado) => {
+          setRegistrosAseo((prev) =>
+            prev.map((r) => {
+              if (r.id !== registroId) return r;
+              const serverEntry = actualizado.entries.find((e) => e.id === entryId);
+              if (!serverEntry) return r;
+              return {
+                ...r,
+                entries: r.entries.map((e) => (e.id === entryId ? serverEntry : e)),
+              };
+            })
+          );
+        })
         .catch((err) => {
           console.error('Error actualizando acciones/areas de entry (revirtiendo):', err);
-          setRegistrosAseo(snapshot);
+          if (originalEntry) {
+            setRegistrosAseo((prev) =>
+              prev.map((r) =>
+                r.id !== registroId
+                  ? r
+                  : {
+                      ...r,
+                      entries: r.entries.map((e) => (e.id === entryId ? originalEntry! : e)),
+                    }
+              )
+            );
+          }
         });
     };
 
