@@ -89,7 +89,7 @@ export const ContactoFormulario = () => {
     if (!window.confirm('¿Estás seguro de eliminar tu mensaje de contacto?')) return;
     
     try {
-      const res = await fetch(`${API_BASE}/contacto-mensajes/${miMensaje.id}`, {
+      const res = await fetch(`${API_BASE}/contacto-mensajes/${miMensaje.id}?email=${encodeURIComponent(user.email)}`, {
         method: 'DELETE'
       });
       if (res.ok) {
@@ -97,10 +97,13 @@ export const ContactoFormulario = () => {
         setAsunto('');
         setMensaje('');
         setEditando(false);
+      } else {
+        const errText = await res.text();
+        alert(`Error al eliminar: ${errText}`);
       }
     } catch (err) {
       console.error(err);
-      alert('Error al eliminar.');
+      alert('Error de conexión al eliminar.');
     }
   };
 

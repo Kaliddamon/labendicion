@@ -35,6 +35,10 @@ public class ContactoMensaje {
 
     private Boolean leido;
 
+    private Boolean eliminado;
+
+    private Integer ediciones;
+
     @PrePersist
     protected void onCreate() {
         if (fecha == null) {
@@ -42,6 +46,12 @@ public class ContactoMensaje {
         }
         if (leido == null) {
             leido = false;
+        }
+        if (eliminado == null) {
+            eliminado = false;
+        }
+        if (ediciones == null) {
+            ediciones = 0;
         }
     }
 }

@@ -71,6 +71,7 @@ export const Rendimiento = () => {
   const { user, tieneRol } = useAuth();
   const [periodo, setPeriodo] = useState<Periodo>('7d');
   const [empleadoSeleccionado, setEmpleadoSeleccionado] = useState<string>('todos');
+  const [modoGrafica, setModoGrafica] = useState<'volumen' | 'eficiencia'>('volumen');
 
   const esAdmin = tieneRol('SUPERADMINISTRADOR') || tieneRol('ADMINISTRADOR');
   const empleadoUsuarioId = useMemo(() => empleados.find(e => e.email === user?.email)?.id, [empleados, user]);
@@ -101,22 +102,40 @@ export const Rendimiento = () => {
   const dataDiaria = useMemo(() => {
     const agrupado = registrosFiltrados.reduce((acc, reg) => {
       if (!acc[reg.fecha]) {
-        acc[reg.fecha] = { fecha: reg.fecha, total: 0, buenas: 0 };
+        acc[reg.fecha] = { fecha: reg.fecha, total: 0, buenas: 0, horasAsistidas: 0, horasProductivasEstimadas: 0 };
       }
       acc[reg.fecha].total += reg.unidadesTotales;
       acc[reg.fecha].buenas += reg.unidadesBuenas;
+      acc[reg.fecha].horasAsistidas += horasTrabajadas(reg.horaEntrada, reg.horaSalida);
+
+      let prodEst = 0;
+      for (const prod of (reg.producciones || [])) {
+        const producto = productos.find(p => p.id === prod.productoId);
+        let paso = producto?.pasos?.find(ps => ps.id === prod.pasoId);
+        if (!paso && producto?.pasos?.length === 1) {
+          paso = producto.pasos[0];
+        }
+        const meta = paso?.metaUnidadesHora || 12;
+        prodEst += (Number(prod.unidadesBuenas) || 0) / meta;
+      }
+      acc[reg.fecha].horasProductivasEstimadas += prodEst;
+
       return acc;
-    }, {} as Record<string, { fecha: string; total: number; buenas: number }>);
+    }, {} as Record<string, { fecha: string; total: number; buenas: number; horasAsistidas: number; horasProductivasEstimadas: number }>);
 
     return Object.values(agrupado)
       .sort((a, b) => a.fecha.localeCompare(b.fecha))
-      .map((d) => ({
-        dia: d.fecha.slice(5),
-        total: d.total,
-        buenas: d.buenas,
-        defectos: Math.max(d.total - d.buenas, 0),
-      }));
-  }, [registrosFiltrados]);
+      .map((d) => {
+        const efi = d.horasAsistidas > 0 ? (d.horasProductivasEstimadas / d.horasAsistidas) * 100 : 0;
+        return {
+          dia: d.fecha.slice(5),
+          total: d.total,
+          buenas: d.buenas,
+          defectos: Math.max(d.total - d.buenas, 0),
+          eficiencia: Number(efi.toFixed(1))
+        };
+      });
+  }, [registrosFiltrados, productos]);
 
   const resumen = useMemo(() => {
     const total = registrosFiltrados.reduce((acc, r) => acc + r.unidadesTotales, 0);
@@ -144,11 +163,12 @@ export const Rendimiento = () => {
     const retrabajoRate = defectosRate;
     const asistenciaEfectiva = horasAsistidas > 0 ? (horasProductivasEstimadas / horasAsistidas) * 100 : 0;
     const ausentismo = horasPlanificadas > 0 ? ((horasPlanificadas - horasAsistidas) / horasPlanificadas) * 100 : 0;
+    const productividadPromedio = horasAsistidas > 0 ? total / horasAsistidas : 0;
 
     return {
       total, buenas, defectos, horasAsistidas, horasPlanificadas,
       horasProductivasEstimadas, eficiencia, fpy, defectosRate,
-      retrabajoRate, asistenciaEfectiva, ausentismo,
+      retrabajoRate, asistenciaEfectiva, ausentismo, productividadPromedio
     };
   }, [registrosFiltrados, productos]);
 
@@ -254,7 +274,7 @@ export const Rendimiento = () => {
   const metricCards = [
     { label: 'Eficiencia global', value: formatearPorcentaje(resumen.eficiencia), sub: 'Meta sugerida: 90%', icon: Gauge, gradient: 'from-[var(--accent-copper)] to-[var(--accent-copper-bright)]' },
     { label: 'FPY (calidad primera)', value: formatearPorcentaje(resumen.fpy), sub: `${resumen.buenas} buenas de ${resumen.total}`, icon: ShieldCheck, gradient: 'from-emerald-500 to-emerald-600' },
-    { label: 'Horas efectivas', value: formatearPorcentaje(resumen.asistenciaEfectiva), sub: `${resumen.horasAsistidas.toFixed(1)} h asistidas`, icon: Clock, gradient: 'from-blue-500 to-blue-600' },
+    { label: 'Productividad prom.', value: `${resumen.productividadPromedio.toFixed(1)} und/h`, sub: `${resumen.horasAsistidas.toFixed(1)} h totales trabajadas`, icon: Clock, gradient: 'from-blue-500 to-blue-600' },
     { label: 'Índice de riesgo', value: `${indiceRiesgo.toFixed(0)}/100`, sub: 'Eficiencia + calidad + asistencia', icon: AlertTriangle, gradient: 'from-violet-500 to-violet-600' },
   ];
 
@@ -343,20 +363,42 @@ export const Rendimiento = () => {
       {/* Charts row */}
       <div className="grid gap-4 lg:grid-cols-3 mb-6">
         <div className="card-premium-static rounded-2xl p-5 lg:col-span-2">
-          <h2 className="text-sm font-bold mb-4" style={{ fontFamily: 'var(--font-heading)', color: 'var(--carbon)' }}>
-            Producción diaria y defectos
-          </h2>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-2">
+            <h2 className="text-sm font-bold" style={{ fontFamily: 'var(--font-heading)', color: 'var(--carbon)' }}>
+              {modoGrafica === 'volumen' ? 'Producción diaria y defectos' : 'Eficiencia global diaria (%)'}
+            </h2>
+            <div className="flex bg-slate-100 p-1 rounded-lg">
+              <button 
+                onClick={() => setModoGrafica('volumen')}
+                className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${modoGrafica === 'volumen' ? 'bg-white shadow-sm text-slate-800' : 'text-slate-500 hover:text-slate-700'}`}
+              >
+                Volumen
+              </button>
+              <button 
+                onClick={() => setModoGrafica('eficiencia')}
+                className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${modoGrafica === 'eficiencia' ? 'bg-white shadow-sm text-slate-800' : 'text-slate-500 hover:text-slate-700'}`}
+              >
+                Eficiencia
+              </button>
+            </div>
+          </div>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={dataDiaria}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e8e2d9" />
                 <XAxis dataKey="dia" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 11 }} />
                 <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 11 }} />
-                <Tooltip contentStyle={tooltipStyle} />
+                <Tooltip contentStyle={tooltipStyle} formatter={(value: number, name: string) => name === 'Eficiencia' ? `${value}%` : value} />
                 <Legend wrapperStyle={{ fontSize: '11px' }} />
-                <Line type="monotone" dataKey="total" name="Total" stroke="#d4a012" strokeWidth={2.5} dot={false} />
-                <Line type="monotone" dataKey="buenas" name="Buenas" stroke="#16a34a" strokeWidth={2} dot={false} />
-                <Line type="monotone" dataKey="defectos" name="Defectos" stroke="#e11d48" strokeWidth={2} dot={false} strokeDasharray="4 4" />
+                {modoGrafica === 'volumen' ? (
+                  <>
+                    <Line type="monotone" dataKey="total" name="Total" stroke="#d4a012" strokeWidth={2.5} dot={false} />
+                    <Line type="monotone" dataKey="buenas" name="Buenas" stroke="#16a34a" strokeWidth={2} dot={false} />
+                    <Line type="monotone" dataKey="defectos" name="Defectos" stroke="#e11d48" strokeWidth={2} dot={false} strokeDasharray="4 4" />
+                  </>
+                ) : (
+                  <Line type="monotone" dataKey="eficiencia" name="Eficiencia" stroke="#7c3aed" strokeWidth={3} dot={{ r: 4, strokeWidth: 2, fill: '#7c3aed' }} activeDot={{ r: 6 }} />
+                )}
               </LineChart>
             </ResponsiveContainer>
           </div>

@@ -22,7 +22,7 @@ public class ContactoMensajeController {
 
     @GetMapping("/mi-mensaje")
     public ResponseEntity<ContactoMensaje> getMiMensaje(@RequestParam String email) {
-        return repository.findByUsuarioEmail(email)
+        return repository.findByUsuarioEmailAndEliminadoFalse(email)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.noContent().build());
     }
@@ -41,10 +41,10 @@ public class ContactoMensajeController {
             return ResponseEntity.status(429).body("Se ha alcanzado el límite diario de mensajes recibidos por el sistema. Por favor, intenta mañana.");
         }
 
-        // Validation: One message per user
-        Optional<ContactoMensaje> existing = repository.findByUsuarioEmail(mensaje.getUsuarioEmail());
+        // Validation: One message per user (ignoring soft-deleted)
+        Optional<ContactoMensaje> existing = repository.findByUsuarioEmailAndEliminadoFalse(mensaje.getUsuarioEmail());
         if (existing.isPresent()) {
-            return ResponseEntity.badRequest().body("Ya tienes un mensaje enviado.");
+            return ResponseEntity.badRequest().body("Ya tienes un mensaje enviado activo.");
         }
 
         ContactoMensaje saved = repository.save(mensaje);
@@ -57,23 +57,47 @@ public class ContactoMensajeController {
             return ResponseEntity.badRequest().body("El mensaje no puede exceder los 200 caracteres.");
         }
         return repository.findById(id).map(mensaje -> {
+            // Ownership validation
+            if (!mensaje.getUsuarioEmail().equals(updated.getUsuarioEmail())) {
+                return ResponseEntity.status(403).body("No tienes permisos para editar este mensaje.");
+            }
+            // Freeze if read
+            if (Boolean.TRUE.equals(mensaje.getLeido())) {
+                return ResponseEntity.status(403).body("No puedes editar un mensaje que ya ha sido leído por un administrador.");
+            }
+            // Rate limit edits
+            if (mensaje.getEdiciones() >= 3) {
+                return ResponseEntity.status(429).body("Has alcanzado el límite máximo de ediciones para este mensaje.");
+            }
+
             mensaje.setAsunto(updated.getAsunto());
             mensaje.setMensaje(updated.getMensaje());
+            mensaje.setEdiciones(mensaje.getEdiciones() + 1);
             return ResponseEntity.ok(repository.save(mensaje));
         }).orElse(ResponseEntity.notFound().build());
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteMensaje(@PathVariable Long id) {
+    public ResponseEntity<?> deleteMensaje(@PathVariable Long id, @RequestParam String email) {
         return repository.findById(id).map(mensaje -> {
-            repository.delete(mensaje);
+            // Ownership validation
+            if (!mensaje.getUsuarioEmail().equals(email)) {
+                return ResponseEntity.status(403).body("No tienes permisos para eliminar este mensaje.");
+            }
+            // Freeze if read
+            if (Boolean.TRUE.equals(mensaje.getLeido())) {
+                return ResponseEntity.status(403).body("No puedes eliminar un mensaje que ya ha sido leído por un administrador.");
+            }
+            
+            mensaje.setEliminado(true);
+            repository.save(mensaje);
             return ResponseEntity.ok().build();
         }).orElse(ResponseEntity.notFound().build());
     }
 
     @GetMapping
     public ResponseEntity<List<ContactoMensaje>> getAllMensajes() {
-        List<ContactoMensaje> mensajes = repository.findAll(Sort.by(Sort.Direction.DESC, "fecha"));
+        List<ContactoMensaje> mensajes = repository.findByEliminadoFalse(Sort.by(Sort.Direction.DESC, "fecha"));
         return ResponseEntity.ok(mensajes);
     }
 

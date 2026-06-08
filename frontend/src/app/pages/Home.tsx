@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router';
-import { Scissors, Users, Sparkles, TrendingUp, ArrowRight } from 'lucide-react';
+import { Scissors, Users, Sparkles, TrendingUp, ArrowRight, AlertTriangle, Clock } from 'lucide-react';
 import {
   Area,
   AreaChart,
@@ -143,7 +143,7 @@ export const Home = () => {
   return (
     <div className="pb-8">
       {/* ── Saludo ──────────────────────────────────────── */}
-      <header className="mb-8 mt-4 md:mt-0 animate-fade-up">
+      <header className="mb-6 mt-4 md:mt-0 animate-fade-up">
         <div className="flex items-center gap-3 mb-1">
           <div className="w-10 h-1 rounded-full" style={{ background: 'var(--accent-copper)' }} />
           <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400" style={{ fontFamily: 'var(--font-heading)' }}>
@@ -160,6 +160,60 @@ export const Home = () => {
           ¿Qué vamos a hacer hoy en el taller?
         </p>
       </header>
+
+      {/* ── Alertas de Atraso ───────────────────────────── */}
+      {(() => {
+        const hoy = new Date();
+        hoy.setHours(0,0,0,0);
+        
+        const enRiesgo = productos.filter(p => {
+          if (p.estado?.toString().trim().toLowerCase() === 'terminado') return false;
+          if (!p.fechaTerminacion) return false;
+          
+          const fechaTerminacion = new Date(p.fechaTerminacion);
+          // Calculate difference in days
+          const diffTime = fechaTerminacion.getTime() - hoy.getTime();
+          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+          
+          return diffDays <= 2; // Overdue (<0), Due Today (0), Due in 1-2 days (1,2)
+        });
+
+        if (enRiesgo.length === 0) return null;
+
+        const vencidas = enRiesgo.filter(p => new Date(p.fechaTerminacion).getTime() < hoy.getTime());
+        const proximas = enRiesgo.filter(p => new Date(p.fechaTerminacion).getTime() >= hoy.getTime());
+
+        return (
+          <div className="mb-6 animate-fade-up flex flex-col gap-3">
+            {vencidas.length > 0 && (
+              <div className="rounded-xl px-5 py-4 flex items-start gap-4" style={{ background: 'rgba(225,29,72,0.06)', border: '1px solid rgba(225,29,72,0.2)' }}>
+                <div className="p-2 rounded-full bg-rose-100 text-rose-600 shrink-0 mt-0.5">
+                  <AlertTriangle size={20} />
+                </div>
+                <div>
+                  <h3 className="font-bold text-rose-700">Órdenes Vencidas</h3>
+                  <p className="text-sm text-rose-600/80 mt-0.5">
+                    Tienes {vencidas.length} orden(es) que ya pasaron su fecha de entrega. ¡Atiéndelas con urgencia!
+                  </p>
+                </div>
+              </div>
+            )}
+            {proximas.length > 0 && (
+              <div className="rounded-xl px-5 py-4 flex items-start gap-4" style={{ background: 'rgba(217,119,6,0.06)', border: '1px solid rgba(217,119,6,0.2)' }}>
+                <div className="p-2 rounded-full bg-amber-100 text-amber-600 shrink-0 mt-0.5">
+                  <Clock size={20} />
+                </div>
+                <div>
+                  <h3 className="font-bold text-amber-700">Órdenes en Riesgo</h3>
+                  <p className="text-sm text-amber-600/80 mt-0.5">
+                    Tienes {proximas.length} orden(es) que vencen en 48 horas o menos.
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       {/* ── Barra de Progreso Global ────────────────────── */}
       <div
