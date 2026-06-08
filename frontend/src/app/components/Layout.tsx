@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { Outlet, NavLink, useNavigate, useLocation } from 'react-router';
-import { AnimatePresence, motion } from 'motion/react';
+import { Outlet, NavLink, useNavigate } from 'react-router';
 import { Home, Scissors, Users, Sparkles, TrendingUp, LogOut, Shield, Settings, Mail, UserCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -9,7 +8,6 @@ export const Layout = () => {
   const { logout, user, roles } = useAuth();
   const [isHovered, setIsHovered] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
-  const location = useLocation();
 
   const handleLogout = () => {
     logout();
@@ -36,18 +34,7 @@ export const Layout = () => {
     <div className="flex min-h-dvh flex-col bg-slate-50 text-slate-800 font-sans md:flex-row">
       <main className="order-1 flex min-h-0 min-w-0 flex-1 flex-col pb-[calc(5.5rem+env(safe-area-inset-bottom,0px))] md:order-2 md:pb-0 md:pl-[5.5rem]">
         <div className="mx-auto w-full max-w-5xl flex-1 p-4 md:p-8">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={location.pathname}
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -15 }}
-              transition={{ duration: 0.3, ease: 'easeOut' }}
-              className="h-full"
-            >
-              <Outlet />
-            </motion.div>
-          </AnimatePresence>
+          <Outlet />
         </div>
       </main>
 
