@@ -13,6 +13,8 @@ export const Produccion = () => {
   const { productos, agregarProducto, editarProducto, eliminarProducto, cambiarEstadoProducto, accionesProduccion, empresas } = useAppContext();
   const { tieneRol } = useAuth();
   const [busqueda, setBusqueda] = useState('');
+  const [filtroEstado, setFiltroEstado] = useState<string>('Todos');
+  const [filtroEmpresa, setFiltroEmpresa] = useState<string>('Todas');
   const { confirm } = useConfirm();
 
   const [mostrarForm, setMostrarForm] = useState(false);
@@ -29,10 +31,12 @@ export const Produccion = () => {
   const [fechaTerminacion, setFechaTerminacion] = useState('');
   const [estado, setEstado] = useState<Producto['estado']>('Pendiente');
 
-  const productosFiltrados = productos.filter(p =>
-    p.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
-    p.empresa.toLowerCase().includes(busqueda.toLowerCase())
-  );
+  const productosFiltrados = productos.filter(p => {
+    const cumpleBusqueda = p.nombre.toLowerCase().includes(busqueda.toLowerCase()) || p.empresa.toLowerCase().includes(busqueda.toLowerCase());
+    const cumpleEstado = filtroEstado === 'Todos' || p.estado === filtroEstado;
+    const cumpleEmpresa = filtroEmpresa === 'Todas' || p.empresa === filtroEmpresa;
+    return cumpleBusqueda && cumpleEstado && cumpleEmpresa;
+  });
 
   const formatMonto = (num: number) => {
     if (num == null) return '';
@@ -405,20 +409,64 @@ export const Produccion = () => {
       {/* Search & List */}
       {!mostrarForm && (
         <>
-          <div className="relative mb-5">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
-            <input
-              type="text"
-              placeholder="Buscar órdenes por nombre o empresa..."
-              className="w-full rounded-xl pl-12 pr-5 py-3.5 text-sm font-medium transition-all"
-              style={{
-                background: 'var(--surface-silk)',
-                border: '1px solid var(--border-fiber)',
-                boxShadow: 'var(--shadow-sm)',
-              }}
-              value={busqueda}
-              onChange={e => setBusqueda(e.target.value)}
-            />
+          <div className="flex flex-col md:flex-row gap-3 mb-5">
+            <div className="relative flex-1">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+              <input
+                type="text"
+                placeholder="Buscar órdenes por nombre o empresa..."
+                className="w-full rounded-xl pl-12 pr-5 py-3.5 text-sm font-medium transition-all h-full min-h-[50px]"
+                style={{
+                  background: 'var(--surface-silk)',
+                  border: '1px solid var(--border-fiber)',
+                  boxShadow: 'var(--shadow-sm)',
+                }}
+                value={busqueda}
+                onChange={e => setBusqueda(e.target.value)}
+              />
+            </div>
+            <div className="flex gap-3 md:w-auto w-full">
+              <div className="flex-1 md:w-48 relative">
+                <Filter className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                <select
+                  className="w-full rounded-xl pl-10 pr-8 py-3.5 text-sm font-medium transition-all appearance-none bg-no-repeat bg-[right_1rem_center] h-full min-h-[50px]"
+                  style={{
+                    background: 'var(--surface-silk)',
+                    border: '1px solid var(--border-fiber)',
+                    color: 'var(--carbon)',
+                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
+                    backgroundSize: '1.2em'
+                  }}
+                  value={filtroEstado}
+                  onChange={e => setFiltroEstado(e.target.value)}
+                >
+                  <option value="Todos">Todos los estados</option>
+                  <option value="Pendiente">Pendiente</option>
+                  <option value="En proceso">En proceso</option>
+                  <option value="Terminado">Terminado</option>
+                </select>
+              </div>
+              <div className="flex-1 md:w-48 relative">
+                <Filter className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                <select
+                  className="w-full rounded-xl pl-10 pr-8 py-3.5 text-sm font-medium transition-all appearance-none bg-no-repeat bg-[right_1rem_center] h-full min-h-[50px]"
+                  style={{
+                    background: 'var(--surface-silk)',
+                    border: '1px solid var(--border-fiber)',
+                    color: 'var(--carbon)',
+                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
+                    backgroundSize: '1.2em'
+                  }}
+                  value={filtroEmpresa}
+                  onChange={e => setFiltroEmpresa(e.target.value)}
+                >
+                  <option value="Todas">Todas las empresas</option>
+                  {empresas.map(emp => (
+                    <option key={emp.id} value={emp.razonSocial}>{emp.razonSocial}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
           </div>
 
           <div className="grid gap-4">

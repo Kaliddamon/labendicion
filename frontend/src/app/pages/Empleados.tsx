@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAppContext, Empleado, ProduccionRegistro } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
-import { Search, Plus, Edit2, Trash2, X, Users, PackageSearch, Save, ArrowRight, UserCircle, Star, BadgeCheck, CheckCircle2, Circle, ClipboardList, History, Clock, MinusCircle, FileText } from 'lucide-react';
+import { Search, Plus, Edit2, Trash2, X, Users, PackageSearch, Save, ArrowRight, UserCircle, Star, BadgeCheck, CheckCircle2, Circle, ClipboardList, History, Clock, MinusCircle, FileText, Filter } from 'lucide-react';
 import { getColombiaDateString } from '../utils/dateUtils';
 import { toast } from 'sonner';
 import { useConfirm } from '../context/ConfirmContext';
@@ -46,7 +46,18 @@ export const Empleados = () => {
   const [telefono, setTelefono] = useState('');
   const [email, setEmail] = useState('');
   const [fechaIngreso, setFechaIngreso] = useState('');
-  const [estado, setEstado] = useState<'Activo'|'Inactivo'>('Activo');
+  const [busqueda, setBusqueda] = useState('');
+  const [filtroEstadoEmp, setFiltroEstadoEmp] = useState<string>('Todos');
+  const [filtroCargo, setFiltroCargo] = useState<string>('Todos');
+
+  const empleadosFiltrados = empleados.filter(emp => {
+    const cumpleBusqueda = emp.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
+                           emp.documento.includes(busqueda) ||
+                           (emp.cargo?.nombre || '').toLowerCase().includes(busqueda.toLowerCase());
+    const cumpleEstado = filtroEstadoEmp === 'Todos' || emp.estado === filtroEstadoEmp;
+    const cumpleCargo = filtroCargo === 'Todos' || emp.cargo?.id === filtroCargo;
+    return cumpleBusqueda && cumpleEstado && cumpleCargo;
+  });
 
   const [empleadoCalificando, setEmpleadoCalificando] = useState<string | null>(null);
   const [registroEditando, setRegistroEditando] = useState<string | null>(null);
@@ -399,14 +410,78 @@ export const Empleados = () => {
         </form>
       )}
 
+      {/* Search & List */}
+      {!mostrarFormEmpleado && (
+        <div className="flex flex-col md:flex-row gap-3 mb-5">
+          <div className="relative flex-1">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+            <input
+              type="text"
+              placeholder="Buscar empleados por nombre, documento o cargo..."
+              className="w-full rounded-xl pl-12 pr-5 py-3.5 text-sm font-medium transition-all h-full min-h-[50px]"
+              style={{
+                background: 'var(--surface-silk)',
+                border: '1px solid var(--border-fiber)',
+                boxShadow: 'var(--shadow-sm)',
+              }}
+              value={busqueda}
+              onChange={e => setBusqueda(e.target.value)}
+            />
+          </div>
+          <div className="flex gap-3 md:w-auto w-full">
+            <div className="flex-1 md:w-48 relative">
+              <Filter className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+              <select
+                className="w-full rounded-xl pl-10 pr-8 py-3.5 text-sm font-medium transition-all appearance-none bg-no-repeat bg-[right_1rem_center] h-full min-h-[50px]"
+                style={{
+                  background: 'var(--surface-silk)',
+                  border: '1px solid var(--border-fiber)',
+                  color: 'var(--carbon)',
+                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
+                  backgroundSize: '1.2em'
+                }}
+                value={filtroEstadoEmp}
+                onChange={e => setFiltroEstadoEmp(e.target.value)}
+              >
+                <option value="Todos">Todos los estados</option>
+                <option value="Activo">Activo</option>
+                <option value="Inactivo">Inactivo</option>
+              </select>
+            </div>
+            <div className="flex-1 md:w-48 relative">
+              <Filter className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+              <select
+                className="w-full rounded-xl pl-10 pr-8 py-3.5 text-sm font-medium transition-all appearance-none bg-no-repeat bg-[right_1rem_center] h-full min-h-[50px]"
+                style={{
+                  background: 'var(--surface-silk)',
+                  border: '1px solid var(--border-fiber)',
+                  color: 'var(--carbon)',
+                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
+                  backgroundSize: '1.2em'
+                }}
+                value={filtroCargo}
+                onChange={e => setFiltroCargo(e.target.value)}
+              >
+                <option value="Todos">Todos los cargos</option>
+                {cargos.map(c => (
+                  <option key={c.id} value={c.id}>{c.nombre}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Employee list */}
       <div className="grid gap-4">
-        {empleados.length === 0 ? (
+        {empleadosFiltrados.length === 0 ? (
           <div className="text-center py-12 rounded-2xl border-2 border-dashed text-slate-400" style={{ background: 'var(--surface-silk)', borderColor: 'var(--border-fiber)' }}>
-            <p className="text-base font-medium" style={{ color: 'var(--carbon)' }}>No hay empleados registrados aún.</p>
+            <p className="text-base font-medium" style={{ color: 'var(--carbon)' }}>
+              {empleados.length === 0 ? 'No hay empleados registrados aún.' : 'No se encontraron empleados.'}
+            </p>
           </div>
         ) : (
-          empleados.map(emp => (
+          empleadosFiltrados.map(emp => (
             <div key={emp.id} className="card-premium-static rounded-2xl overflow-hidden">
 
               {/* Employee card header */}

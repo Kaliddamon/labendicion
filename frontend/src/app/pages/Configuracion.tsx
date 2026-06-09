@@ -296,9 +296,6 @@ export const Configuracion = () => {
               >
                 <span className="font-medium text-sm" style={{ color: 'var(--carbon)' }}>
                   {item.nombre}
-                  {item.orden != null && tab === 'accionesProduccion' && (
-                    <span className="text-slate-400 font-normal ml-2 text-xs">(paso {item.orden})</span>
-                  )}
                 </span>
                 <div className="flex gap-1.5">
                   <button type="button" onClick={() => iniciarEdicion(item)} disabled={item.id.startsWith('tmp-')} className="p-2 rounded-lg transition-colors hover:bg-[var(--surface-linen)] disabled:opacity-40" style={{ border: '1px solid var(--border-fiber)' }}>
