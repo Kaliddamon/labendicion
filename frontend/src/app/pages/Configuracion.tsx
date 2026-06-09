@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAppContext, CatalogoItem, Empresa } from '../context/AppContext';
 import { Settings, Plus, Edit2, Trash2, Search, X, Check, CheckCircle2, Shield, AlertCircle, Eye, Users } from 'lucide-react';
 import { toast } from 'sonner';
 import { useConfirm } from '../context/ConfirmContext';
 import { GestionarRoles } from '../components/GestionarRoles';
+import { Paginador } from '../components/Paginador';
 
 type Tab = 'accionesProduccion' | 'cargos' | 'areas' | 'accionesAseo' | 'empresas' | 'roles';
 
@@ -46,6 +47,21 @@ export const Configuracion = () => {
       case 'roles': return [];
     }
   };
+
+  const [paginaActual, setPaginaActual] = useState(1);
+  const itemsPorPagina = 10;
+  
+  const itemsActualesLength = tab === 'empresas' ? empresas.length : listaActual().length;
+  const totalPaginas = Math.ceil(itemsActualesLength / itemsPorPagina);
+  
+  const empresasPaginadas = empresas.slice((paginaActual - 1) * itemsPorPagina, paginaActual * itemsPorPagina);
+  const catalogoPaginado = [...listaActual()]
+    .sort((a, b) => (a.orden ?? 999) - (b.orden ?? 999) || a.nombre.localeCompare(b.nombre))
+    .slice((paginaActual - 1) * itemsPorPagina, paginaActual * itemsPorPagina);
+
+  useEffect(() => {
+    setPaginaActual(1);
+  }, [tab, itemsActualesLength]);
 
   const resetForm = () => {
     setNombre(''); setSecuencia(''); setEditando(null);
@@ -247,7 +263,7 @@ export const Configuracion = () => {
             Sin ítems en este catálogo
           </li>
         ) : tab === 'empresas' ? (
-          empresas.map((item) => {
+          empresasPaginadas.map((item) => {
             const pendientes = pendientesEmpresa(item.razonSocial);
             return (
               <li
@@ -284,9 +300,7 @@ export const Configuracion = () => {
             );
           })
         ) : (
-          [...listaActual()]
-            .sort((a, b) => (a.orden ?? 999) - (b.orden ?? 999) || a.nombre.localeCompare(b.nombre))
-            .map((item) => (
+          catalogoPaginado.map((item) => (
               <li
                 key={item.id}
                 className={`card-premium-static rounded-xl px-4 py-3 flex items-center justify-between ${
@@ -309,6 +323,13 @@ export const Configuracion = () => {
             ))
         )}
       </ul>
+      {tab !== 'roles' && totalPaginas > 1 && (
+        <Paginador
+          paginaActual={paginaActual}
+          totalPaginas={totalPaginas}
+          cambiarPagina={setPaginaActual}
+        />
+      )}
         </>
       )}
     </div>

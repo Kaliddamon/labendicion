@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAppContext, Producto } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 import { Package, Search, Filter, Plus, Edit2, Trash2, CheckCircle, PackageSearch, AlertCircle, TrendingUp, X, Check, Scissors } from 'lucide-react';
@@ -8,6 +8,7 @@ import { getColombiaDateString } from '../utils/dateUtils';
 import { AccessibleButton } from '../components/ui/accessible/AccessibleButton';
 import { AccessibleInput } from '../components/ui/accessible/AccessibleInput';
 import { AccessibleCardSelector } from '../components/ui/accessible/AccessibleCardSelector';
+import { Paginador } from '../components/Paginador';
 
 export const Produccion = () => {
   const { productos, agregarProducto, editarProducto, eliminarProducto, cambiarEstadoProducto, accionesProduccion, empresas } = useAppContext();
@@ -37,6 +38,15 @@ export const Produccion = () => {
     const cumpleEmpresa = filtroEmpresa === 'Todas' || p.empresa === filtroEmpresa;
     return cumpleBusqueda && cumpleEstado && cumpleEmpresa;
   });
+
+  const [paginaActual, setPaginaActual] = useState(1);
+  const itemsPorPagina = 10;
+  const totalPaginas = Math.ceil(productosFiltrados.length / itemsPorPagina);
+  const productosPaginados = productosFiltrados.slice((paginaActual - 1) * itemsPorPagina, paginaActual * itemsPorPagina);
+
+  useEffect(() => {
+    setPaginaActual(1);
+  }, [busqueda, filtroEstado, filtroEmpresa, productos.length]);
 
   const formatMonto = (num: number) => {
     if (num == null) return '';
@@ -479,7 +489,7 @@ export const Produccion = () => {
                 <p className="text-sm mt-1 text-slate-400">Crea una nueva orden para comenzar</p>
               </div>
             ) : (
-              productosFiltrados.map((prod) => (
+              productosPaginados.map((prod) => (
                 <div
                   key={prod.id}
                   className="card-premium p-5 rounded-2xl flex flex-col lg:flex-row lg:items-center justify-between gap-5"
@@ -533,6 +543,13 @@ export const Produccion = () => {
               ))
             )}
           </div>
+          {totalPaginas > 1 && (
+            <Paginador
+              paginaActual={paginaActual}
+              totalPaginas={totalPaginas}
+              cambiarPagina={setPaginaActual}
+            />
+          )}
         </>
       )}
     </div>

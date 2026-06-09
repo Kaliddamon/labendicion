@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAppContext, RegistroAseo, RegistroAseoEntry } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 import { Sparkles, CheckCircle2, Circle, Plus, Trash2, Check, X, Edit2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useConfirm } from '../context/ConfirmContext';
 import { getColombiaDateString } from '../utils/dateUtils';
+import { Paginador } from '../components/Paginador';
 
 export const Aseo = () => {
   const {
@@ -30,6 +31,19 @@ export const Aseo = () => {
   const progreso = tareasMostradas.length > 0
     ? Math.round((tareasMostradas.filter(t => t.completada).length / tareasMostradas.length) * 100)
     : 0;
+
+  const [paginaActualTareas, setPaginaActualTareas] = useState(1);
+  const itemsPorPagina = 10;
+  const totalPaginasTareas = Math.ceil(tareasMostradas.length / itemsPorPagina);
+  const tareasPaginadas = tareasMostradas.slice((paginaActualTareas - 1) * itemsPorPagina, paginaActualTareas * itemsPorPagina);
+
+  const [paginaActualHistorico, setPaginaActualHistorico] = useState(1);
+  const totalPaginasHistorico = Math.ceil(registrosAseo.length / itemsPorPagina);
+  const historicoPaginado = registrosAseo.slice((paginaActualHistorico - 1) * itemsPorPagina, paginaActualHistorico * itemsPorPagina);
+
+  useEffect(() => {
+    setPaginaActualTareas(1);
+  }, [ultimoRegistro?.id]);
 
   const hoy = getColombiaDateString();
   const yaExisteHoy = ultimoRegistro ? ultimoRegistro.fecha.startsWith(hoy) : false;
@@ -198,7 +212,7 @@ export const Aseo = () => {
                 </tr>
               </thead>
               <tbody>
-                {tareasMostradas.map((entry, idx) => (
+                {tareasPaginadas.map((entry, idx) => (
                   <tr
                     key={entry.id}
                     className="transition-colors hover:bg-[var(--surface-linen)]/50"
@@ -329,6 +343,13 @@ export const Aseo = () => {
                 ))}
               </tbody>
             </table>
+            {totalPaginasTareas > 1 && (
+              <Paginador
+                paginaActual={paginaActualTareas}
+                totalPaginas={totalPaginasTareas}
+                cambiarPagina={setPaginaActualTareas}
+              />
+            )}
           </div>
         )}
       </div>
@@ -338,7 +359,7 @@ export const Aseo = () => {
         <div className="mt-6 animate-fade-up">
           <h3 className="text-sm font-bold mb-4" style={{ fontFamily: 'var(--font-heading)', color: 'var(--carbon)' }}>Histórico de registros</h3>
           <div className="space-y-2.5">
-            {registrosAseo.map(r => (
+            {historicoPaginado.map(r => (
               <div key={r.id} className="card-premium-static p-4 rounded-xl">
                 <div className="flex justify-between items-start mb-2">
                   <strong className="text-sm" style={{ color: 'var(--carbon)', fontFamily: 'var(--font-heading)' }}>{r.fecha}</strong>
@@ -372,6 +393,13 @@ export const Aseo = () => {
               </div>
             ))}
           </div>
+          {totalPaginasHistorico > 1 && (
+            <Paginador
+              paginaActual={paginaActualHistorico}
+              totalPaginas={totalPaginasHistorico}
+              cambiarPagina={setPaginaActualHistorico}
+            />
+          )}
         </div>
       )}
     </div>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAppContext, Empleado, ProduccionRegistro } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 import { Search, Plus, Edit2, Trash2, X, Users, PackageSearch, Save, ArrowRight, UserCircle, Star, BadgeCheck, CheckCircle2, Circle, ClipboardList, History, Clock, MinusCircle, FileText, Filter } from 'lucide-react';
@@ -6,6 +6,7 @@ import { getColombiaDateString } from '../utils/dateUtils';
 import { toast } from 'sonner';
 import { useConfirm } from '../context/ConfirmContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
+import { Paginador } from '../components/Paginador';
 
 export const Empleados = () => {
   const {
@@ -58,6 +59,15 @@ export const Empleados = () => {
     const cumpleCargo = filtroCargo === 'Todos' || emp.cargo?.id === filtroCargo;
     return cumpleBusqueda && cumpleEstado && cumpleCargo;
   });
+
+  const [paginaActual, setPaginaActual] = useState(1);
+  const itemsPorPagina = 10;
+  const totalPaginas = Math.ceil(empleadosFiltrados.length / itemsPorPagina);
+  const empleadosPaginados = empleadosFiltrados.slice((paginaActual - 1) * itemsPorPagina, paginaActual * itemsPorPagina);
+
+  useEffect(() => {
+    setPaginaActual(1);
+  }, [busqueda, filtroEstadoEmp, filtroCargo, empleados.length]);
 
   const [empleadoCalificando, setEmpleadoCalificando] = useState<string | null>(null);
   const [registroEditando, setRegistroEditando] = useState<string | null>(null);
@@ -481,7 +491,7 @@ export const Empleados = () => {
             </p>
           </div>
         ) : (
-          empleadosFiltrados.map(emp => (
+          empleadosPaginados.map(emp => (
             <div key={emp.id} className="card-premium-static rounded-2xl overflow-hidden">
 
               {/* Employee card header */}
@@ -868,6 +878,13 @@ export const Empleados = () => {
           ))
         )}
       </div>
+      {totalPaginas > 1 && (
+        <Paginador
+          paginaActual={paginaActual}
+          totalPaginas={totalPaginas}
+          cambiarPagina={setPaginaActual}
+        />
+      )}
     </div>
   );
 };

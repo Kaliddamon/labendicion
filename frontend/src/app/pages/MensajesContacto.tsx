@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Mail, MailOpen, Check, Trash2, Clock } from 'lucide-react';
+import { Paginador } from '../components/Paginador';
 
 interface ContactoMensaje {
   id: number;
@@ -35,6 +36,15 @@ export const MensajesContacto = () => {
   useEffect(() => {
     cargarMensajes();
   }, []);
+
+  const [paginaActual, setPaginaActual] = useState(1);
+  const itemsPorPagina = 10;
+  const totalPaginas = Math.ceil(mensajes.length / itemsPorPagina);
+  const mensajesPaginados = mensajes.slice((paginaActual - 1) * itemsPorPagina, paginaActual * itemsPorPagina);
+
+  useEffect(() => {
+    setPaginaActual(1);
+  }, [mensajes.length]);
 
   const toggleLeido = async (id: number, actual: boolean) => {
     try {
@@ -85,7 +95,7 @@ export const MensajesContacto = () => {
             <p className="text-xs mt-1">No hay mensajes de contacto por el momento.</p>
           </div>
         ) : (
-          mensajes.map((msg) => (
+          mensajesPaginados.map((msg) => (
             <div key={msg.id} className={`card-premium-static p-5 rounded-2xl flex flex-col md:flex-row gap-4 justify-between transition-all ${!msg.leido ? 'border-l-4 border-blue-500 bg-blue-50/20' : ''}`}>
               <div className="flex gap-4">
                 <div className="w-10 h-10 shrink-0 rounded-full flex items-center justify-center mt-1" style={{ background: msg.leido ? 'var(--surface-linen)' : '#dbeafe', color: msg.leido ? 'var(--carbon)' : '#2563eb' }}>
@@ -118,6 +128,13 @@ export const MensajesContacto = () => {
           ))
         )}
       </div>
+      {totalPaginas > 1 && (
+        <Paginador
+          paginaActual={paginaActual}
+          totalPaginas={totalPaginas}
+          cambiarPagina={setPaginaActual}
+        />
+      )}
     </div>
   );
 };
