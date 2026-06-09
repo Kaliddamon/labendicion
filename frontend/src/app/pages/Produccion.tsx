@@ -431,7 +431,7 @@ export const Produccion = () => {
                 <select
                   className="w-full rounded-xl pl-10 pr-8 py-3.5 text-sm font-medium transition-all appearance-none bg-no-repeat bg-[right_1rem_center] h-full min-h-[50px]"
                   style={{
-                    background: 'var(--surface-silk)',
+                    backgroundColor: 'var(--surface-silk)',
                     border: '1px solid var(--border-fiber)',
                     color: 'var(--carbon)',
                     backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
@@ -451,7 +451,7 @@ export const Produccion = () => {
                 <select
                   className="w-full rounded-xl pl-10 pr-8 py-3.5 text-sm font-medium transition-all appearance-none bg-no-repeat bg-[right_1rem_center] h-full min-h-[50px]"
                   style={{
-                    background: 'var(--surface-silk)',
+                    backgroundColor: 'var(--surface-silk)',
                     border: '1px solid var(--border-fiber)',
                     color: 'var(--carbon)',
                     backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
