@@ -49,6 +49,7 @@ export const Empleados = () => {
   const [telefono, setTelefono] = useState('');
   const [email, setEmail] = useState('');
   const [fechaIngreso, setFechaIngreso] = useState('');
+  const [estado, setEstado] = useState<'Activo' | 'Inactivo'>('Activo');
   const [busqueda, setBusqueda] = useState('');
   const [filtroEstadoEmp, setFiltroEstadoEmp] = useState<string>('Todos');
   const [filtroCargo, setFiltroCargo] = useState<string>('Todos');
