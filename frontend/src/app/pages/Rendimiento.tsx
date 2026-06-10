@@ -213,6 +213,29 @@ export const Rendimiento = () => {
     .map((emp) => ({ name: emp.nombre, value: Number(emp.defectos.toFixed(1)) }))
     .filter((emp) => emp.value > 0);
 
+  const aportePorOrdenAccion = useMemo(() => {
+    const map: Record<string, { orden: string; accion: string; buenas: number }> = {};
+    for (const r of registrosFiltrados) {
+      for (const prod of (r.producciones || [])) {
+        const producto = productos.find(p => p.id === prod.productoId);
+        if (!producto) continue;
+        const paso = producto.pasos?.find(ps => ps.id === prod.pasoId);
+        const key = `${prod.productoId}::${prod.pasoId}`;
+        if (!map[key]) {
+          map[key] = {
+            orden: producto.nombre,
+            accion: paso?.descripcion || 'General',
+            buenas: 0,
+          };
+        }
+        map[key].buenas += Number(prod.unidadesBuenas) || 0;
+      }
+    }
+    return Object.values(map)
+      .filter(v => v.buenas > 0)
+      .sort((a, b) => b.buenas - a.buenas);
+  }, [registrosFiltrados, productos]);
+
   const capacidadDespacho = useMemo(() => {
     const hoy = getColombiaDateString();
     const pedidosConVencimiento = productos.filter((p) => p.fechaTerminacion <= hoy);
@@ -406,25 +429,61 @@ export const Rendimiento = () => {
         </div>
 
         <div className="card-premium-static rounded-2xl p-5">
-          <h2 className="text-sm font-bold mb-4" style={{ fontFamily: 'var(--font-heading)', color: 'var(--carbon)' }}>
-            Defectos por trabajador
+          <h2 className="text-sm font-bold mb-1" style={{ fontFamily: 'var(--font-heading)', color: 'var(--carbon)' }}>
+            {esAdmin ? 'Defectos por trabajador' : 'Mi aporte por orden y acción'}
           </h2>
+          {!esAdmin && (
+            <p className="text-[11px] text-slate-400 mb-3">Unidades buenas que aportaste por orden y acción trabajada</p>
+          )}
           <div className="h-64">
-            {defectosPareto.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie data={defectosPareto} dataKey="value" nameKey="name" innerRadius={45} outerRadius={85} paddingAngle={3}>
-                    {defectosPareto.map((_, index) => (
-                      <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip contentStyle={tooltipStyle} />
-                </PieChart>
-              </ResponsiveContainer>
+            {esAdmin ? (
+              defectosPareto.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie data={defectosPareto} dataKey="value" nameKey="name" innerRadius={45} outerRadius={85} paddingAngle={3}>
+                      {defectosPareto.map((_, index) => (
+                        <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip contentStyle={tooltipStyle} />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="h-full flex items-center justify-center text-slate-400 text-xs">
+                  No hay defectos registrados en el periodo.
+                </div>
+              )
             ) : (
-              <div className="h-full flex items-center justify-center text-slate-400 text-xs">
-                No hay defectos registrados en el periodo.
-              </div>
+              aportePorOrdenAccion.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={aportePorOrdenAccion} layout="vertical" margin={{ left: 4, right: 20, top: 4, bottom: 4 }}>
+                    <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#e8e2d9" />
+                    <XAxis type="number" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 11 }} />
+                    <YAxis
+                      type="category"
+                      dataKey="orden"
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fill: '#64748b', fontSize: 10 }}
+                      width={76}
+                      tickFormatter={(v: string) => v.length > 11 ? v.slice(0, 11) + '…' : v}
+                    />
+                    <Tooltip
+                      contentStyle={tooltipStyle}
+                      formatter={(value: number) => [`${value} uds. buenas`, 'Aporte']}
+                      labelFormatter={(_label: string, payload: any[]) => {
+                        const item = payload?.[0]?.payload;
+                        return item ? `${item.orden} · ${item.accion}` : _label;
+                      }}
+                    />
+                    <Bar dataKey="buenas" name="Uds. buenas" fill="#16a34a" radius={[0, 6, 6, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="h-full flex items-center justify-center text-slate-400 text-xs">
+                  No hay registros de producción en el periodo.
+                </div>
+              )
             )}
           </div>
         </div>
