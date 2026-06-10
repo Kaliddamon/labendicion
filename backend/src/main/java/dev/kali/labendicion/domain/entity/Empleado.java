@@ -27,6 +27,11 @@ public class Empleado {
     @JoinColumn(name = "cargo_id")
     private CargoEmpleado cargo;
     
+    @NotNull(message = "El tipo de documento es obligatorio")
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "tipo_documento_id")
+    private TipoDocumento tipoDocumento;
+    
     @NotBlank(message = "El documento es obligatorio")
     @Pattern(regexp = "^[0-9]+$", message = "El documento debe contener únicamente números")
     @Column(unique = true)

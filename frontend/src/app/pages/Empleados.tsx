@@ -21,6 +21,7 @@ export const Empleados = () => {
     unidadesDisponiblesPaso,
     productos,
     cargos,
+    tiposDocumento,
   } = useAppContext();
   const { tieneRol } = useAuth();
   const { confirm } = useConfirm();
@@ -43,6 +44,7 @@ export const Empleados = () => {
 
   const [nombre, setNombre] = useState('');
   const [cargo, setCargo] = useState('');
+  const [tipoDocumento, setTipoDocumento] = useState('CC');
   const [documento, setDocumento] = useState('');
   const [telefono, setTelefono] = useState('');
   const [email, setEmail] = useState('');
@@ -88,12 +90,12 @@ export const Empleados = () => {
   } | null>(null);
 
   const resetFormEmpleado = () => {
-    setNombre(''); setCargo(''); setDocumento(''); setTelefono(''); setEmail('');
+    setNombre(''); setCargo(''); setTipoDocumento('CC'); setDocumento(''); setTelefono(''); setEmail('');
     setFechaIngreso(''); setEstado('Activo'); setEmpleadoEditando(null); setMostrarFormEmpleado(false);
   };
 
   const iniciarEdicion = (emp: Empleado) => {
-    setNombre(emp.nombre); setCargo(emp.cargo?.id || ''); setDocumento(emp.documento);
+    setNombre(emp.nombre); setCargo(emp.cargo?.id || ''); setTipoDocumento(emp.tipoDocumento?.id || 'CC'); setDocumento(emp.documento);
     setTelefono(emp.telefono); setEmail(emp.email || ''); setFechaIngreso(emp.fechaIngreso); setEstado(emp.estado);
     setEmpleadoEditando(emp.id); setMostrarFormEmpleado(true);
     setEmpleadoCalificando(null);
@@ -117,10 +119,11 @@ export const Empleados = () => {
     }
 
     const cargoObj = cargo ? { id: cargo, nombre: cargos.find(c => c.id === cargo)?.nombre || '' } : null;
+    const tipoDocObj = { id: tipoDocumento, nombre: tiposDocumento.find(td => td.id === tipoDocumento)?.nombre || '' };
     if (empleadoEditando) {
-      editarEmpleado(empleadoEditando, { nombre, cargo: cargoObj, documento, telefono, email, fechaIngreso, estado });
+      editarEmpleado(empleadoEditando, { nombre, cargo: cargoObj, tipoDocumento: tipoDocObj, documento, telefono, email, fechaIngreso, estado });
     } else {
-      agregarEmpleado({ nombre, cargo: cargoObj, documento, telefono, email, fechaIngreso, estado });
+      agregarEmpleado({ nombre, cargo: cargoObj, tipoDocumento: tipoDocObj, documento, telefono, email, fechaIngreso, estado });
     }
     resetFormEmpleado();
   };
@@ -382,6 +385,14 @@ export const Empleados = () => {
               <input type="text" className="w-full rounded-xl px-4 py-3 text-sm" style={inputStyle} value={nombre} onChange={e=>setNombre(e.target.value)} required />
             </div>
             <div>
+              <label className="block text-xs font-medium text-slate-500 mb-1.5" style={{ fontFamily: 'var(--font-heading)' }}>Tipo de Doc.</label>
+              <select className="w-full rounded-xl px-4 py-3 text-sm" style={inputStyle} value={tipoDocumento} onChange={(e) => setTipoDocumento(e.target.value)} required>
+                {tiposDocumento.map((td) => (
+                  <option key={td.id} value={td.id}>{td.nombre}</option>
+                ))}
+              </select>
+            </div>
+            <div>
               <label className="block text-xs font-medium text-slate-500 mb-1.5" style={{ fontFamily: 'var(--font-heading)' }}>Documento de Identidad</label>
               <input type="text" className="w-full rounded-xl px-4 py-3 text-sm" style={inputStyle} value={documento} onChange={e=>setDocumento(e.target.value)} pattern="[0-9]+" title="Solo se permiten números" required />
             </div>
@@ -515,7 +526,7 @@ export const Empleados = () => {
                     <p className="text-slate-500 text-sm font-medium">{emp.cargo?.nombre || 'Sin cargo'}</p>
                     <div className="flex flex-wrap gap-2 mt-2">
                       <span className="text-xs px-2.5 py-1 rounded-lg" style={{ background: 'var(--surface-linen)', color: 'var(--carbon)', border: '1px solid var(--border-fiber)' }}>
-                        C.C. {emp.documento}
+                        {emp.tipoDocumento?.id || 'C.C.'} {emp.documento}
                       </span>
                       <span className="text-xs px-2.5 py-1 rounded-lg" style={{ background: 'var(--surface-linen)', color: 'var(--carbon)', border: '1px solid var(--border-fiber)' }}>
                         📞 {emp.telefono || 'Sin teléfono'}

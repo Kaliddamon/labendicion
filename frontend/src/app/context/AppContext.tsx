@@ -35,6 +35,7 @@ export interface CatalogoItem {
 export interface Empleado {
   id: string;
   nombre: string;
+  tipoDocumento: { id: string; nombre: string } | null;
   cargo: { id: string; nombre: string } | null;
   documento: string;
   telefono: string;
@@ -93,6 +94,7 @@ interface BootstrapResponse {
   registrosAseo: RegistroAseo[];
   accionesProduccion?: CatalogoItem[];
   cargos?: CatalogoItem[];
+  tiposDocumento?: CatalogoItem[];
   areasTrabajo?: CatalogoItem[];
   accionesAseo?: CatalogoItem[];
 }
@@ -122,6 +124,7 @@ interface AppContextType {
   // Catálogos
   accionesProduccion: CatalogoItem[];
   cargos: CatalogoItem[];
+  tiposDocumento: CatalogoItem[];
   areasTrabajo: CatalogoItem[];
   accionesAseo: CatalogoItem[];
   agregarAccionProduccion: (item: Omit<CatalogoItem, 'id'>) => void;
@@ -186,6 +189,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [empresas, setEmpresas] = useState<Empresa[]>([]);
   const [accionesProduccion, setAccionesProduccion] = useState<CatalogoItem[]>([]);
   const [cargos, setCargos] = useState<CatalogoItem[]>([]);
+  const [tiposDocumento, setTiposDocumento] = useState<CatalogoItem[]>([]);
   const [areasTrabajo, setAreasTrabajo] = useState<CatalogoItem[]>([]);
   const [accionesAseo, setAccionesAseo] = useState<CatalogoItem[]>([]);
 
@@ -203,6 +207,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
            (items ?? []).filter((c) => c.id && c.id.trim() !== '' && !c.id.startsWith('tmp-'));
          setAccionesProduccion(filtrarCatalogo(data.accionesProduccion));
          setCargos(filtrarCatalogo(data.cargos));
+         setTiposDocumento(filtrarCatalogo(data.tiposDocumento));
          setAreasTrabajo(filtrarCatalogo(data.areasTrabajo));
          setAccionesAseo(filtrarCatalogo(data.accionesAseo));
          console.log('Bootstrap cargado:', data.productos);
@@ -745,7 +750,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
        registros, agregarRegistro, editarRegistro, eliminarRegistro, unidadesDisponiblesPaso,
        registrosAseo, crearRegistroAseo, toggleRegistroAseoEntry, actualizarRegistroAseoEntry, eliminarRegistroAseo,
        empresas, agregarEmpresa, editarEmpresa, eliminarEmpresa,
-       accionesProduccion, cargos, areasTrabajo, accionesAseo,
+       accionesProduccion, cargos, tiposDocumento, areasTrabajo, accionesAseo,
        agregarAccionProduccion, editarAccionProduccion, eliminarAccionProduccion,
        agregarCargo, editarCargo, eliminarCargo,
        agregarArea, editarArea, eliminarArea,
