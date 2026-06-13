@@ -127,13 +127,15 @@ export const Produccion = () => {
           id: p.id,
           accionProduccionId: p.accionProduccionId,
           descripcion: p.descripcion ?? '',
-          metaUnidadesHora: p.metaUnidadesHora
+          metaUnidadesHora: p.metaUnidadesHora,
+          valorPorUnidad: p.valorPorUnidad ?? undefined,
         })));
       } else if (typeof obj === 'string' && obj.trim() !== '') {
         setPasos(JSON.parse(obj).map((p: any) => ({
           id: p.id,
           descripcion: p.descripcion ?? '',
-          metaUnidadesHora: p.metaUnidadesHora
+          metaUnidadesHora: p.metaUnidadesHora,
+          valorPorUnidad: p.valorPorUnidad ?? undefined,
         })));
       } else {
         setPasos([]);

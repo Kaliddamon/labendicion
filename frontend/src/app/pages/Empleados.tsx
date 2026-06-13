@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAppContext, Empleado, ProduccionRegistro } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
-import { Search, Plus, Edit2, Trash2, X, Users, PackageSearch, Save, ArrowRight, UserCircle, Star, BadgeCheck, CheckCircle2, Circle, ClipboardList, History, Clock, MinusCircle, FileText, Filter, DollarSign, TrendingUp, CalendarDays } from 'lucide-react';
+import { Search, Plus, Edit2, Trash2, X, Users, PackageSearch, Save, ArrowRight, UserCircle, Star, BadgeCheck, CheckCircle2, Circle, ClipboardList, History, Clock, MinusCircle, FileText, Filter, DollarSign, CalendarDays } from 'lucide-react';
 import { getColombiaDateString } from '../utils/dateUtils';
 import { toast } from 'sonner';
 import { useConfirm } from '../context/ConfirmContext';
@@ -664,10 +664,16 @@ export const Empleados = () => {
                 // Calcular totales del período
                 let totalHoras = 0;
                 let totalProduccion = 0;
+                let totalConfeccionadas = 0;
+                let totalCalidad = 0;
                 regsFiltrados.forEach(reg => {
                   const { pagoHoras, pagoProduccion } = calcularPagaDiaria(reg, emp);
                   totalHoras += pagoHoras;
                   totalProduccion += pagoProduccion;
+                  if (reg.horaEntrada !== '--:--') {
+                    totalConfeccionadas += reg.unidadesTotales ?? 0;
+                    totalCalidad += reg.unidadesBuenas ?? 0;
+                  }
                 });
                 const hayPago = emp.valorHora != null || productos.some(p => p.pasos?.some(ps => ps.valorPorUnidad != null));
 
@@ -711,7 +717,6 @@ export const Empleados = () => {
                       <div className="grid gap-2.5">
                         {regsFiltrados.map(reg => {
                           const { pagoHoras, pagoProduccion } = calcularPagaDiaria(reg, emp);
-                          const tienePago = pagoHoras > 0 || pagoProduccion > 0;
                           return (
                           <div key={reg.id} className="bg-white p-4 rounded-xl flex flex-col gap-3" style={{ border: '1px solid var(--border-fiber)' }}>
                             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
@@ -728,41 +733,32 @@ export const Empleados = () => {
                                 )}
                               </div>
 
-                              <div className="flex gap-3 shrink-0">
-                                {reg.horaEntrada !== '--:--' && (
-                                  <>
+                              {/* Chips: totales + calidad + pago horas + pago producción */}
+                              {reg.horaEntrada !== '--:--' && (
+                                <div className="flex gap-3 shrink-0 flex-wrap justify-end">
+                                  <div className="text-center">
+                                    <span className="block text-[10px] text-slate-400 font-semibold uppercase">Totales</span>
+                                    <span className="font-bold text-base" style={{ fontFamily: 'var(--font-heading)', color: 'var(--carbon)' }}>{reg.unidadesTotales}</span>
+                                  </div>
+                                  <div className="text-center">
+                                    <span className="block text-[10px] text-emerald-600 font-semibold uppercase">Calidad</span>
+                                    <span className="font-bold text-base text-emerald-600" style={{ fontFamily: 'var(--font-heading)' }}>{reg.unidadesBuenas}</span>
+                                  </div>
+                                  {pagoHoras > 0 && (
                                     <div className="text-center">
-                                      <span className="block text-[10px] text-slate-400 font-semibold uppercase">Totales</span>
-                                      <span className="font-bold text-base" style={{ fontFamily: 'var(--font-heading)', color: 'var(--carbon)' }}>{reg.unidadesTotales}</span>
+                                      <span className="block text-[10px] font-semibold uppercase" style={{ color: 'var(--accent-copper)' }}>$/Horas</span>
+                                      <span className="font-bold text-base" style={{ fontFamily: 'var(--font-heading)', color: 'var(--accent-copper)' }}>{formatCOP(pagoHoras)}</span>
                                     </div>
+                                  )}
+                                  {pagoProduccion > 0 && (
                                     <div className="text-center">
-                                      <span className="block text-[10px] text-emerald-600 font-semibold uppercase">Calidad</span>
-                                      <span className="font-bold text-base text-emerald-600" style={{ fontFamily: 'var(--font-heading)' }}>{reg.unidadesBuenas}</span>
+                                      <span className="block text-[10px] text-violet-600 font-semibold uppercase">$/Prod</span>
+                                      <span className="font-bold text-base text-violet-600" style={{ fontFamily: 'var(--font-heading)' }}>{formatCOP(pagoProduccion)}</span>
                                     </div>
-                                  </>
-                                )}
-                              </div>
-                            </div>
-
-                            {/* Paga diaria */}
-                            {tienePago && (
-                              <div className="rounded-xl px-3 py-2 flex flex-wrap gap-3" style={{ background: 'linear-gradient(135deg,rgba(212,160,18,0.07),rgba(212,160,18,0.03))', border: '1px solid rgba(212,160,18,0.2)' }}>
-                                <div className="flex items-center gap-1.5">
-                                  <DollarSign size={13} style={{ color: 'var(--accent-copper)' }} />
-                                  <span className="text-[11px] font-semibold text-slate-500">Pago día:</span>
+                                  )}
                                 </div>
-                                {pagoHoras > 0 && (
-                                  <span className="text-[11px] font-bold" style={{ color: 'var(--carbon)' }}>
-                                    Horas: <span style={{ color: 'var(--accent-copper)' }}>{formatCOP(pagoHoras)}</span>
-                                  </span>
-                                )}
-                                {pagoProduccion > 0 && (
-                                  <span className="text-[11px] font-bold" style={{ color: 'var(--carbon)' }}>
-                                    Producción: <span className="text-emerald-700">{formatCOP(pagoProduccion)}</span>
-                                  </span>
-                                )}
-                              </div>
-                            )}
+                              )}
+                            </div>
 
                             {reg.horaEntrada !== '--:--' && (reg.producciones?.length ?? 0) > 0 && (
                               <div className="pt-2 space-y-1.5" style={{ borderTop: '1px solid var(--border-fiber-light)' }}>
@@ -820,29 +816,29 @@ export const Empleados = () => {
                       </div>
                     )}
 
-                    {/* Resumen total del período */}
-                    {hayPago && regsFiltrados.length > 0 && (totalHoras > 0 || totalProduccion > 0) && (
-                      <div className="mt-4 rounded-2xl p-4" style={{ background: 'linear-gradient(135deg,rgba(26,58,92,0.06),rgba(26,58,92,0.02))', border: '1px solid rgba(26,58,92,0.12)' }}>
-                        <p className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3 flex items-center gap-1.5">
-                          <TrendingUp size={14} className="text-blue-600" /> Resumen del período
-                        </p>
-                        <div className="flex flex-wrap gap-4">
+                    {/* Resumen compacto del período */}
+                    {regsFiltrados.length > 0 && (
+                      <div className="mt-4 pt-4" style={{ borderTop: '1px solid var(--border-fiber)' }}>
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2.5">Resumen del período</p>
+                        <div className="flex flex-wrap gap-x-5 gap-y-2">
+                          <div className="text-center">
+                            <span className="block text-[10px] text-slate-400 font-semibold uppercase">Confeccionadas</span>
+                            <span className="font-bold text-lg" style={{ fontFamily: 'var(--font-heading)', color: 'var(--carbon)' }}>{totalConfeccionadas}</span>
+                          </div>
+                          <div className="text-center">
+                            <span className="block text-[10px] text-emerald-600 font-semibold uppercase">Calidad</span>
+                            <span className="font-bold text-lg text-emerald-600" style={{ fontFamily: 'var(--font-heading)' }}>{totalCalidad}</span>
+                          </div>
                           {totalHoras > 0 && (
-                            <div>
-                              <span className="text-[10px] text-slate-400 font-semibold uppercase block">Total por horas</span>
-                              <span className="text-xl font-bold" style={{ fontFamily: 'var(--font-heading)', color: 'var(--accent-copper)' }}>{formatCOP(totalHoras)}</span>
+                            <div className="text-center">
+                              <span className="block text-[10px] font-semibold uppercase" style={{ color: 'var(--accent-copper)' }}>Total $/Horas</span>
+                              <span className="font-bold text-lg" style={{ fontFamily: 'var(--font-heading)', color: 'var(--accent-copper)' }}>{formatCOP(totalHoras)}</span>
                             </div>
                           )}
                           {totalProduccion > 0 && (
-                            <div>
-                              <span className="text-[10px] text-slate-400 font-semibold uppercase block">Total por producción</span>
-                              <span className="text-xl font-bold text-emerald-700" style={{ fontFamily: 'var(--font-heading)' }}>{formatCOP(totalProduccion)}</span>
-                            </div>
-                          )}
-                          {(totalHoras > 0 || totalProduccion > 0) && (
-                            <div className="ml-auto text-right">
-                              <span className="text-[10px] text-slate-400 font-semibold uppercase block">Gran total</span>
-                              <span className="text-xl font-bold text-blue-700" style={{ fontFamily: 'var(--font-heading)' }}>{formatCOP(totalHoras + totalProduccion)}</span>
+                            <div className="text-center">
+                              <span className="block text-[10px] text-violet-600 font-semibold uppercase">Total $/Prod</span>
+                              <span className="font-bold text-lg text-violet-600" style={{ fontFamily: 'var(--font-heading)' }}>{formatCOP(totalProduccion)}</span>
                             </div>
                           )}
                         </div>
