@@ -198,34 +198,8 @@ export const Produccion = () => {
   ];
 
   return (
-    <div className="animate-fade-up pb-12">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
-        <div>
-          <div className="flex items-center gap-3 mb-1">
-            <div className="w-10 h-1 rounded-full" style={{ background: 'var(--accent-copper)' }} />
-            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400" style={{ fontFamily: 'var(--font-heading)' }}>
-              Órdenes
-            </span>
-          </div>
-          <h1
-            className="text-3xl font-bold flex items-center gap-3"
-            style={{ fontFamily: 'var(--font-heading)', color: 'var(--carbon)' }}
-          >
-            Producción
-            <div className="w-9 h-9 rounded-lg bg-blue-100 flex items-center justify-center">
-              <Scissors size={18} className="text-blue-600" />
-            </div>
-          </h1>
-          <p className="text-slate-500 mt-1.5 text-sm">Controla lo que estamos confeccionando</p>
-        </div>
-
-        <AccessibleButton onClick={() => setMostrarForm(true)}>
-          <Plus size={20} /> Nueva orden
-        </AccessibleButton>
-      </div>
-
-      {/* Form — modal overlay */}
+    <>
+      {/* Form — modal overlay FUERA del div animado */}
       {mostrarForm && (
         <div
           className="fixed inset-0 z-[200] flex items-center justify-center p-4"
@@ -234,7 +208,7 @@ export const Produccion = () => {
         >
           <form
             onSubmit={handleGuardar}
-            className="card-premium-static p-6 md:p-8 rounded-2xl w-full max-w-3xl max-h-[92vh] overflow-y-auto animate-fade-up"
+            className="card-premium-static p-6 md:p-8 rounded-2xl w-full max-w-3xl max-h-[92vh] overflow-y-auto"
             onClick={e => e.stopPropagation()}
           >
             <div className="flex justify-between items-center mb-6 pb-4" style={{ borderBottom: '1px solid var(--border-fiber)' }}>
@@ -252,14 +226,11 @@ export const Produccion = () => {
                 <div className="px-3 py-2 rounded-xl" style={{ background: 'var(--surface-linen)', fontFamily: 'var(--font-heading)' }}>
                   <span className="text-sm font-semibold" style={{ color: 'var(--carbon)' }}>1. Información Básica</span>
                 </div>
-
                 <AccessibleInput label="¿Qué vamos a confeccionar?" placeholder="Ej. Pantalones, Camisas..." value={nombre} onChange={e => setNombre(e.target.value)} required autoFocus />
-
                 <div className="grid grid-cols-2 gap-4">
                   <AccessibleInput label="Cantidad" inputMode="numeric" placeholder="Ej. 100" value={cantidad} onChange={e => setCantidad(formatInputNumber(e.target.value))} required />
                   <AccessibleInput label="Ganancia ($)" inputMode="numeric" placeholder="Ej. 150000" value={ganancia} onChange={e => setGanancia(formatInputNumber(e.target.value))} required />
                 </div>
-
                 <AccessibleInput label="Empresa / Cliente" isSelect options={[{ value: '', label: 'Seleccione una empresa...' }, ...empresas.map(emp => ({ value: emp.razonSocial, label: emp.razonSocial }))]} value={empresa} onChange={e => setEmpresa(e.target.value)} required />
               </div>
 
@@ -268,9 +239,7 @@ export const Produccion = () => {
                 <div className="px-3 py-2 rounded-xl" style={{ background: 'var(--surface-linen)', fontFamily: 'var(--font-heading)' }}>
                   <span className="text-sm font-semibold" style={{ color: 'var(--carbon)' }}>2. Fechas y Estado</span>
                 </div>
-
-                <AccessibleCardSelector label="Estado actual" options={opcionesEstado} value={estado} onChange={(val) => setEstado(val as Producto['estado'])} columns={3} />
-
+                <AccessibleCardSelector label="Estado actual" options={opcionesEstado} value={estado} onChange={val => setEstado(val as Producto['estado'])} columns={3} />
                 <div className="grid grid-cols-2 gap-4 mt-4">
                   <AccessibleInput type="date" label="Fecha de Inicio" value={fechaAsignacion} onChange={e => setFechaAsignacion(e.target.value)} required />
                   <AccessibleInput type="date" label="Fecha de Entrega" helperText="(Opcional)" value={fechaTerminacion} onChange={e => setFechaTerminacion(e.target.value)} />
@@ -290,13 +259,13 @@ export const Produccion = () => {
               ) : (
                 <div className="flex flex-col sm:flex-row gap-3 mb-5 items-end">
                   <div className="flex-[2]">
-                    <AccessibleInput label="Proceso" isSelect options={[{ value: '', label: 'Seleccione un proceso...' }, ...accionesValidas.map((a) => ({ value: a.id, label: a.nombre }))]} value={accionSeleccionada} onChange={(e) => setAccionSeleccionada(e.target.value)} />
+                    <AccessibleInput label="Proceso" isSelect options={[{ value: '', label: 'Seleccione un proceso...' }, ...accionesValidas.map(a => ({ value: a.id, label: a.nombre }))]} value={accionSeleccionada} onChange={e => setAccionSeleccionada(e.target.value)} />
                   </div>
                   <div className="flex-[1]">
-                    <AccessibleInput label="Meta Und/Hora" inputMode="numeric" placeholder="Ej. 25" value={metaHoraPaso} onChange={(e) => setMetaHoraPaso(e.target.value)} />
+                    <AccessibleInput label="Meta Und/Hora" inputMode="numeric" placeholder="Ej. 25" value={metaHoraPaso} onChange={e => setMetaHoraPaso(e.target.value)} />
                   </div>
                   <div className="flex-[1]">
-                    <AccessibleInput label="Valor/unidad ($) Opcional" inputMode="numeric" placeholder="Ej. 500" value={valorPorUnidadPaso} onChange={(e) => setValorPorUnidadPaso(e.target.value)} />
+                    <AccessibleInput label="Valor/unidad ($) Opcional" inputMode="numeric" placeholder="Ej. 500" value={valorPorUnidadPaso} onChange={e => setValorPorUnidadPaso(e.target.value)} />
                   </div>
                   <AccessibleButton type="button" variant="secondary" onClick={agregarPasoAOrden} className="mb-0.5">
                     <Plus size={18} /> Asignar
@@ -312,12 +281,12 @@ export const Produccion = () => {
                   <div key={idx} className="flex flex-col sm:flex-row items-start sm:items-center justify-between bg-white border rounded-xl px-4 py-3 gap-3" style={{ borderColor: 'var(--border-fiber)' }}>
                     <div className="flex flex-wrap items-center gap-3 text-sm font-semibold flex-1" style={{ color: 'var(--carbon)' }}>
                       <div className="flex items-center gap-2">
-                        <input type="number" className="w-16 px-2 py-1.5 text-center rounded-lg text-sm" style={{ background: 'var(--surface-linen)', border: '1px solid var(--border-fiber)' }} value={p.metaUnidadesHora ?? ''} onChange={(e) => { const val = Number(e.target.value); setPasos(prev => prev.map((paso, i) => i === idx ? { ...paso, metaUnidadesHora: val > 0 ? val : undefined } : paso)); }} placeholder="Meta" title="Meta und/hora" />
+                        <input type="number" className="w-16 px-2 py-1.5 text-center rounded-lg text-sm" style={{ background: 'var(--surface-linen)', border: '1px solid var(--border-fiber)' }} value={p.metaUnidadesHora ?? ''} onChange={e => { const val = Number(e.target.value); setPasos(prev => prev.map((paso, i) => i === idx ? { ...paso, metaUnidadesHora: val > 0 ? val : undefined } : paso)); }} placeholder="Meta" title="Meta und/hora" />
                         <span className="text-xs text-slate-400 font-normal">und/hr</span>
                       </div>
                       <div className="flex items-center gap-1.5">
                         <span className="text-xs text-slate-400 font-normal">$</span>
-                        <input type="number" min={0} step={0.01} className="w-20 px-2 py-1.5 text-center rounded-lg text-sm" style={{ background: 'rgba(212,160,18,0.05)', border: '1px solid rgba(212,160,18,0.2)' }} value={p.valorPorUnidad ?? ''} onChange={(e) => { const val = parseFloat(e.target.value); setPasos(prev => prev.map((paso, i) => i === idx ? { ...paso, valorPorUnidad: isNaN(val) ? undefined : val } : paso)); }} placeholder="$/und" title="Valor por unidad (opcional)" />
+                        <input type="number" min={0} step={0.01} className="w-20 px-2 py-1.5 text-center rounded-lg text-sm" style={{ background: 'rgba(212,160,18,0.05)', border: '1px solid rgba(212,160,18,0.2)' }} value={p.valorPorUnidad ?? ''} onChange={e => { const val = parseFloat(e.target.value); setPasos(prev => prev.map((paso, i) => i === idx ? { ...paso, valorPorUnidad: isNaN(val) ? undefined : val } : paso)); }} placeholder="$/und" title="Valor por unidad (opcional)" />
                       </div>
                       <span className="ml-1">{p.descripcion}</span>
                     </div>
@@ -341,140 +310,98 @@ export const Produccion = () => {
         </div>
       )}
 
-      {/* Search & List */}
-      <>
-          <div className="flex flex-col md:flex-row gap-3 mb-5">
-            <div className="relative flex-1">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
-              <input
-                type="text"
-                placeholder="Buscar órdenes por nombre o empresa..."
-                className="w-full rounded-xl pl-12 pr-5 py-3.5 text-sm font-medium transition-all h-full min-h-[50px]"
-                style={{
-                  background: 'var(--surface-silk)',
-                  border: '1px solid var(--border-fiber)',
-                  boxShadow: 'var(--shadow-sm)',
-                }}
-                value={busqueda}
-                onChange={e => setBusqueda(e.target.value)}
-              />
+      {/* Contenido de página */}
+      <div className="animate-fade-up pb-12">
+        {/* Header */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
+          <div>
+            <div className="flex items-center gap-3 mb-1">
+              <div className="w-10 h-1 rounded-full" style={{ background: 'var(--accent-copper)' }} />
+              <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400" style={{ fontFamily: 'var(--font-heading)' }}>Órdenes</span>
             </div>
-            <div className="flex gap-3 md:w-auto w-full">
-              <div className="flex-1 md:w-48 relative">
-                <Filter className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-                <select
-                  className="w-full rounded-xl pl-10 pr-8 py-3.5 text-sm font-medium transition-all appearance-none bg-no-repeat bg-[right_1rem_center] h-full min-h-[50px]"
-                  style={{
-                    backgroundColor: 'var(--surface-silk)',
-                    border: '1px solid var(--border-fiber)',
-                    color: 'var(--carbon)',
-                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
-                    backgroundSize: '1.2em'
-                  }}
-                  value={filtroEstado}
-                  onChange={e => setFiltroEstado(e.target.value)}
-                >
-                  <option value="Todos">Todos los estados</option>
-                  <option value="Pendiente">Pendiente</option>
-                  <option value="En proceso">En proceso</option>
-                  <option value="Terminado">Terminado</option>
-                </select>
+            <h1 className="text-3xl font-bold flex items-center gap-3" style={{ fontFamily: 'var(--font-heading)', color: 'var(--carbon)' }}>
+              Producción
+              <div className="w-9 h-9 rounded-lg bg-blue-100 flex items-center justify-center">
+                <Scissors size={18} className="text-blue-600" />
               </div>
-              <div className="flex-1 md:w-48 relative">
-                <Filter className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-                <select
-                  className="w-full rounded-xl pl-10 pr-8 py-3.5 text-sm font-medium transition-all appearance-none bg-no-repeat bg-[right_1rem_center] h-full min-h-[50px]"
-                  style={{
-                    backgroundColor: 'var(--surface-silk)',
-                    border: '1px solid var(--border-fiber)',
-                    color: 'var(--carbon)',
-                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
-                    backgroundSize: '1.2em'
-                  }}
-                  value={filtroEmpresa}
-                  onChange={e => setFiltroEmpresa(e.target.value)}
-                >
-                  <option value="Todas">Todas las empresas</option>
-                  {empresas.map(emp => (
-                    <option key={emp.id} value={emp.razonSocial}>{emp.razonSocial}</option>
-                  ))}
-                </select>
-              </div>
+            </h1>
+            <p className="text-slate-500 mt-1.5 text-sm">Controla lo que estamos confeccionando</p>
+          </div>
+          <AccessibleButton onClick={() => setMostrarForm(true)}>
+            <Plus size={20} /> Nueva orden
+          </AccessibleButton>
+        </div>
+
+        {/* Search & List */}
+        <div className="flex flex-col md:flex-row gap-3 mb-5">
+          <div className="relative flex-1">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+            <input type="text" placeholder="Buscar órdenes por nombre o empresa..." className="w-full rounded-xl pl-12 pr-5 py-3.5 text-sm font-medium transition-all h-full min-h-[50px]" style={{ background: 'var(--surface-silk)', border: '1px solid var(--border-fiber)', boxShadow: 'var(--shadow-sm)' }} value={busqueda} onChange={e => setBusqueda(e.target.value)} />
+          </div>
+          <div className="flex gap-3 md:w-auto w-full">
+            <div className="flex-1 md:w-48 relative">
+              <Filter className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+              <select className="w-full rounded-xl pl-10 pr-8 py-3.5 text-sm font-medium transition-all appearance-none bg-no-repeat bg-[right_1rem_center] h-full min-h-[50px]" style={{ backgroundColor: 'var(--surface-silk)', border: '1px solid var(--border-fiber)', color: 'var(--carbon)', backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`, backgroundSize: '1.2em' }} value={filtroEstado} onChange={e => setFiltroEstado(e.target.value)}>
+                <option value="Todos">Todos los estados</option>
+                <option value="Pendiente">Pendiente</option>
+                <option value="En proceso">En proceso</option>
+                <option value="Terminado">Terminado</option>
+              </select>
+            </div>
+            <div className="flex-1 md:w-48 relative">
+              <Filter className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+              <select className="w-full rounded-xl pl-10 pr-8 py-3.5 text-sm font-medium transition-all appearance-none bg-no-repeat bg-[right_1rem_center] h-full min-h-[50px]" style={{ backgroundColor: 'var(--surface-silk)', border: '1px solid var(--border-fiber)', color: 'var(--carbon)', backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`, backgroundSize: '1.2em' }} value={filtroEmpresa} onChange={e => setFiltroEmpresa(e.target.value)}>
+                <option value="Todas">Todas las empresas</option>
+                {empresas.map(emp => <option key={emp.id} value={emp.razonSocial}>{emp.razonSocial}</option>)}
+              </select>
             </div>
           </div>
+        </div>
 
-          <div className="grid gap-4">
-            {productosFiltrados.length === 0 ? (
-              <div className="text-center py-16 rounded-2xl border-2 border-dashed text-slate-400" style={{ background: 'var(--surface-silk)', borderColor: 'var(--border-fiber)' }}>
-                <div className="w-16 h-16 rounded-2xl mx-auto mb-4 flex items-center justify-center" style={{ background: 'var(--surface-linen)' }}>
-                  <Package size={28} className="opacity-50" />
-                </div>
-                <p className="text-base font-medium" style={{ color: 'var(--carbon)' }}>No se encontraron órdenes.</p>
-                <p className="text-sm mt-1 text-slate-400">Crea una nueva orden para comenzar</p>
+        <div className="grid gap-4">
+          {productosFiltrados.length === 0 ? (
+            <div className="text-center py-16 rounded-2xl border-2 border-dashed text-slate-400" style={{ background: 'var(--surface-silk)', borderColor: 'var(--border-fiber)' }}>
+              <div className="w-16 h-16 rounded-2xl mx-auto mb-4 flex items-center justify-center" style={{ background: 'var(--surface-linen)' }}>
+                <Package size={28} className="opacity-50" />
               </div>
-            ) : (
-              productosPaginados.map((prod) => (
-                <div
-                  key={prod.id}
-                  className="card-premium p-5 rounded-2xl flex flex-col lg:flex-row lg:items-center justify-between gap-5"
-                  style={{ borderLeft: `3px solid ${getEstadoBorderColor(prod.estado)}` }}
-                >
-                  <div className="flex items-start md:items-center gap-5 flex-1">
-                    <div
-                      className="w-16 h-16 rounded-xl flex flex-col items-center justify-center font-bold text-lg shrink-0"
-                      style={{ background: 'var(--surface-linen)', color: 'var(--carbon)', fontFamily: 'var(--font-heading)' }}
-                    >
-                      <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-wider mb-0.5">Cant</span>
-                      {formatMonto(prod.cantidad)}
-                    </div>
-
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-bold text-lg truncate" style={{ fontFamily: 'var(--font-heading)', color: 'var(--carbon)' }}>
-                        {prod.nombre}
-                      </h3>
-                      <p className="text-slate-500 font-medium text-sm mt-0.5">{prod.empresa}</p>
-
-                      <div className="flex flex-wrap items-center gap-2 mt-3">
-                        <span className={`px-3 py-1 rounded-lg text-xs font-semibold uppercase tracking-wide ${getEstadoBadge(prod.estado)}`}>
-                          {prod.estado}
-                        </span>
-                        <span className="text-xs font-semibold px-3 py-1 rounded-lg" style={{ background: 'var(--surface-linen)', color: 'var(--carbon)', border: '1px solid var(--border-fiber)' }}>
-                          ${formatMonto(prod.ganancia)}
-                        </span>
-                      </div>
+              <p className="text-base font-medium" style={{ color: 'var(--carbon)' }}>No se encontraron órdenes.</p>
+              <p className="text-sm mt-1 text-slate-400">Crea una nueva orden para comenzar</p>
+            </div>
+          ) : (
+            productosPaginados.map(prod => (
+              <div key={prod.id} className="card-premium p-5 rounded-2xl flex flex-col lg:flex-row lg:items-center justify-between gap-5" style={{ borderLeft: `3px solid ${getEstadoBorderColor(prod.estado)}` }}>
+                <div className="flex items-start md:items-center gap-5 flex-1">
+                  <div className="w-16 h-16 rounded-xl flex flex-col items-center justify-center font-bold text-lg shrink-0" style={{ background: 'var(--surface-linen)', color: 'var(--carbon)', fontFamily: 'var(--font-heading)' }}>
+                    <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-wider mb-0.5">Cant</span>
+                    {formatMonto(prod.cantidad)}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-bold text-lg truncate" style={{ fontFamily: 'var(--font-heading)', color: 'var(--carbon)' }}>{prod.nombre}</h3>
+                    <p className="text-slate-500 font-medium text-sm mt-0.5">{prod.empresa}</p>
+                    <div className="flex flex-wrap items-center gap-2 mt-3">
+                      <span className={`px-3 py-1 rounded-lg text-xs font-semibold uppercase tracking-wide ${getEstadoBadge(prod.estado)}`}>{prod.estado}</span>
+                      <span className="text-xs font-semibold px-3 py-1 rounded-lg" style={{ background: 'var(--surface-linen)', color: 'var(--carbon)', border: '1px solid var(--border-fiber)' }}>${formatMonto(prod.ganancia)}</span>
                     </div>
                   </div>
-
-                  <div className="flex items-center gap-2 lg:w-auto w-full border-t lg:border-t-0 pt-4 lg:pt-0" style={{ borderColor: 'var(--border-fiber)' }}>
-                    <AccessibleButton
-                      variant="secondary"
-                      onClick={() => iniciarEdicion(prod)}
-                      className="flex-1 lg:flex-none !px-4 !min-h-[44px] !text-sm"
-                    >
-                      <Edit2 size={16} /> Editar
+                </div>
+                <div className="flex items-center gap-2 lg:w-auto w-full border-t lg:border-t-0 pt-4 lg:pt-0" style={{ borderColor: 'var(--border-fiber)' }}>
+                  <AccessibleButton variant="secondary" onClick={() => iniciarEdicion(prod)} className="flex-1 lg:flex-none !px-4 !min-h-[44px] !text-sm">
+                    <Edit2 size={16} /> Editar
+                  </AccessibleButton>
+                  {tieneRol('SUPERADMINISTRADOR') && (
+                    <AccessibleButton variant="danger" onClick={async () => { if (await confirm({ title: '¿Eliminar orden?', description: '¿Seguro que deseas eliminar esta orden permanentemente?', confirmText: 'Eliminar' })) eliminarProducto(prod.id); }} className="flex-1 lg:flex-none !px-4 !min-h-[44px] !text-sm">
+                      <Trash2 size={16} /> Eliminar
                     </AccessibleButton>
-                    {tieneRol('SUPERADMINISTRADOR') && (
-                      <AccessibleButton
-                        variant="danger"
-                        onClick={async () => { if (await confirm({ title: '¿Eliminar orden?', description: '¿Seguro que deseas eliminar esta orden permanentemente?', confirmText: 'Eliminar' })) eliminarProducto(prod.id); }}
-                        className="flex-1 lg:flex-none !px-4 !min-h-[44px] !text-sm"
-                      >
-                        <Trash2 size={16} /> Eliminar
-                      </AccessibleButton>
-                    )}
-                  </div>
+                  )}
                 </div>
-              ))
-            )}
-          </div>
-          {totalPaginas > 1 && (
-            <Paginador
-              paginaActual={paginaActual}
-              totalPaginas={totalPaginas}
-              cambiarPagina={setPaginaActual}
-            />
+              </div>
+            ))
           )}
-      </>
-    </div>
+        </div>
+        {totalPaginas > 1 && (
+          <Paginador paginaActual={paginaActual} totalPaginas={totalPaginas} cambiarPagina={setPaginaActual} />
+        )}
+      </div>
+    </>
   );
 };

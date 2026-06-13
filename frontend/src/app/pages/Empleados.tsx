@@ -357,92 +357,19 @@ export const Empleados = () => {
   };
 
   return (
-    <div className="animate-fade-up">
-      <Dialog
-        open={modalOrdenProduccion !== null}
-        onOpenChange={(open) => {
-          if (!open) setModalOrdenProduccion(null);
-        }}
-      >
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>
-              {modalOrdenProduccion
-                ? `Orden · ${modalOrdenProduccion.fecha} (línea ${modalOrdenProduccion.indice + 1})`
-                : 'Orden de producción'}
-            </DialogTitle>
-          </DialogHeader>
-          {(() => {
-            const item = modalOrdenProduccion?.item;
-            const orden = item ? productos.find((p) => p.id === item.productoId) : undefined;
-            if (!item) return null;
-            if (!orden) {
-              return (
-                <p className="text-sm text-rose-700">
-                  Esta orden ya no existe en Producción (pudo haberse eliminado). Subtotales guardados:{' '}
-                  {item.unidadesTotales} confeccionadas · {item.unidadesBuenas} calidad.
-                </p>
-              );
-            }
-            return (
-              <div className="space-y-3 text-sm" style={{ color: 'var(--carbon)' }}>
-                <p>
-                  <span className="font-bold">{orden.nombre}</span>
-                </p>
-                <p className="text-slate-500">Cliente: {orden.empresa}</p>
-                <p className="text-slate-500">
-                  Cantidad: <span className="font-semibold">{orden.cantidad}</span> · Estado:{' '}
-                  <span className="font-semibold">{orden.estado}</span>
-                </p>
-                <p className="text-slate-500">
-                  Asignación: {orden.fechaAsignacion}
-                  {orden.fechaTerminacion ? ` · Entrega: ${orden.fechaTerminacion}` : ''}
-                </p>
-                <div className="rounded-xl px-3 py-2" style={{ background: 'var(--surface-linen)', border: '1px solid var(--border-fiber)' }}>
-                  Aporte este día:{' '}
-                  <span className="font-bold">{item.unidadesTotales}</span> confeccionadas ·{' '}
-                  <span className="font-bold text-emerald-700">{item.unidadesBuenas}</span> calidad
-                </div>
-              </div>
-            );
-          })()}
-        </DialogContent>
-      </Dialog>
-
-      {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-        <div>
-          <div className="flex items-center gap-3 mb-1">
-            <div className="w-10 h-1 rounded-full" style={{ background: 'var(--accent-copper)' }} />
-            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400" style={{ fontFamily: 'var(--font-heading)' }}>
-              Personal
-            </span>
-          </div>
-          <h1
-            className="text-3xl font-bold flex items-center gap-3"
-            style={{ fontFamily: 'var(--font-heading)', color: 'var(--carbon)' }}
-          >
-            Equipo de Trabajo
-            <div className="w-9 h-9 rounded-lg bg-emerald-100 flex items-center justify-center">
-              <Users size={18} className="text-emerald-600" />
-            </div>
-          </h1>
-          <p className="text-slate-500 mt-1.5 text-sm">Gestiona el personal y revisa su desempeño</p>
-        </div>
-
-        <button
-          onClick={() => { resetFormEmpleado(); setMostrarFormEmpleado(true); }}
-          className="px-5 py-3 rounded-xl font-semibold text-sm flex items-center gap-2 transition-all active:scale-[0.97] text-[#1a1a2e]"
-          style={{ background: 'var(--accent-copper)', boxShadow: 'var(--shadow-copper)' }}
-        >
-          <Plus size={20} /> Nuevo Empleado
-        </button>
-      </div>
-
-      {/* Employee form */}
+    <>
+      {/* Modal formulario empleado — FUERA del div animado para que fixed cubra todo el viewport */}
       {mostrarFormEmpleado && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in">
-          <form onSubmit={guardarEmpleado} className="card-premium-static p-6 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto animate-fade-up">
+        <div
+          className="fixed inset-0 z-[200] flex items-center justify-center p-4"
+          style={{ background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(4px)' }}
+          onClick={e => { if (e.target === e.currentTarget) setMostrarFormEmpleado(false); }}
+        >
+          <form
+            onSubmit={guardarEmpleado}
+            className="card-premium-static p-6 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+            onClick={e => e.stopPropagation()}
+          >
             <h2 className="text-lg font-bold mb-5" style={{ fontFamily: 'var(--font-heading)', color: 'var(--carbon)' }}>
               {empleadoEditando ? 'Editar Empleado' : 'Agregar Empleado'}
             </h2>
@@ -454,10 +381,8 @@ export const Empleados = () => {
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-500 mb-1.5" style={{ fontFamily: 'var(--font-heading)' }}>Tipo de Doc.</label>
-                <select className="w-full rounded-xl px-4 py-3 text-sm" style={inputStyle} value={tipoDocumento} onChange={(e) => setTipoDocumento(e.target.value)} required>
-                  {tiposDocumento.map((td) => (
-                    <option key={td.id} value={td.id}>{td.nombre}</option>
-                  ))}
+                <select className="w-full rounded-xl px-4 py-3 text-sm" style={inputStyle} value={tipoDocumento} onChange={e => setTipoDocumento(e.target.value)} required>
+                  {tiposDocumento.map(td => <option key={td.id} value={td.id}>{td.nombre}</option>)}
                 </select>
               </div>
               <div>
@@ -466,16 +391,14 @@ export const Empleados = () => {
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-500 mb-1.5" style={{ fontFamily: 'var(--font-heading)' }}>Cargo / Rol</label>
-                <select className="w-full rounded-xl px-4 py-3 text-sm" style={inputStyle} value={cargo} onChange={(e) => setCargo(e.target.value)} required>
+                <select className="w-full rounded-xl px-4 py-3 text-sm" style={inputStyle} value={cargo} onChange={e => setCargo(e.target.value)} required>
                   <option value="">Seleccione un cargo…</option>
-                  {cargos.filter((c) => c.activa !== false).map((c) => (
-                    <option key={c.id} value={c.id}>{c.nombre}</option>
-                  ))}
+                  {cargos.filter(c => c.activa !== false).map(c => <option key={c.id} value={c.id}>{c.nombre}</option>)}
                 </select>
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-500 mb-1.5" style={{ fontFamily: 'var(--font-heading)' }}>Modalidad de pago nómina</label>
-                <select className="w-full rounded-xl px-4 py-3 text-sm" style={inputStyle} value={tipoPago} onChange={(e) => setTipoPago(e.target.value as 'HORAS' | 'PRODUCCION' | 'AMBOS')}>
+                <select className="w-full rounded-xl px-4 py-3 text-sm" style={inputStyle} value={tipoPago} onChange={e => setTipoPago(e.target.value as 'HORAS' | 'PRODUCCION' | 'AMBOS')}>
                   <option value="HORAS">⏱ Por Horas</option>
                   <option value="PRODUCCION">📦 Por Producción</option>
                   <option value="AMBOS">⚡ Ambos (Horas + Producción)</option>
@@ -505,19 +428,11 @@ export const Empleados = () => {
                 <label className="block text-xs font-medium text-slate-500 mb-1.5" style={{ fontFamily: 'var(--font-heading)' }}>Valor por hora ($) <span className="text-slate-400 font-normal">(Opcional)</span></label>
                 <div className="relative">
                   <DollarSign className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={15} />
-                  <input
-                    type="number"
-                    min={0}
-                    step={1}
-                    className="w-full rounded-xl pl-9 pr-4 py-3 text-sm"
-                    style={inputStyle}
-                    value={valorHora}
-                    onChange={e => setValorHora(e.target.value.replace(/[^0-9]/g, ''))}
-                    placeholder="Ej. 8000"
-                  />
+                  <input type="number" min={0} step={1} className="w-full rounded-xl pl-9 pr-4 py-3 text-sm" style={inputStyle} value={valorHora} onChange={e => setValorHora(e.target.value.replace(/[^0-9]/g, ''))} placeholder="Ej. 8000" />
                 </div>
               </div>
             </div>
+
             <div className="flex justify-end gap-3">
               <button type="button" onClick={() => setMostrarFormEmpleado(false)} className="px-5 py-3 rounded-xl font-semibold text-sm text-slate-600 bg-slate-100 hover:bg-slate-200 transition-all">Cancelar</button>
               <button type="submit" className="px-6 py-3 rounded-xl font-semibold text-sm text-[#1a1a2e] active:scale-[0.97] transition-all" style={{ background: 'var(--accent-copper)', boxShadow: 'var(--shadow-copper)' }}>
@@ -528,8 +443,78 @@ export const Empleados = () => {
         </div>
       )}
 
-      {/* Search & List */}
-      {!mostrarFormEmpleado && (
+      {/* Contenido de la página */}
+      <div className="animate-fade-up">
+        <Dialog
+          open={modalOrdenProduccion !== null}
+          onOpenChange={open => { if (!open) setModalOrdenProduccion(null); }}
+        >
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>
+                {modalOrdenProduccion
+                  ? `Orden · ${modalOrdenProduccion.fecha} (línea ${modalOrdenProduccion.indice + 1})`
+                  : 'Orden de producción'}
+              </DialogTitle>
+            </DialogHeader>
+            {(() => {
+              const item = modalOrdenProduccion?.item;
+              const orden = item ? productos.find(p => p.id === item.productoId) : undefined;
+              if (!item) return null;
+              if (!orden) return (
+                <p className="text-sm text-rose-700">
+                  Esta orden ya no existe en Producción (pudo haberse eliminado). Subtotales guardados:{' '}
+                  {item.unidadesTotales} confeccionadas · {item.unidadesBuenas} calidad.
+                </p>
+              );
+              return (
+                <div className="space-y-3 text-sm" style={{ color: 'var(--carbon)' }}>
+                  <p><span className="font-bold">{orden.nombre}</span></p>
+                  <p className="text-slate-500">Cliente: {orden.empresa}</p>
+                  <p className="text-slate-500">
+                    Cantidad: <span className="font-semibold">{orden.cantidad}</span> · Estado:{' '}
+                    <span className="font-semibold">{orden.estado}</span>
+                  </p>
+                  <p className="text-slate-500">
+                    Asignación: {orden.fechaAsignacion}
+                    {orden.fechaTerminacion ? ` · Entrega: ${orden.fechaTerminacion}` : ''}
+                  </p>
+                  <div className="rounded-xl px-3 py-2" style={{ background: 'var(--surface-linen)', border: '1px solid var(--border-fiber)' }}>
+                    Aporte este día:{' '}
+                    <span className="font-bold">{item.unidadesTotales}</span> confeccionadas ·{' '}
+                    <span className="font-bold text-emerald-700">{item.unidadesBuenas}</span> calidad
+                  </div>
+                </div>
+              );
+            })()}
+          </DialogContent>
+        </Dialog>
+
+        {/* Header */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+          <div>
+            <div className="flex items-center gap-3 mb-1">
+              <div className="w-10 h-1 rounded-full" style={{ background: 'var(--accent-copper)' }} />
+              <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400" style={{ fontFamily: 'var(--font-heading)' }}>Personal</span>
+            </div>
+            <h1 className="text-3xl font-bold flex items-center gap-3" style={{ fontFamily: 'var(--font-heading)', color: 'var(--carbon)' }}>
+              Equipo de Trabajo
+              <div className="w-9 h-9 rounded-lg bg-emerald-100 flex items-center justify-center">
+                <Users size={18} className="text-emerald-600" />
+              </div>
+            </h1>
+            <p className="text-slate-500 mt-1.5 text-sm">Gestiona el personal y revisa su desempeño</p>
+          </div>
+          <button
+            onClick={() => { resetFormEmpleado(); setMostrarFormEmpleado(true); }}
+            className="px-5 py-3 rounded-xl font-semibold text-sm flex items-center gap-2 transition-all active:scale-[0.97] text-[#1a1a2e]"
+            style={{ background: 'var(--accent-copper)', boxShadow: 'var(--shadow-copper)' }}
+          >
+            <Plus size={20} /> Nuevo Empleado
+          </button>
+        </div>
+
+        {/* Search & List */}
         <div className="flex flex-col md:flex-row gap-3 mb-5">
           <div className="relative flex-1">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
@@ -588,10 +573,9 @@ export const Empleados = () => {
             </div>
           </div>
         </div>
-      )}
 
-      {/* Employee list */}
-      <div className="grid gap-4">
+        {/* Employee list */}
+        <div className="grid gap-4">
         {empleadosFiltrados.length === 0 ? (
           <div className="text-center py-12 rounded-2xl border-2 border-dashed text-slate-400" style={{ background: 'var(--surface-silk)', borderColor: 'var(--border-fiber)' }}>
             <p className="text-base font-medium" style={{ color: 'var(--carbon)' }}>
@@ -1081,6 +1065,7 @@ export const Empleados = () => {
           cambiarPagina={setPaginaActual}
         />
       )}
-    </div>
+      </div>
+    </>
   );
 };
