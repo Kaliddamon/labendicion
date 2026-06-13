@@ -44,6 +44,8 @@ export interface Empleado {
   fechaIngreso: string;
   estado: 'Activo' | 'Inactivo';
   valorHora?: number;
+  /** HORAS | PRODUCCION | AMBOS — si null/undefined se asume AMBOS */
+  tipoPago?: 'HORAS' | 'PRODUCCION' | 'AMBOS';
 }
 
 export interface Empresa {

@@ -51,14 +51,15 @@ export const Empleados = () => {
   const [fechaIngreso, setFechaIngreso] = useState('');
   const [estado, setEstado] = useState<'Activo' | 'Inactivo'>('Activo');
   const [valorHora, setValorHora] = useState<string>('');
+  const [tipoPago, setTipoPago] = useState<'HORAS' | 'PRODUCCION' | 'AMBOS'>('AMBOS');
   const [busqueda, setBusqueda] = useState('');
   const [filtroEstadoEmp, setFiltroEstadoEmp] = useState<string>('Todos');
   const [filtroCargo, setFiltroCargo] = useState<string>('Todos');
 
   const empleadosFiltrados = empleados.filter(emp => {
     const cumpleBusqueda = emp.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
-                           emp.documento.includes(busqueda) ||
-                           (emp.cargo?.nombre || '').toLowerCase().includes(busqueda.toLowerCase());
+      emp.documento.includes(busqueda) ||
+      (emp.cargo?.nombre || '').toLowerCase().includes(busqueda.toLowerCase());
     const cumpleEstado = filtroEstadoEmp === 'Todos' || emp.estado === filtroEstadoEmp;
     const cumpleCargo = filtroCargo === 'Todos' || emp.cargo?.id === filtroCargo;
     return cumpleBusqueda && cumpleEstado && cumpleCargo;
@@ -76,8 +77,8 @@ export const Empleados = () => {
   const [empleadoCalificando, setEmpleadoCalificando] = useState<string | null>(null);
   const [registroEditando, setRegistroEditando] = useState<string | null>(null);
   const [calificacionFecha, setCalificacionFecha] = useState(getColombiaDateString());
-  const [calificacionHoraEntrada, setCalificacionHoraEntrada] = useState('08:00');
-  const [calificacionHoraSalida, setCalificacionHoraSalida] = useState('17:00');
+  const [calificacionHoraEntrada, setCalificacionHoraEntrada] = useState('07:00');
+  const [calificacionHoraSalida, setCalificacionHoraSalida] = useState('16:00');
   const [calificacionAsistencia, setCalificacionAsistencia] = useState(true);
   const [calificacionProducciones, setCalificacionProducciones] = useState<ProduccionRegistro[]>([
     crearLineaProduccionVacia(),
@@ -94,13 +95,14 @@ export const Empleados = () => {
 
   const resetFormEmpleado = () => {
     setNombre(''); setCargo(''); setTipoDocumento('CC'); setDocumento(''); setTelefono(''); setEmail('');
-    setFechaIngreso(''); setEstado('Activo'); setValorHora(''); setEmpleadoEditando(null); setMostrarFormEmpleado(false);
+    setFechaIngreso(''); setEstado('Activo'); setValorHora(''); setTipoPago('AMBOS'); setEmpleadoEditando(null); setMostrarFormEmpleado(false);
   };
 
   const iniciarEdicion = (emp: Empleado) => {
     setNombre(emp.nombre); setCargo(emp.cargo?.id || ''); setTipoDocumento(emp.tipoDocumento?.id || 'CC'); setDocumento(emp.documento);
     setTelefono(emp.telefono); setEmail(emp.email || ''); setFechaIngreso(emp.fechaIngreso); setEstado(emp.estado);
     setValorHora(emp.valorHora != null ? String(emp.valorHora) : '');
+    setTipoPago(emp.tipoPago || 'AMBOS');
     setEmpleadoEditando(emp.id); setMostrarFormEmpleado(true);
     setEmpleadoCalificando(null);
     setEmpleadoViendoHistorial(null);
@@ -126,9 +128,9 @@ export const Empleados = () => {
     const tipoDocObj = { id: tipoDocumento, nombre: tiposDocumento.find(td => td.id === tipoDocumento)?.nombre || '' };
     const valorHoraNum = valorHora && /^[0-9]+$/.test(valorHora) ? parseInt(valorHora) : undefined;
     if (empleadoEditando) {
-      editarEmpleado(empleadoEditando, { nombre, cargo: cargoObj, tipoDocumento: tipoDocObj, documento, telefono, email, fechaIngreso, estado, valorHora: valorHoraNum });
+      editarEmpleado(empleadoEditando, { nombre, cargo: cargoObj, tipoDocumento: tipoDocObj, documento, telefono, email, fechaIngreso, estado, valorHora: valorHoraNum, tipoPago });
     } else {
-      agregarEmpleado({ nombre, cargo: cargoObj, tipoDocumento: tipoDocObj, documento, telefono, email, fechaIngreso, estado, valorHora: valorHoraNum });
+      agregarEmpleado({ nombre, cargo: cargoObj, tipoDocumento: tipoDocObj, documento, telefono, email, fechaIngreso, estado, valorHora: valorHoraNum, tipoPago });
     }
     resetFormEmpleado();
   };
@@ -139,8 +141,8 @@ export const Empleados = () => {
     setCalificacionProducciones([crearLineaProduccionVacia()]);
     setCalificacionAsistencia(true);
     setCalificacionFecha(getColombiaDateString());
-    setCalificacionHoraEntrada('08:00');
-    setCalificacionHoraSalida('17:00');
+    setCalificacionHoraEntrada('07:00');
+    setCalificacionHoraSalida('16:00');
   };
 
   const abrirCalificacion = (empId: string) => {
@@ -169,8 +171,8 @@ export const Empleados = () => {
     setRegistroEditando(reg.id);
     setCalificacionFecha(reg.fecha);
     setCalificacionAsistencia(reg.horaEntrada !== '--:--');
-    setCalificacionHoraEntrada(reg.horaEntrada !== '--:--' ? reg.horaEntrada : '08:00');
-    setCalificacionHoraSalida(reg.horaSalida !== '--:--' ? reg.horaSalida : '17:00');
+    setCalificacionHoraEntrada(reg.horaEntrada !== '--:--' ? reg.horaEntrada : '07:00');
+    setCalificacionHoraSalida(reg.horaSalida !== '--:--' ? reg.horaSalida : '16:00');
     setCalificacionProducciones(
       reg.producciones?.length
         ? reg.producciones.map((p) => ({ ...p, pasoId: p.pasoId ?? '' }))
@@ -283,7 +285,7 @@ export const Empleados = () => {
   };
 
   const getRegistrosEmpleado = (empId: string) => {
-    return registros.filter(r => r.empleadoId === empId).sort((a,b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
+    return registros.filter(r => r.empleadoId === empId).sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
   };
 
   // Filtros de tiempo para el historial: quincena en curso, mes completo, todo
@@ -330,7 +332,7 @@ export const Empleados = () => {
         const [hS, mS] = reg.horaSalida.split(':').map(Number);
         const horas = Math.max(0, (hS + mS / 60) - (hE + mE / 60));
         pagoHoras = horas * emp.valorHora;
-      } catch {}
+      } catch { }
     }
     // Pago por producción
     if (reg.producciones) {
@@ -429,90 +431,101 @@ export const Empleados = () => {
         </div>
 
         <button
-          onClick={() => { resetFormEmpleado(); setMostrarFormEmpleado(!mostrarFormEmpleado); }}
-          className={`px-5 py-3 rounded-xl font-semibold text-sm flex items-center gap-2 transition-all active:scale-[0.97] ${
-            mostrarFormEmpleado
-              ? 'bg-[var(--surface-linen)] text-[var(--carbon)] border border-[var(--border-fiber)]'
-              : 'bg-[var(--accent-copper)] hover:bg-[var(--accent-copper-bright)] text-[#1a1a2e] shadow-[0_2px_8px_rgba(212,160,18,0.3)]'
-          }`}
+          onClick={() => { resetFormEmpleado(); setMostrarFormEmpleado(true); }}
+          className="px-5 py-3 rounded-xl font-semibold text-sm flex items-center gap-2 transition-all active:scale-[0.97] text-[#1a1a2e]"
+          style={{ background: 'var(--accent-copper)', boxShadow: 'var(--shadow-copper)' }}
         >
-          {mostrarFormEmpleado ? 'Cancelar' : <><Plus size={20} /> Nuevo Empleado</>}
+          <Plus size={20} /> Nuevo Empleado
         </button>
       </div>
 
       {/* Employee form */}
       {mostrarFormEmpleado && (
-        <form onSubmit={guardarEmpleado} className="card-premium-static p-6 rounded-2xl mb-8 animate-fade-up">
-          <h2 className="text-lg font-bold mb-5" style={{ fontFamily: 'var(--font-heading)', color: 'var(--carbon)' }}>
-            {empleadoEditando ? 'Editar Empleado' : 'Agregar Empleado'}
-          </h2>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in">
+          <form onSubmit={guardarEmpleado} className="card-premium-static p-6 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto animate-fade-up">
+            <h2 className="text-lg font-bold mb-5" style={{ fontFamily: 'var(--font-heading)', color: 'var(--carbon)' }}>
+              {empleadoEditando ? 'Editar Empleado' : 'Agregar Empleado'}
+            </h2>
 
-          <div className="grid md:grid-cols-2 gap-4 mb-5">
-            <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1.5" style={{ fontFamily: 'var(--font-heading)' }}>Nombre Completo</label>
-              <input type="text" className="w-full rounded-xl px-4 py-3 text-sm" style={inputStyle} value={nombre} onChange={e=>setNombre(e.target.value)} required />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1.5" style={{ fontFamily: 'var(--font-heading)' }}>Tipo de Doc.</label>
-              <select className="w-full rounded-xl px-4 py-3 text-sm" style={inputStyle} value={tipoDocumento} onChange={(e) => setTipoDocumento(e.target.value)} required>
-                {tiposDocumento.map((td) => (
-                  <option key={td.id} value={td.id}>{td.nombre}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1.5" style={{ fontFamily: 'var(--font-heading)' }}>Documento de Identidad</label>
-              <input type="text" className="w-full rounded-xl px-4 py-3 text-sm" style={inputStyle} value={documento} onChange={e=>setDocumento(e.target.value)} pattern="[0-9]+" title="Solo se permiten números" required />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1.5" style={{ fontFamily: 'var(--font-heading)' }}>Cargo / Rol</label>
-              <select className="w-full rounded-xl px-4 py-3 text-sm" style={inputStyle} value={cargo} onChange={(e) => setCargo(e.target.value)} required>
-                <option value="">Seleccione un cargo…</option>
-                {cargos.filter((c) => c.activa !== false).map((c) => (
-                  <option key={c.id} value={c.id}>{c.nombre}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1.5" style={{ fontFamily: 'var(--font-heading)' }}>Teléfono</label>
-              <input type="tel" className="w-full rounded-xl px-4 py-3 text-sm" style={inputStyle} value={telefono} onChange={e=>setTelefono(e.target.value)} pattern="[0-9+\- ]{7,15}" title="Entre 7 y 15 caracteres" />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1.5" style={{ fontFamily: 'var(--font-heading)' }}>Correo Electrónico</label>
-              <input type="email" className="w-full rounded-xl px-4 py-3 text-sm" style={inputStyle} value={email} onChange={e=>setEmail(e.target.value)} />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1.5" style={{ fontFamily: 'var(--font-heading)' }}>Fecha de Ingreso</label>
-              <input type="date" className="w-full rounded-xl px-4 py-3 text-sm" style={inputStyle} value={fechaIngreso} onChange={e=>setFechaIngreso(e.target.value)} max={getColombiaDateString()} />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1.5" style={{ fontFamily: 'var(--font-heading)' }}>Estado</label>
-              <select className="w-full rounded-xl px-4 py-3 text-sm" style={inputStyle} value={estado} onChange={e=>setEstado(e.target.value as 'Activo'|'Inactivo')}>
-                <option value="Activo">Activo trabajando</option>
-                <option value="Inactivo">Inactivo / Retirado</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1.5" style={{ fontFamily: 'var(--font-heading)' }}>Valor por hora ($) <span className="text-slate-400 font-normal">(Opcional)</span></label>
-              <div className="relative">
-                <DollarSign className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={15} />
-                <input
-                  type="number"
-                  min={0}
-                  step={1}
-                  className="w-full rounded-xl pl-9 pr-4 py-3 text-sm"
-                  style={inputStyle}
-                  value={valorHora}
-                  onChange={e => setValorHora(e.target.value.replace(/[^0-9]/g, ''))}
-                  placeholder="Ej. 8000"
-                />
+            <div className="grid md:grid-cols-2 gap-4 mb-5">
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1.5" style={{ fontFamily: 'var(--font-heading)' }}>Nombre Completo</label>
+                <input type="text" className="w-full rounded-xl px-4 py-3 text-sm" style={inputStyle} value={nombre} onChange={e => setNombre(e.target.value)} required />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1.5" style={{ fontFamily: 'var(--font-heading)' }}>Tipo de Doc.</label>
+                <select className="w-full rounded-xl px-4 py-3 text-sm" style={inputStyle} value={tipoDocumento} onChange={(e) => setTipoDocumento(e.target.value)} required>
+                  {tiposDocumento.map((td) => (
+                    <option key={td.id} value={td.id}>{td.nombre}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1.5" style={{ fontFamily: 'var(--font-heading)' }}>Documento de Identidad</label>
+                <input type="text" className="w-full rounded-xl px-4 py-3 text-sm" style={inputStyle} value={documento} onChange={e => setDocumento(e.target.value)} pattern="[0-9]+" title="Solo se permiten números" required />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1.5" style={{ fontFamily: 'var(--font-heading)' }}>Cargo / Rol</label>
+                <select className="w-full rounded-xl px-4 py-3 text-sm" style={inputStyle} value={cargo} onChange={(e) => setCargo(e.target.value)} required>
+                  <option value="">Seleccione un cargo…</option>
+                  {cargos.filter((c) => c.activa !== false).map((c) => (
+                    <option key={c.id} value={c.id}>{c.nombre}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1.5" style={{ fontFamily: 'var(--font-heading)' }}>Modalidad de pago nómina</label>
+                <select className="w-full rounded-xl px-4 py-3 text-sm" style={inputStyle} value={tipoPago} onChange={(e) => setTipoPago(e.target.value as 'HORAS' | 'PRODUCCION' | 'AMBOS')}>
+                  <option value="HORAS">⏱ Por Horas</option>
+                  <option value="PRODUCCION">📦 Por Producción</option>
+                  <option value="AMBOS">⚡ Ambos (Horas + Producción)</option>
+                </select>
+                <p className="text-[10px] text-slate-400 mt-1.5">Define qué se suma al calcular la nómina automática.</p>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1.5" style={{ fontFamily: 'var(--font-heading)' }}>Teléfono</label>
+                <input type="tel" className="w-full rounded-xl px-4 py-3 text-sm" style={inputStyle} value={telefono} onChange={e => setTelefono(e.target.value)} pattern="[0-9+\- ]{7,15}" title="Entre 7 y 15 caracteres" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1.5" style={{ fontFamily: 'var(--font-heading)' }}>Correo Electrónico</label>
+                <input type="email" className="w-full rounded-xl px-4 py-3 text-sm" style={inputStyle} value={email} onChange={e => setEmail(e.target.value)} />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1.5" style={{ fontFamily: 'var(--font-heading)' }}>Fecha de Ingreso</label>
+                <input type="date" className="w-full rounded-xl px-4 py-3 text-sm" style={inputStyle} value={fechaIngreso} onChange={e => setFechaIngreso(e.target.value)} max={getColombiaDateString()} />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1.5" style={{ fontFamily: 'var(--font-heading)' }}>Estado</label>
+                <select className="w-full rounded-xl px-4 py-3 text-sm" style={inputStyle} value={estado} onChange={e => setEstado(e.target.value as 'Activo' | 'Inactivo')}>
+                  <option value="Activo">Activo trabajando</option>
+                  <option value="Inactivo">Inactivo / Retirado</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1.5" style={{ fontFamily: 'var(--font-heading)' }}>Valor por hora ($) <span className="text-slate-400 font-normal">(Opcional)</span></label>
+                <div className="relative">
+                  <DollarSign className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={15} />
+                  <input
+                    type="number"
+                    min={0}
+                    step={1}
+                    className="w-full rounded-xl pl-9 pr-4 py-3 text-sm"
+                    style={inputStyle}
+                    value={valorHora}
+                    onChange={e => setValorHora(e.target.value.replace(/[^0-9]/g, ''))}
+                    placeholder="Ej. 8000"
+                  />
+                </div>
               </div>
             </div>
-          </div>
-          <button type="submit" className="w-full md:w-auto px-6 py-3 rounded-xl font-semibold text-sm text-[#1a1a2e] active:scale-[0.97] transition-all" style={{ background: 'var(--accent-copper)', boxShadow: 'var(--shadow-copper)' }}>
-            Guardar Empleado
-          </button>
-        </form>
+            <div className="flex justify-end gap-3">
+              <button type="button" onClick={() => setMostrarFormEmpleado(false)} className="px-5 py-3 rounded-xl font-semibold text-sm text-slate-600 bg-slate-100 hover:bg-slate-200 transition-all">Cancelar</button>
+              <button type="submit" className="px-6 py-3 rounded-xl font-semibold text-sm text-[#1a1a2e] active:scale-[0.97] transition-all" style={{ background: 'var(--accent-copper)', boxShadow: 'var(--shadow-copper)' }}>
+                Guardar Empleado
+              </button>
+            </div>
+          </form>
+        </div>
       )}
 
       {/* Search & List */}
@@ -627,21 +640,19 @@ export const Empleados = () => {
                 <div className="flex flex-wrap gap-2 w-full md:w-auto">
                   <button
                     onClick={() => abrirCalificacion(emp.id)}
-                    className={`flex-1 md:flex-none px-4 py-2.5 rounded-xl font-semibold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-[0.97] border ${
-                      empleadoCalificando === emp.id
-                        ? 'bg-amber-50 border-amber-400 text-amber-800'
-                        : 'border-[var(--accent-copper)] text-[var(--accent-copper)] bg-white hover:bg-[var(--accent-copper-glow)]'
-                    }`}
+                    className={`flex-1 md:flex-none px-4 py-2.5 rounded-xl font-semibold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-[0.97] border ${empleadoCalificando === emp.id
+                      ? 'bg-amber-50 border-amber-400 text-amber-800'
+                      : 'border-[var(--accent-copper)] text-[var(--accent-copper)] bg-white hover:bg-[var(--accent-copper-glow)]'
+                      }`}
                   >
                     <ClipboardList size={16} /> Evaluar
                   </button>
                   <button
                     onClick={() => abrirHistorial(emp.id)}
-                    className={`flex-1 md:flex-none px-4 py-2.5 rounded-xl font-semibold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-[0.97] border ${
-                      empleadoViendoHistorial === emp.id
-                        ? 'bg-blue-50 border-blue-400 text-blue-800'
-                        : 'border-blue-300 text-blue-600 bg-white hover:bg-blue-50'
-                    }`}
+                    className={`flex-1 md:flex-none px-4 py-2.5 rounded-xl font-semibold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-[0.97] border ${empleadoViendoHistorial === emp.id
+                      ? 'bg-blue-50 border-blue-400 text-blue-800'
+                      : 'border-blue-300 text-blue-600 bg-white hover:bg-blue-50'
+                      }`}
                   >
                     <History size={16} /> Historial
                   </button>
@@ -649,7 +660,7 @@ export const Empleados = () => {
                     <Edit2 size={16} className="text-slate-500" />
                   </button>
                   {tieneRol('SUPERADMINISTRADOR') && (
-                    <button onClick={async () => { if(await confirm({ title: '¿Eliminar empleado?', description: '¿Seguro que deseas eliminar este empleado definitivamente? Se borrará todo su historial asociado.', confirmText: 'Eliminar definitivamente', requireInput: emp.nombre })) eliminarEmpleado(emp.id); }} className="p-2.5 rounded-xl transition-all active:scale-[0.97] bg-rose-50 hover:bg-rose-100 border border-rose-200">
+                    <button onClick={async () => { if (await confirm({ title: '¿Eliminar empleado?', description: '¿Seguro que deseas eliminar este empleado definitivamente? Se borrará todo su historial asociado.', confirmText: 'Eliminar definitivamente', requireInput: emp.nombre })) eliminarEmpleado(emp.id); }} className="p-2.5 rounded-xl transition-all active:scale-[0.97] bg-rose-50 hover:bg-rose-100 border border-rose-200">
                       <Trash2 size={16} className="text-rose-500" />
                     </button>
                   )}
@@ -689,11 +700,10 @@ export const Empleados = () => {
                           <button
                             key={f}
                             onClick={() => setFiltroHistorial(f)}
-                            className={`px-3 py-1.5 text-xs font-semibold transition-colors ${
-                              filtroHistorial === f
-                                ? 'text-[#1a1a2e]'
-                                : 'text-slate-500 hover:text-slate-700'
-                            }`}
+                            className={`px-3 py-1.5 text-xs font-semibold transition-colors ${filtroHistorial === f
+                              ? 'text-[#1a1a2e]'
+                              : 'text-slate-500 hover:text-slate-700'
+                              }`}
                             style={filtroHistorial === f ? { background: 'var(--accent-copper)' } : { background: 'white' }}
                           >
                             {f === 'quincena' ? '15 días' : f === 'mes' ? 'Este mes' : 'Todo'}
@@ -718,100 +728,100 @@ export const Empleados = () => {
                         {regsFiltrados.map(reg => {
                           const { pagoHoras, pagoProduccion } = calcularPagaDiaria(reg, emp);
                           return (
-                          <div key={reg.id} className="bg-white p-4 rounded-xl flex flex-col gap-3" style={{ border: '1px solid var(--border-fiber)' }}>
-                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                              <div className="flex flex-wrap items-center gap-2">
-                                <div className="font-bold text-xs px-3 py-1.5 rounded-lg text-blue-800" style={{ background: 'rgba(37,99,235,0.08)' }}>
-                                  {reg.fecha}
-                                </div>
-                                {reg.horaEntrada !== '--:--' ? (
-                                  <div className="text-slate-500 text-xs font-medium flex items-center gap-1">
-                                    <Clock size={14} /> {reg.horaEntrada} - {reg.horaSalida}
+                            <div key={reg.id} className="bg-white p-4 rounded-xl flex flex-col gap-3" style={{ border: '1px solid var(--border-fiber)' }}>
+                              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <div className="font-bold text-xs px-3 py-1.5 rounded-lg text-blue-800" style={{ background: 'rgba(37,99,235,0.08)' }}>
+                                    {reg.fecha}
                                   </div>
-                                ) : (
-                                  <span className="text-rose-600 font-semibold text-xs bg-rose-50 px-2 py-1 rounded-lg">No Asistió</span>
+                                  {reg.horaEntrada !== '--:--' ? (
+                                    <div className="text-slate-500 text-xs font-medium flex items-center gap-1">
+                                      <Clock size={14} /> {reg.horaEntrada} - {reg.horaSalida}
+                                    </div>
+                                  ) : (
+                                    <span className="text-rose-600 font-semibold text-xs bg-rose-50 px-2 py-1 rounded-lg">No Asistió</span>
+                                  )}
+                                </div>
+
+                                {/* Chips: totales + calidad + pago horas + pago producción */}
+                                {reg.horaEntrada !== '--:--' && (
+                                  <div className="flex gap-3 shrink-0 flex-wrap justify-end">
+                                    <div className="text-center">
+                                      <span className="block text-[10px] text-slate-400 font-semibold uppercase">Totales</span>
+                                      <span className="font-bold text-base" style={{ fontFamily: 'var(--font-heading)', color: 'var(--carbon)' }}>{reg.unidadesTotales}</span>
+                                    </div>
+                                    <div className="text-center">
+                                      <span className="block text-[10px] text-emerald-600 font-semibold uppercase">Calidad</span>
+                                      <span className="font-bold text-base text-emerald-600" style={{ fontFamily: 'var(--font-heading)' }}>{reg.unidadesBuenas}</span>
+                                    </div>
+                                    {pagoHoras > 0 && (
+                                      <div className="text-center">
+                                        <span className="block text-[10px] font-semibold uppercase" style={{ color: 'var(--accent-copper)' }}>$/Horas</span>
+                                        <span className="font-bold text-base" style={{ fontFamily: 'var(--font-heading)', color: 'var(--accent-copper)' }}>{formatCOP(pagoHoras)}</span>
+                                      </div>
+                                    )}
+                                    {pagoProduccion > 0 && (
+                                      <div className="text-center">
+                                        <span className="block text-[10px] text-violet-600 font-semibold uppercase">$/Prod</span>
+                                        <span className="font-bold text-base text-violet-600" style={{ fontFamily: 'var(--font-heading)' }}>{formatCOP(pagoProduccion)}</span>
+                                      </div>
+                                    )}
+                                  </div>
                                 )}
                               </div>
 
-                              {/* Chips: totales + calidad + pago horas + pago producción */}
-                              {reg.horaEntrada !== '--:--' && (
-                                <div className="flex gap-3 shrink-0 flex-wrap justify-end">
-                                  <div className="text-center">
-                                    <span className="block text-[10px] text-slate-400 font-semibold uppercase">Totales</span>
-                                    <span className="font-bold text-base" style={{ fontFamily: 'var(--font-heading)', color: 'var(--carbon)' }}>{reg.unidadesTotales}</span>
-                                  </div>
-                                  <div className="text-center">
-                                    <span className="block text-[10px] text-emerald-600 font-semibold uppercase">Calidad</span>
-                                    <span className="font-bold text-base text-emerald-600" style={{ fontFamily: 'var(--font-heading)' }}>{reg.unidadesBuenas}</span>
-                                  </div>
-                                  {pagoHoras > 0 && (
-                                    <div className="text-center">
-                                      <span className="block text-[10px] font-semibold uppercase" style={{ color: 'var(--accent-copper)' }}>$/Horas</span>
-                                      <span className="font-bold text-base" style={{ fontFamily: 'var(--font-heading)', color: 'var(--accent-copper)' }}>{formatCOP(pagoHoras)}</span>
+                              {reg.horaEntrada !== '--:--' && (reg.producciones?.length ?? 0) > 0 && (
+                                <div className="pt-2 space-y-1.5" style={{ borderTop: '1px solid var(--border-fiber-light)' }}>
+                                  <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
+                                    Órdenes vinculadas este día
+                                  </p>
+                                  {reg.producciones!.map((prod, index) => (
+                                    <div
+                                      key={`${reg.id}-p-${index}`}
+                                      className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between rounded-lg px-3 py-2 text-xs"
+                                      style={{ background: 'var(--surface-linen)', border: '1px solid var(--border-fiber-light)' }}
+                                    >
+                                      <div className="flex min-w-0 flex-1 flex-col gap-1 sm:flex-row sm:items-center sm:gap-2">
+                                        <span className="font-bold text-slate-500 shrink-0">#{index + 1}</span>
+                                        <span className="truncate font-medium" style={{ color: 'var(--carbon)' }} title={etiquetaOrden(prod.productoId)}>
+                                          {etiquetaOrden(prod.productoId)}
+                                          {prod.pasoId ? ` · ${etiquetaPaso(prod.productoId, prod.pasoId)}` : ''}
+                                        </span>
+                                        <span className="text-slate-500 sm:ml-auto">
+                                          <span className="font-semibold">{prod.unidadesTotales}</span> conf. ·{' '}
+                                          <span className="font-semibold text-emerald-700">{prod.unidadesBuenas}</span>{' '}calidad
+                                        </span>
+                                      </div>
+                                      <div className="flex gap-1.5 shrink-0">
+                                        <button
+                                          type="button"
+                                          onClick={() => setModalOrdenProduccion({ fecha: reg.fecha, indice: index, item: prod })}
+                                          className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[10px] font-semibold text-blue-700 hover:bg-blue-50 border border-blue-200 bg-white"
+                                        >
+                                          <FileText size={12} /> Ver
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => cargarRegistroParaEdicion(reg)}
+                                          className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[10px] font-semibold border bg-white"
+                                          style={{ color: 'var(--accent-copper)', borderColor: 'rgba(212,160,18,0.3)' }}
+                                        >
+                                          <Edit2 size={12} /> Editar
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={async () => { if (await confirm({ title: '¿Eliminar evaluación?', description: '¿Seguro que deseas eliminar esta evaluación?', confirmText: 'Eliminar' })) eliminarRegistro(reg.id); }}
+                                          className="inline-flex items-center gap-1 rounded-lg border border-rose-200 bg-white px-2.5 py-1 text-[10px] font-semibold text-rose-600"
+                                        >
+                                          <Trash2 size={12} /> Eliminar
+                                        </button>
+                                      </div>
                                     </div>
-                                  )}
-                                  {pagoProduccion > 0 && (
-                                    <div className="text-center">
-                                      <span className="block text-[10px] text-violet-600 font-semibold uppercase">$/Prod</span>
-                                      <span className="font-bold text-base text-violet-600" style={{ fontFamily: 'var(--font-heading)' }}>{formatCOP(pagoProduccion)}</span>
-                                    </div>
-                                  )}
+                                  ))}
                                 </div>
                               )}
                             </div>
-
-                            {reg.horaEntrada !== '--:--' && (reg.producciones?.length ?? 0) > 0 && (
-                              <div className="pt-2 space-y-1.5" style={{ borderTop: '1px solid var(--border-fiber-light)' }}>
-                                <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
-                                  Órdenes vinculadas este día
-                                </p>
-                                {reg.producciones!.map((prod, index) => (
-                                  <div
-                                    key={`${reg.id}-p-${index}`}
-                                    className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between rounded-lg px-3 py-2 text-xs"
-                                    style={{ background: 'var(--surface-linen)', border: '1px solid var(--border-fiber-light)' }}
-                                  >
-                                    <div className="flex min-w-0 flex-1 flex-col gap-1 sm:flex-row sm:items-center sm:gap-2">
-                                      <span className="font-bold text-slate-500 shrink-0">#{index + 1}</span>
-                                      <span className="truncate font-medium" style={{ color: 'var(--carbon)' }} title={etiquetaOrden(prod.productoId)}>
-                                        {etiquetaOrden(prod.productoId)}
-                                        {prod.pasoId ? ` · ${etiquetaPaso(prod.productoId, prod.pasoId)}` : ''}
-                                      </span>
-                                      <span className="text-slate-500 sm:ml-auto">
-                                        <span className="font-semibold">{prod.unidadesTotales}</span> conf. ·{' '}
-                                        <span className="font-semibold text-emerald-700">{prod.unidadesBuenas}</span>{' '}calidad
-                                      </span>
-                                    </div>
-                                    <div className="flex gap-1.5 shrink-0">
-                                      <button
-                                        type="button"
-                                        onClick={() => setModalOrdenProduccion({ fecha: reg.fecha, indice: index, item: prod })}
-                                        className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[10px] font-semibold text-blue-700 hover:bg-blue-50 border border-blue-200 bg-white"
-                                      >
-                                        <FileText size={12} /> Ver
-                                      </button>
-                                      <button
-                                        type="button"
-                                        onClick={() => cargarRegistroParaEdicion(reg)}
-                                        className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[10px] font-semibold border bg-white"
-                                        style={{ color: 'var(--accent-copper)', borderColor: 'rgba(212,160,18,0.3)' }}
-                                      >
-                                        <Edit2 size={12} /> Editar
-                                      </button>
-                                      <button
-                                        type="button"
-                                        onClick={async () => { if (await confirm({ title: '¿Eliminar evaluación?', description: '¿Seguro que deseas eliminar esta evaluación?', confirmText: 'Eliminar' })) eliminarRegistro(reg.id); }}
-                                        className="inline-flex items-center gap-1 rounded-lg border border-rose-200 bg-white px-2.5 py-1 text-[10px] font-semibold text-rose-600"
-                                      >
-                                        <Trash2 size={12} /> Eliminar
-                                      </button>
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        );
+                          );
                         })}
                       </div>
                     )}
@@ -859,7 +869,7 @@ export const Empleados = () => {
                   <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 items-start">
                     <div className="flex flex-col gap-1.5">
                       <label className="block text-xs font-medium text-slate-500" style={{ fontFamily: 'var(--font-heading)' }}>Fecha del registro</label>
-                      <input type="date" value={calificacionFecha} onChange={e=>setCalificacionFecha(e.target.value)} className="w-full bg-white rounded-xl px-3 py-2.5 text-sm" style={{ border: '1px solid var(--border-fiber)' }} required max={getColombiaDateString()} />
+                      <input type="date" value={calificacionFecha} onChange={e => setCalificacionFecha(e.target.value)} className="w-full bg-white rounded-xl px-3 py-2.5 text-sm" style={{ border: '1px solid var(--border-fiber)' }} required max={getColombiaDateString()} />
                     </div>
 
                     <div className="flex flex-col gap-1.5">
@@ -880,11 +890,11 @@ export const Empleados = () => {
                           <div className="grid grid-cols-2 gap-4">
                             <div>
                               <label className="block text-[10px] font-medium text-slate-400 mb-1">Entrada</label>
-                              <input type="time" value={calificacionHoraEntrada} onChange={e=>setCalificacionHoraEntrada(e.target.value)} className="w-full rounded-xl px-3 py-2 text-sm" style={inputStyle} required />
+                              <input type="time" value={calificacionHoraEntrada} onChange={e => setCalificacionHoraEntrada(e.target.value)} className="w-full rounded-xl px-3 py-2 text-sm" style={inputStyle} required />
                             </div>
                             <div>
                               <label className="block text-[10px] font-medium text-slate-400 mb-1">Salida</label>
-                              <input type="time" value={calificacionHoraSalida} onChange={e=>setCalificacionHoraSalida(e.target.value)} className="w-full rounded-xl px-3 py-2 text-sm" style={inputStyle} required />
+                              <input type="time" value={calificacionHoraSalida} onChange={e => setCalificacionHoraSalida(e.target.value)} className="w-full rounded-xl px-3 py-2 text-sm" style={inputStyle} required />
                             </div>
                           </div>
                         </div>
@@ -907,118 +917,118 @@ export const Empleados = () => {
                               No hay órdenes en Producción. Crea una orden allí primero.
                             </p>
                           ) : (
-                          <div className="space-y-2.5">
-                            {calificacionProducciones.map((prod, index) => {
-                              const clavesOtros = calificacionProducciones
-                                .filter((_, i) => i !== index)
-                                .map((p) => `${p.productoId}:${p.pasoId}`)
-                                .filter((k) => k !== ':');
-                              const ordenSel = productos.find((p) => p.id === prod.productoId);
-                              const pasosOrden = (ordenSel?.pasos ?? []).filter((ps) => ps.id);
-                              const disponible = prod.productoId && prod.pasoId
-                                ? unidadesDisponiblesPaso(prod.productoId, prod.pasoId, registroEditando ?? undefined)
-                                : null;
-                              return (
-                              <div key={`prod-${index}`} className="rounded-xl p-3" style={{ background: 'var(--surface-linen)', border: '1px solid var(--border-fiber-light)' }}>
-                                <div className="mb-2 flex items-center justify-between">
-                                  <p className="text-[10px] font-semibold uppercase text-slate-500">Línea {index + 1}</p>
-                                  <button
-                                    type="button"
-                                    onClick={() => quitarProduccion(index)}
-                                    className="inline-flex items-center gap-1 text-[10px] font-semibold text-rose-500 disabled:opacity-40"
-                                    disabled={calificacionProducciones.length === 1}
-                                  >
-                                    <MinusCircle size={12} /> Quitar
-                                  </button>
-                                </div>
-                                <div className="space-y-2.5">
-                                  <div>
-                                    <label className="mb-1 block text-[10px] font-medium text-slate-400">Orden de producción</label>
-                                    <select
-                                      value={prod.productoId}
-                                      onChange={(e) => {
-                                        actualizarProduccion(index, 'productoId', e.target.value);
-                                        actualizarProduccion(index, 'pasoId', '');
-                                      }}
-                                      required
-                                      className="w-full rounded-xl bg-white px-3 py-2 text-xs font-medium"
-                                      style={{ border: '1px solid var(--border-fiber)' }}
-                                    >
-                                      <option value="">Selecciona una orden…</option>
-                                      {productos.map((p) => (
-                                        <option key={p.id} value={p.id}>
-                                          {p.nombre} — {p.empresa} ({p.estado}, meta {p.cantidad} u.)
-                                        </option>
-                                      ))}
-                                    </select>
-                                  </div>
-                                  <div>
-                                    <label className="mb-1 block text-[10px] font-medium text-slate-400">Acción de la orden</label>
-                                    {prod.productoId && pasosOrden.length === 0 && (
-                                      <p className="mb-2 text-[10px] text-rose-600 bg-rose-50 border border-rose-200 rounded-lg px-3 py-1.5">
-                                        Esta orden no tiene acciones. Edítala en Producción.
-                                      </p>
-                                    )}
-                                    <select
-                                      value={prod.pasoId}
-                                      onChange={(e) => actualizarProduccion(index, 'pasoId', e.target.value)}
-                                      required
-                                      disabled={!prod.productoId || pasosOrden.length === 0}
-                                      className="w-full rounded-xl bg-white px-3 py-2 text-xs font-medium disabled:opacity-50"
-                                      style={{ border: '1px solid var(--border-fiber)' }}
-                                    >
-                                      <option value="">Selecciona la acción…</option>
-                                      {pasosOrden.map((ps, pi) => {
-                                        const pasoKey = ps.id || `paso-${pi}`;
-                                        const clave = `${prod.productoId}:${pasoKey}`;
-                                        const ocupada = clavesOtros.includes(clave);
-                                        if (!ps.id) return null;
-                                        if (ocupada && ps.id !== prod.pasoId) return null;
-                                        return (
-                                          <option key={pasoKey} value={ps.id}>
-                                            {ps.descripcion}
-                                          </option>
-                                        );
-                                      })}
-                                    </select>
-                                    {disponible != null && prod.pasoId && (
-                                      <p className="mt-1 text-[10px]" style={{ color: 'var(--accent-copper)' }}>
-                                        Disponibles: <strong>{disponible}</strong> de {ordenSel?.cantidad ?? 0}
-                                      </p>
-                                    )}
-                                  </div>
-                                  <div className="grid grid-cols-2 gap-2.5">
-                                    <div className="flex flex-col">
-                                      <label className="mb-1 block text-[10px] font-medium text-slate-400">Confeccionadas</label>
-                                      <input
-                                        type="number"
-                                        min={0}
-                                        max={disponible ?? undefined}
-                                        value={prod.unidadesTotales || ''}
-                                        onChange={(e) => actualizarProduccion(index, 'unidadesTotales', Number(e.target.value))}
-                                        required
-                                        className="w-full rounded-xl bg-white px-3 py-2 text-sm font-bold"
-                                        style={{ border: '1px solid var(--border-fiber)' }}
-                                      />
+                            <div className="space-y-2.5">
+                              {calificacionProducciones.map((prod, index) => {
+                                const clavesOtros = calificacionProducciones
+                                  .filter((_, i) => i !== index)
+                                  .map((p) => `${p.productoId}:${p.pasoId}`)
+                                  .filter((k) => k !== ':');
+                                const ordenSel = productos.find((p) => p.id === prod.productoId);
+                                const pasosOrden = (ordenSel?.pasos ?? []).filter((ps) => ps.id);
+                                const disponible = prod.productoId && prod.pasoId
+                                  ? unidadesDisponiblesPaso(prod.productoId, prod.pasoId, registroEditando ?? undefined)
+                                  : null;
+                                return (
+                                  <div key={`prod-${index}`} className="rounded-xl p-3" style={{ background: 'var(--surface-linen)', border: '1px solid var(--border-fiber-light)' }}>
+                                    <div className="mb-2 flex items-center justify-between">
+                                      <p className="text-[10px] font-semibold uppercase text-slate-500">Línea {index + 1}</p>
+                                      <button
+                                        type="button"
+                                        onClick={() => quitarProduccion(index)}
+                                        className="inline-flex items-center gap-1 text-[10px] font-semibold text-rose-500 disabled:opacity-40"
+                                        disabled={calificacionProducciones.length === 1}
+                                      >
+                                        <MinusCircle size={12} /> Quitar
+                                      </button>
                                     </div>
-                                    <div className="flex flex-col">
-                                      <label className="mb-1 block text-[10px] font-medium text-emerald-600">Calidad</label>
-                                      <input
-                                        type="number"
-                                        min={0}
-                                        value={prod.unidadesBuenas || ''}
-                                        onChange={(e) => actualizarProduccion(index, 'unidadesBuenas', Number(e.target.value))}
-                                        required
-                                        className="w-full rounded-xl bg-emerald-50/50 px-3 py-2 text-sm font-bold text-emerald-700"
-                                        style={{ border: '1px solid rgba(22,163,74,0.2)' }}
-                                      />
+                                    <div className="space-y-2.5">
+                                      <div>
+                                        <label className="mb-1 block text-[10px] font-medium text-slate-400">Orden de producción</label>
+                                        <select
+                                          value={prod.productoId}
+                                          onChange={(e) => {
+                                            actualizarProduccion(index, 'productoId', e.target.value);
+                                            actualizarProduccion(index, 'pasoId', '');
+                                          }}
+                                          required
+                                          className="w-full rounded-xl bg-white px-3 py-2 text-xs font-medium"
+                                          style={{ border: '1px solid var(--border-fiber)' }}
+                                        >
+                                          <option value="">Selecciona una orden…</option>
+                                          {productos.map((p) => (
+                                            <option key={p.id} value={p.id}>
+                                              {p.nombre} — {p.empresa} ({p.estado}, meta {p.cantidad} u.)
+                                            </option>
+                                          ))}
+                                        </select>
+                                      </div>
+                                      <div>
+                                        <label className="mb-1 block text-[10px] font-medium text-slate-400">Acción de la orden</label>
+                                        {prod.productoId && pasosOrden.length === 0 && (
+                                          <p className="mb-2 text-[10px] text-rose-600 bg-rose-50 border border-rose-200 rounded-lg px-3 py-1.5">
+                                            Esta orden no tiene acciones. Edítala en Producción.
+                                          </p>
+                                        )}
+                                        <select
+                                          value={prod.pasoId}
+                                          onChange={(e) => actualizarProduccion(index, 'pasoId', e.target.value)}
+                                          required
+                                          disabled={!prod.productoId || pasosOrden.length === 0}
+                                          className="w-full rounded-xl bg-white px-3 py-2 text-xs font-medium disabled:opacity-50"
+                                          style={{ border: '1px solid var(--border-fiber)' }}
+                                        >
+                                          <option value="">Selecciona la acción…</option>
+                                          {pasosOrden.map((ps, pi) => {
+                                            const pasoKey = ps.id || `paso-${pi}`;
+                                            const clave = `${prod.productoId}:${pasoKey}`;
+                                            const ocupada = clavesOtros.includes(clave);
+                                            if (!ps.id) return null;
+                                            if (ocupada && ps.id !== prod.pasoId) return null;
+                                            return (
+                                              <option key={pasoKey} value={ps.id}>
+                                                {ps.descripcion}
+                                              </option>
+                                            );
+                                          })}
+                                        </select>
+                                        {disponible != null && prod.pasoId && (
+                                          <p className="mt-1 text-[10px]" style={{ color: 'var(--accent-copper)' }}>
+                                            Disponibles: <strong>{disponible}</strong> de {ordenSel?.cantidad ?? 0}
+                                          </p>
+                                        )}
+                                      </div>
+                                      <div className="grid grid-cols-2 gap-2.5">
+                                        <div className="flex flex-col">
+                                          <label className="mb-1 block text-[10px] font-medium text-slate-400">Confeccionadas</label>
+                                          <input
+                                            type="number"
+                                            min={0}
+                                            max={disponible ?? undefined}
+                                            value={prod.unidadesTotales || ''}
+                                            onChange={(e) => actualizarProduccion(index, 'unidadesTotales', Number(e.target.value))}
+                                            required
+                                            className="w-full rounded-xl bg-white px-3 py-2 text-sm font-bold"
+                                            style={{ border: '1px solid var(--border-fiber)' }}
+                                          />
+                                        </div>
+                                        <div className="flex flex-col">
+                                          <label className="mb-1 block text-[10px] font-medium text-emerald-600">Calidad</label>
+                                          <input
+                                            type="number"
+                                            min={0}
+                                            value={prod.unidadesBuenas || ''}
+                                            onChange={(e) => actualizarProduccion(index, 'unidadesBuenas', Number(e.target.value))}
+                                            required
+                                            className="w-full rounded-xl bg-emerald-50/50 px-3 py-2 text-sm font-bold text-emerald-700"
+                                            style={{ border: '1px solid rgba(22,163,74,0.2)' }}
+                                          />
+                                        </div>
+                                      </div>
                                     </div>
                                   </div>
-                                </div>
-                              </div>
-                            );
-                            })}
-                          </div>
+                                );
+                              })}
+                            </div>
                           )}
                           <div className="mt-3 rounded-xl bg-white px-4 py-3 grid grid-cols-2 gap-4 text-xs" style={{ border: '1px solid var(--border-fiber)' }}>
                             <p className="text-slate-600">

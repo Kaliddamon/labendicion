@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useAppContext, MovimientoFinanciero } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
-import { Wallet, Plus, Trash2, X, TrendingUp, TrendingDown, BarChart3, DollarSign, Calendar } from 'lucide-react';
+import { Wallet, Plus, Trash2, X, TrendingUp, TrendingDown, BarChart3, DollarSign, Calendar, Edit2, Save } from 'lucide-react';
 import { toast } from 'sonner';
 import { useConfirm } from '../context/ConfirmContext';
 import { getColombiaDateString } from '../utils/dateUtils';
@@ -14,13 +14,25 @@ const NOMBRE_MES: Record<string, string> = {
   '09': 'Septiembre', '10': 'Octubre', '11': 'Noviembre', '12': 'Diciembre',
 };
 
-const formatCOP = (n: number) =>
-  `$${Math.round(n).toLocaleString('es-CO')}`;
+const formatCOP = (n: number) => `$${Math.round(n).toLocaleString('es-CO')}`;
 
 const labelMes = (mes: string) => {
   const [year, m] = mes.split('-');
   return `${NOMBRE_MES[m] || m} ${year}`;
 };
+
+/** Formatea un string numérico separando miles con punto (Colombia) */
+const formatMiles = (raw: string): string => {
+  const digits = raw.replace(/\D/g, '');
+  if (!digits) return '';
+  return Number(digits).toLocaleString('es-CO');
+};
+
+/** Convierte el string formateado de vuelta a número */
+const parseMiles = (formatted: string): number =>
+  Number(formatted.replace(/\./g, '').replace(/,/g, '.'));
+
+type TipoPago = 'HORAS' | 'PRODUCCION' | 'AMBOS';
 
 export const Finanzas = () => {
   const {
@@ -36,28 +48,45 @@ export const Finanzas = () => {
 
   const [mesSel, setMesSel] = useState(MES_ACTUAL);
   const [mostrarForm, setMostrarForm] = useState(false);
+  const [editandoId, setEditandoId] = useState<string | null>(null);
 
   // Form state
   const [fNombre, setFNombre] = useState('');
   const [fDescripcion, setFDescripcion] = useState('');
-  const [fMonto, setFMonto] = useState('');
+  const [fMontoStr, setFMontoStr] = useState('');
   const [fTipo, setFTipo] = useState<'GASTO' | 'INGRESO'>('GASTO');
 
-  // Calcular nómina automáticamente del mes seleccionado
+  const resetForm = () => {
+    setFNombre(''); setFDescripcion(''); setFMontoStr(''); setFTipo('GASTO');
+    setMostrarForm(false); setEditandoId(null);
+  };
+
+  const abrirEdicion = (mv: MovimientoFinanciero) => {
+    setEditandoId(mv.id);
+    setFNombre(mv.nombre);
+    setFDescripcion(mv.descripcion || '');
+    setFMontoStr(formatMiles(String(Math.round(mv.monto))));
+    setFTipo(mv.tipo);
+    setMostrarForm(true);
+  };
+
+  // Calcular nómina automáticamente del mes seleccionado respetando tipoPago
   const nominaCalculada = useMemo(() => {
-    const rows: Array<Omit<MovimientoFinanciero, 'id'> & { id: string }> = [];
+    const rows: Array<MovimientoFinanciero> = [];
     for (const emp of empleados) {
       const regsEmp = registros.filter(
         r => r.empleadoId === emp.id && r.fecha?.startsWith(mesSel)
       );
       if (regsEmp.length === 0) continue;
 
+      const modalidad: TipoPago = (emp.tipoPago as TipoPago) || 'AMBOS';
       let pagoHoras = 0;
       let pagoProduccion = 0;
 
       for (const reg of regsEmp) {
-        // Pago por horas
+        // Pago por horas (solo si modalidad lo incluye)
         if (
+          (modalidad === 'HORAS' || modalidad === 'AMBOS') &&
           emp.valorHora &&
           reg.horaEntrada && reg.horaSalida &&
           reg.horaEntrada !== '--:--' && reg.horaSalida !== '--:--'
@@ -69,13 +98,16 @@ export const Finanzas = () => {
             pagoHoras += horas * emp.valorHora;
           } catch {}
         }
-        // Pago por producción
-        for (const prod of reg.producciones ?? []) {
-          const orden = productos.find(p => p.id === prod.productoId);
-          if (!orden?.pasos) continue;
-          const paso = orden.pasos.find(ps => ps.id === prod.pasoId);
-          if (paso?.valorPorUnidad) {
-            pagoProduccion += (prod.unidadesTotales ?? 0) * paso.valorPorUnidad;
+
+        // Pago por producción (solo si modalidad lo incluye)
+        if (modalidad === 'PRODUCCION' || modalidad === 'AMBOS') {
+          for (const prod of reg.producciones ?? []) {
+            const orden = productos.find(p => p.id === prod.productoId);
+            if (!orden?.pasos) continue;
+            const paso = orden.pasos.find(ps => ps.id === prod.pasoId);
+            if (paso?.valorPorUnidad) {
+              pagoProduccion += (prod.unidadesTotales ?? 0) * paso.valorPorUnidad;
+            }
           }
         }
       }
@@ -83,14 +115,16 @@ export const Finanzas = () => {
       const total = pagoHoras + pagoProduccion;
       if (total <= 0) continue;
 
+      const descripcionParts: string[] = [];
+      if (pagoHoras > 0) descripcionParts.push(`Horas: ${formatCOP(pagoHoras)}`);
+      if (pagoProduccion > 0) descripcionParts.push(`Producción: ${formatCOP(pagoProduccion)}`);
+      const modalidadLabel = modalidad === 'HORAS' ? '⏱ Horas' : modalidad === 'PRODUCCION' ? '📦 Producción' : '⚡ Ambos';
+
       rows.push({
         id: `nomina-${emp.id}-${mesSel}`,
         mes: mesSel,
         nombre: `Nómina: ${emp.nombre}`,
-        descripcion: [
-          pagoHoras > 0 ? `Horas: ${formatCOP(pagoHoras)}` : '',
-          pagoProduccion > 0 ? `Producción: ${formatCOP(pagoProduccion)}` : '',
-        ].filter(Boolean).join(' | '),
+        descripcion: `${modalidadLabel} | ${descripcionParts.join(' | ')}`,
         monto: total,
         tipo: 'GASTO',
         origen: 'NOMINA',
@@ -121,34 +155,45 @@ export const Finanzas = () => {
   );
 
   const totalIngresos = todosLosMov.filter(m => m.tipo === 'INGRESO').reduce((s, m) => s + m.monto, 0);
-  const totalGastos = todosLosMov.filter(m => m.tipo === 'GASTO').reduce((s, m) => s + m.monto, 0);
-  const balance = totalIngresos - totalGastos;
-  const totalAbs = totalIngresos + totalGastos;
+  const totalGastos   = todosLosMov.filter(m => m.tipo === 'GASTO').reduce((s, m) => s + m.monto, 0);
+  const balance       = totalIngresos - totalGastos;
+  const totalAbs      = totalIngresos + totalGastos;
 
   const getPorcentaje = (monto: number) =>
     totalAbs > 0 ? ((monto / totalAbs) * 100).toFixed(1) + '%' : '—';
 
-  const resetForm = () => {
-    setFNombre(''); setFDescripcion(''); setFMonto(''); setFTipo('GASTO');
-    setMostrarForm(false);
-  };
-
   const handleGuardar = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!fNombre.trim()) return toast.warning('El nombre es obligatorio.');
-    const monto = parseFloat(fMonto.replace(/[^0-9.]/g, ''));
+    const monto = parseMiles(fMontoStr);
     if (isNaN(monto) || monto <= 0) return toast.warning('El monto debe ser mayor a cero.');
+
     try {
-      await agregarMovimiento({
-        mes: mesSel,
-        nombre: fNombre.trim(),
-        descripcion: fDescripcion.trim() || undefined,
-        monto,
-        tipo: fTipo,
-        origen: 'MANUAL',
-        fecha: getColombiaDateString(),
-      });
-      toast.success('Movimiento añadido.');
+      if (editandoId) {
+        // Para editar, eliminamos el anterior y creamos uno nuevo
+        await eliminarMovimiento(editandoId);
+        await agregarMovimiento({
+          mes: mesSel,
+          nombre: fNombre.trim(),
+          descripcion: fDescripcion.trim() || undefined,
+          monto,
+          tipo: fTipo,
+          origen: 'MANUAL',
+          fecha: getColombiaDateString(),
+        });
+        toast.success('Movimiento actualizado.');
+      } else {
+        await agregarMovimiento({
+          mes: mesSel,
+          nombre: fNombre.trim(),
+          descripcion: fDescripcion.trim() || undefined,
+          monto,
+          tipo: fTipo,
+          origen: 'MANUAL',
+          fecha: getColombiaDateString(),
+        });
+        toast.success('Movimiento añadido.');
+      }
       resetForm();
     } catch {
       toast.error('Error al guardar el movimiento.');
@@ -188,7 +233,7 @@ export const Finanzas = () => {
           </div>
 
           <button
-            onClick={() => setMostrarForm(true)}
+            onClick={() => { resetForm(); setMostrarForm(true); }}
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-[#1a1a2e] transition-all active:scale-[0.97] self-start md:self-auto"
             style={{ background: 'var(--accent-copper)', boxShadow: 'var(--shadow-copper)' }}
           >
@@ -261,7 +306,7 @@ export const Finanzas = () => {
             <div className="text-center py-16 text-slate-400">
               <Wallet size={36} className="mx-auto mb-3 opacity-30" />
               <p className="font-medium text-sm">Sin movimientos en {labelMes(mesSel)}</p>
-              <p className="text-xs mt-1">Añade un movimiento manualmente.</p>
+              <p className="text-xs mt-1">Añade un movimiento manualmente o registra trabajo en empleados.</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -291,7 +336,7 @@ export const Finanzas = () => {
                           <span className="font-semibold" style={{ color: 'var(--carbon)' }}>{mv.nombre}</span>
                         </div>
                       </td>
-                      <td className="px-5 py-3.5 text-slate-500 max-w-[200px] truncate">{mv.descripcion || '—'}</td>
+                      <td className="px-5 py-3.5 text-slate-500 max-w-[220px] truncate text-xs" title={mv.descripcion}>{mv.descripcion || '—'}</td>
                       <td className="px-5 py-3.5">
                         <span className="font-bold" style={{ color: mv.tipo === 'INGRESO' ? '#16a34a' : '#dc2626' }}>
                           {mv.tipo === 'GASTO' ? '- ' : '+ '}{formatCOP(mv.monto)}
@@ -314,15 +359,25 @@ export const Finanzas = () => {
                       </td>
                       <td className="px-5 py-3.5">
                         {mv.origen !== 'NOMINA' && (
-                          <button
-                            onClick={async () => {
-                              if (await confirm({ title: '¿Eliminar movimiento?', description: '¿Seguro que deseas eliminar este movimiento?', confirmText: 'Eliminar' }))
-                                eliminarMovimiento(mv.id);
-                            }}
-                            className="p-1.5 rounded-lg text-slate-400 hover:bg-rose-50 hover:text-rose-500 transition-colors"
-                          >
-                            <Trash2 size={15} />
-                          </button>
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              onClick={() => abrirEdicion(mv)}
+                              className="p-1.5 rounded-lg text-slate-400 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                              title="Editar"
+                            >
+                              <Edit2 size={14} />
+                            </button>
+                            <button
+                              onClick={async () => {
+                                if (await confirm({ title: '¿Eliminar movimiento?', description: '¿Seguro que deseas eliminar este movimiento?', confirmText: 'Eliminar' }))
+                                  eliminarMovimiento(mv.id);
+                              }}
+                              className="p-1.5 rounded-lg text-slate-400 hover:bg-rose-50 hover:text-rose-500 transition-colors"
+                              title="Eliminar"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
                         )}
                       </td>
                     </tr>
@@ -343,13 +398,13 @@ export const Finanzas = () => {
         >
           <form
             onSubmit={handleGuardar}
-            className="w-full max-w-md rounded-2xl p-6 shadow-2xl"
+            className="w-full max-w-md rounded-2xl p-6 shadow-2xl animate-fade-up"
             style={{ background: 'var(--surface-silk)', border: '1px solid var(--border-fiber)' }}
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-5">
               <h2 className="text-lg font-bold" style={{ fontFamily: 'var(--font-heading)', color: 'var(--carbon)' }}>
-                Nuevo Movimiento
+                {editandoId ? 'Editar Movimiento' : 'Nuevo Movimiento'}
               </h2>
               <button type="button" onClick={resetForm} className="p-2 rounded-xl hover:bg-slate-100 text-slate-400">
                 <X size={18} />
@@ -403,14 +458,13 @@ export const Finanzas = () => {
                 <div className="relative">
                   <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
                   <input
-                    type="number"
-                    min={0}
-                    step={0.01}
-                    className="w-full rounded-xl pl-8 pr-3 py-3 text-sm"
+                    type="text"
+                    inputMode="numeric"
+                    className="w-full rounded-xl pl-8 pr-3 py-3 text-sm font-semibold"
                     style={{ background: 'var(--surface-linen)', border: '1px solid var(--border-fiber)' }}
-                    placeholder="0.00"
-                    value={fMonto}
-                    onChange={e => setFMonto(e.target.value)}
+                    placeholder="0"
+                    value={fMontoStr}
+                    onChange={e => setFMontoStr(formatMiles(e.target.value))}
                     required
                   />
                 </div>
@@ -426,10 +480,10 @@ export const Finanzas = () => {
               </button>
               <button
                 type="submit"
-                className="flex-1 py-3 rounded-xl text-sm font-bold text-[#1a1a2e] active:scale-[0.97] transition-all"
+                className="flex-1 py-3 rounded-xl text-sm font-bold text-[#1a1a2e] active:scale-[0.97] transition-all flex items-center justify-center gap-2"
                 style={{ background: 'var(--accent-copper)', boxShadow: 'var(--shadow-copper)' }}
               >
-                Guardar
+                {editandoId ? <><Save size={15} /> Actualizar</> : 'Guardar'}
               </button>
             </div>
           </form>

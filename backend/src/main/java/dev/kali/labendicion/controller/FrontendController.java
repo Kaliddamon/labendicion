@@ -159,7 +159,7 @@ public class FrontendController {
         // Empleados, tareas y empresas: serializables simples
         var empleadosDto = empleados.stream().map(e -> {
             var m = new java.util.HashMap<String, Object>();
-            m.put("id", e.getId()); m.put("nombre", e.getNombre()); m.put("cargo", e.getCargo()); m.put("tipoDocumento", e.getTipoDocumento()); m.put("documento", e.getDocumento()); m.put("telefono", e.getTelefono()); m.put("email", e.getEmail()); m.put("fechaIngreso", e.getFechaIngreso()); m.put("estado", e.getEstado()); m.put("valorHora", e.getValorHora());
+            m.put("id", e.getId()); m.put("nombre", e.getNombre()); m.put("cargo", e.getCargo()); m.put("tipoDocumento", e.getTipoDocumento()); m.put("documento", e.getDocumento()); m.put("telefono", e.getTelefono()); m.put("email", e.getEmail()); m.put("fechaIngreso", e.getFechaIngreso()); m.put("estado", e.getEstado()); m.put("valorHora", e.getValorHora()); m.put("tipoPago", e.getTipoPago());
             return m;
         }).collect(Collectors.toList());
 

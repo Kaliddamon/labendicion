@@ -220,237 +220,129 @@ export const Produccion = () => {
           <p className="text-slate-500 mt-1.5 text-sm">Controla lo que estamos confeccionando</p>
         </div>
 
-        {!mostrarForm && (
-          <AccessibleButton onClick={() => setMostrarForm(true)}>
-            <Plus size={20} /> Nueva orden
-          </AccessibleButton>
-        )}
+        <AccessibleButton onClick={() => setMostrarForm(true)}>
+          <Plus size={20} /> Nueva orden
+        </AccessibleButton>
       </div>
 
-      {/* Form */}
+      {/* Form — modal overlay */}
       {mostrarForm && (
-        <form onSubmit={handleGuardar} className="card-premium-static p-6 md:p-8 rounded-2xl mb-8 animate-fade-up">
-          <div className="flex justify-between items-center mb-6 pb-4" style={{ borderBottom: '1px solid var(--border-fiber)' }}>
-            <h2
-              className="text-xl font-bold"
-              style={{ fontFamily: 'var(--font-heading)', color: 'var(--carbon)' }}
-            >
-              {productoEditando ? 'Editar Orden' : 'Crear Nueva Orden'}
-            </h2>
-            <button
-              type="button"
-              onClick={resetForm}
-              className="p-2.5 rounded-xl transition-colors hover:bg-[var(--surface-linen)] text-slate-400 hover:text-slate-600"
-            >
-              <X size={20} />
-            </button>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-8 mb-8">
-            {/* Left */}
-            <div className="space-y-5">
-              <div className="px-3 py-2 rounded-xl" style={{ background: 'var(--surface-linen)', fontFamily: 'var(--font-heading)' }}>
-                <span className="text-sm font-semibold" style={{ color: 'var(--carbon)' }}>1. Información Básica</span>
-              </div>
-
-              <AccessibleInput
-                label="¿Qué vamos a confeccionar?"
-                placeholder="Ej. Pantalones, Camisas..."
-                value={nombre}
-                onChange={e => setNombre(e.target.value)}
-                required
-                autoFocus
-              />
-
-              <div className="grid grid-cols-2 gap-4">
-                <AccessibleInput
-                  label="Cantidad"
-                  inputMode="numeric"
-                  placeholder="Ej. 100"
-                  value={cantidad}
-                  onChange={e => setCantidad(formatInputNumber(e.target.value))}
-                  required
-                />
-                <AccessibleInput
-                  label="Ganancia ($)"
-                  inputMode="numeric"
-                  placeholder="Ej. 150000"
-                  value={ganancia}
-                  onChange={e => setGanancia(formatInputNumber(e.target.value))}
-                  required
-                />
-              </div>
-
-              <AccessibleInput
-                label="Empresa / Cliente"
-                isSelect
-                options={[
-                  { value: '', label: 'Seleccione una empresa...' },
-                  ...empresas.map(emp => ({ value: emp.razonSocial, label: emp.razonSocial }))
-                ]}
-                value={empresa}
-                onChange={e => setEmpresa(e.target.value)}
-                required
-              />
+        <div
+          className="fixed inset-0 z-[200] flex items-center justify-center p-4"
+          style={{ background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(4px)' }}
+          onClick={e => { if (e.target === e.currentTarget) resetForm(); }}
+        >
+          <form
+            onSubmit={handleGuardar}
+            className="card-premium-static p-6 md:p-8 rounded-2xl w-full max-w-3xl max-h-[92vh] overflow-y-auto animate-fade-up"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-center mb-6 pb-4" style={{ borderBottom: '1px solid var(--border-fiber)' }}>
+              <h2 className="text-xl font-bold" style={{ fontFamily: 'var(--font-heading)', color: 'var(--carbon)' }}>
+                {productoEditando ? 'Editar Orden' : 'Crear Nueva Orden'}
+              </h2>
+              <button type="button" onClick={resetForm} className="p-2.5 rounded-xl transition-colors hover:bg-[var(--surface-linen)] text-slate-400 hover:text-slate-600">
+                <X size={20} />
+              </button>
             </div>
 
-            {/* Right */}
-            <div className="space-y-5">
-              <div className="px-3 py-2 rounded-xl" style={{ background: 'var(--surface-linen)', fontFamily: 'var(--font-heading)' }}>
-                <span className="text-sm font-semibold" style={{ color: 'var(--carbon)' }}>2. Fechas y Estado</span>
+            <div className="grid md:grid-cols-2 gap-8 mb-8">
+              {/* Left */}
+              <div className="space-y-5">
+                <div className="px-3 py-2 rounded-xl" style={{ background: 'var(--surface-linen)', fontFamily: 'var(--font-heading)' }}>
+                  <span className="text-sm font-semibold" style={{ color: 'var(--carbon)' }}>1. Información Básica</span>
+                </div>
+
+                <AccessibleInput label="¿Qué vamos a confeccionar?" placeholder="Ej. Pantalones, Camisas..." value={nombre} onChange={e => setNombre(e.target.value)} required autoFocus />
+
+                <div className="grid grid-cols-2 gap-4">
+                  <AccessibleInput label="Cantidad" inputMode="numeric" placeholder="Ej. 100" value={cantidad} onChange={e => setCantidad(formatInputNumber(e.target.value))} required />
+                  <AccessibleInput label="Ganancia ($)" inputMode="numeric" placeholder="Ej. 150000" value={ganancia} onChange={e => setGanancia(formatInputNumber(e.target.value))} required />
+                </div>
+
+                <AccessibleInput label="Empresa / Cliente" isSelect options={[{ value: '', label: 'Seleccione una empresa...' }, ...empresas.map(emp => ({ value: emp.razonSocial, label: emp.razonSocial }))]} value={empresa} onChange={e => setEmpresa(e.target.value)} required />
               </div>
 
-              <AccessibleCardSelector
-                label="Estado actual"
-                options={opcionesEstado}
-                value={estado}
-                onChange={(val) => setEstado(val as Producto['estado'])}
-                columns={3}
-              />
+              {/* Right */}
+              <div className="space-y-5">
+                <div className="px-3 py-2 rounded-xl" style={{ background: 'var(--surface-linen)', fontFamily: 'var(--font-heading)' }}>
+                  <span className="text-sm font-semibold" style={{ color: 'var(--carbon)' }}>2. Fechas y Estado</span>
+                </div>
 
-              <div className="grid grid-cols-2 gap-4 mt-4">
-                <AccessibleInput
-                  type="date"
-                  label="Fecha de Inicio"
-                  value={fechaAsignacion}
-                  onChange={e => setFechaAsignacion(e.target.value)}
-                  required
-                />
-                <AccessibleInput
-                  type="date"
-                  label="Fecha de Entrega"
-                  helperText="(Opcional)"
-                  value={fechaTerminacion}
-                  onChange={e => setFechaTerminacion(e.target.value)}
-                />
+                <AccessibleCardSelector label="Estado actual" options={opcionesEstado} value={estado} onChange={(val) => setEstado(val as Producto['estado'])} columns={3} />
+
+                <div className="grid grid-cols-2 gap-4 mt-4">
+                  <AccessibleInput type="date" label="Fecha de Inicio" value={fechaAsignacion} onChange={e => setFechaAsignacion(e.target.value)} required />
+                  <AccessibleInput type="date" label="Fecha de Entrega" helperText="(Opcional)" value={fechaTerminacion} onChange={e => setFechaTerminacion(e.target.value)} />
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Steps section */}
-          <div className="p-6 rounded-2xl mb-8" style={{ background: 'var(--surface-linen)', border: '1px solid var(--border-fiber-light)' }}>
-            <div className="px-3 py-2 rounded-xl mb-1" style={{ fontFamily: 'var(--font-heading)' }}>
-              <span className="text-sm font-semibold" style={{ color: 'var(--carbon)' }}>3. Pasos de Producción</span>
-            </div>
-            <p className="text-slate-500 mb-4 text-xs px-3">¿Qué procesos se deben realizar para esta orden?</p>
-
-            {accionesValidas.length === 0 ? (
-              <p className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 font-medium">
-                ⚠️ No hay acciones configuradas en el sistema.
-              </p>
-            ) : (
-              <div className="flex flex-col sm:flex-row gap-3 mb-5 items-end">
-                <div className="flex-[2]">
-                  <AccessibleInput
-                    label="Proceso"
-                    isSelect
-                    options={[
-                      { value: '', label: 'Seleccione un proceso...' },
-                      ...accionesValidas.map((a) => ({ value: a.id, label: a.nombre }))
-                    ]}
-                    value={accionSeleccionada}
-                    onChange={(e) => setAccionSeleccionada(e.target.value)}
-                  />
-                </div>
-                <div className="flex-[1]">
-                  <AccessibleInput
-                    label="Meta Und/Hora"
-                    inputMode="numeric"
-                    placeholder="Ej. 25"
-                    value={metaHoraPaso}
-                    onChange={(e) => setMetaHoraPaso(e.target.value)}
-                  />
-                </div>
-                <div className="flex-[1]">
-                  <AccessibleInput
-                    label="Valor/unidad ($) Opcional"
-                    inputMode="numeric"
-                    placeholder="Ej. 500"
-                    value={valorPorUnidadPaso}
-                    onChange={(e) => setValorPorUnidadPaso(e.target.value)}
-                  />
-                </div>
-                <AccessibleButton
-                  type="button"
-                  variant="secondary"
-                  onClick={agregarPasoAOrden}
-                  className="mb-0.5"
-                >
-                  <Plus size={18} /> Asignar
-                </AccessibleButton>
+            {/* Steps section */}
+            <div className="p-6 rounded-2xl mb-8" style={{ background: 'var(--surface-linen)', border: '1px solid var(--border-fiber-light)' }}>
+              <div className="px-3 py-2 rounded-xl mb-1" style={{ fontFamily: 'var(--font-heading)' }}>
+                <span className="text-sm font-semibold" style={{ color: 'var(--carbon)' }}>3. Pasos de Producción</span>
               </div>
-            )}
+              <p className="text-slate-500 mb-4 text-xs px-3">¿Qué procesos se deben realizar para esta orden?</p>
 
-            <div className="space-y-2">
-              {pasos.length === 0 && (
-                <div className="text-center py-6 border-2 border-dashed rounded-xl text-slate-400 text-sm" style={{ borderColor: 'var(--border-fiber)' }}>
-                  Ningún paso asignado todavía
+              {accionesValidas.length === 0 ? (
+                <p className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 font-medium">⚠️ No hay acciones configuradas en el sistema.</p>
+              ) : (
+                <div className="flex flex-col sm:flex-row gap-3 mb-5 items-end">
+                  <div className="flex-[2]">
+                    <AccessibleInput label="Proceso" isSelect options={[{ value: '', label: 'Seleccione un proceso...' }, ...accionesValidas.map((a) => ({ value: a.id, label: a.nombre }))]} value={accionSeleccionada} onChange={(e) => setAccionSeleccionada(e.target.value)} />
+                  </div>
+                  <div className="flex-[1]">
+                    <AccessibleInput label="Meta Und/Hora" inputMode="numeric" placeholder="Ej. 25" value={metaHoraPaso} onChange={(e) => setMetaHoraPaso(e.target.value)} />
+                  </div>
+                  <div className="flex-[1]">
+                    <AccessibleInput label="Valor/unidad ($) Opcional" inputMode="numeric" placeholder="Ej. 500" value={valorPorUnidadPaso} onChange={(e) => setValorPorUnidadPaso(e.target.value)} />
+                  </div>
+                  <AccessibleButton type="button" variant="secondary" onClick={agregarPasoAOrden} className="mb-0.5">
+                    <Plus size={18} /> Asignar
+                  </AccessibleButton>
                 </div>
               )}
-              {pasos.map((p, idx) => (
-                <div key={idx} className="flex flex-col sm:flex-row items-start sm:items-center justify-between bg-white border rounded-xl px-4 py-3 gap-3" style={{ borderColor: 'var(--border-fiber)' }}>
-                  <div className="flex flex-wrap items-center gap-3 text-sm font-semibold flex-1" style={{ color: 'var(--carbon)' }}>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="number"
-                        className="w-16 px-2 py-1.5 text-center rounded-lg text-sm transition-colors"
-                        style={{ background: 'var(--surface-linen)', border: '1px solid var(--border-fiber)' }}
-                        value={p.metaUnidadesHora ?? ''}
-                        onChange={(e) => {
-                          const val = Number(e.target.value);
-                          setPasos(prev => prev.map((paso, i) => i === idx ? { ...paso, metaUnidadesHora: val > 0 ? val : undefined } : paso));
-                        }}
-                        placeholder="Meta"
-                        title="Meta de unidades por hora"
-                      />
-                      <span className="text-xs text-slate-400 font-normal">und/hr</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-xs text-slate-400 font-normal">$</span>
-                      <input
-                        type="number"
-                        min={0}
-                        step={0.01}
-                        className="w-20 px-2 py-1.5 text-center rounded-lg text-sm transition-colors"
-                        style={{ background: 'rgba(212,160,18,0.05)', border: '1px solid rgba(212,160,18,0.2)' }}
-                        value={p.valorPorUnidad ?? ''}
-                        onChange={(e) => {
-                          const val = parseFloat(e.target.value);
-                          setPasos(prev => prev.map((paso, i) => i === idx ? { ...paso, valorPorUnidad: isNaN(val) ? undefined : val } : paso));
-                        }}
-                        placeholder="$/und"
-                        title="Valor de pago por unidad (opcional)"
-                      />
-                    </div>
-                    <span className="ml-1">{p.descripcion}</span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => { setPasos(prev => prev.filter((_, i) => i !== idx)); }}
-                    className="p-2 bg-rose-50 text-rose-500 hover:bg-rose-100 rounded-lg active:scale-95 transition-all"
-                    title="Eliminar paso"
-                  >
-                    <Trash2 size={18} />
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
 
-          <div className="flex gap-3">
-            <AccessibleButton type="button" variant="ghost" onClick={resetForm} className="flex-1 md:flex-none hidden md:flex">
-              Cancelar
-            </AccessibleButton>
-            <AccessibleButton type="submit" variant="primary" className="flex-1 text-base text-[#1a1a2e] !min-h-[56px]">
-              {productoEditando ? 'Guardar Cambios' : 'Crear Orden'}
-            </AccessibleButton>
-          </div>
-        </form>
+              <div className="space-y-2">
+                {pasos.length === 0 && (
+                  <div className="text-center py-6 border-2 border-dashed rounded-xl text-slate-400 text-sm" style={{ borderColor: 'var(--border-fiber)' }}>Ningún paso asignado todavía</div>
+                )}
+                {pasos.map((p, idx) => (
+                  <div key={idx} className="flex flex-col sm:flex-row items-start sm:items-center justify-between bg-white border rounded-xl px-4 py-3 gap-3" style={{ borderColor: 'var(--border-fiber)' }}>
+                    <div className="flex flex-wrap items-center gap-3 text-sm font-semibold flex-1" style={{ color: 'var(--carbon)' }}>
+                      <div className="flex items-center gap-2">
+                        <input type="number" className="w-16 px-2 py-1.5 text-center rounded-lg text-sm" style={{ background: 'var(--surface-linen)', border: '1px solid var(--border-fiber)' }} value={p.metaUnidadesHora ?? ''} onChange={(e) => { const val = Number(e.target.value); setPasos(prev => prev.map((paso, i) => i === idx ? { ...paso, metaUnidadesHora: val > 0 ? val : undefined } : paso)); }} placeholder="Meta" title="Meta und/hora" />
+                        <span className="text-xs text-slate-400 font-normal">und/hr</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs text-slate-400 font-normal">$</span>
+                        <input type="number" min={0} step={0.01} className="w-20 px-2 py-1.5 text-center rounded-lg text-sm" style={{ background: 'rgba(212,160,18,0.05)', border: '1px solid rgba(212,160,18,0.2)' }} value={p.valorPorUnidad ?? ''} onChange={(e) => { const val = parseFloat(e.target.value); setPasos(prev => prev.map((paso, i) => i === idx ? { ...paso, valorPorUnidad: isNaN(val) ? undefined : val } : paso)); }} placeholder="$/und" title="Valor por unidad (opcional)" />
+                      </div>
+                      <span className="ml-1">{p.descripcion}</span>
+                    </div>
+                    <button type="button" onClick={() => { setPasos(prev => prev.filter((_, i) => i !== idx)); }} className="p-2 bg-rose-50 text-rose-500 hover:bg-rose-100 rounded-lg active:scale-95 transition-all" title="Eliminar paso">
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <AccessibleButton type="button" variant="ghost" onClick={resetForm} className="flex-1 md:flex-none">
+                Cancelar
+              </AccessibleButton>
+              <AccessibleButton type="submit" variant="primary" className="flex-1 text-base text-[#1a1a2e] !min-h-[56px]">
+                {productoEditando ? 'Guardar Cambios' : 'Crear Orden'}
+              </AccessibleButton>
+            </div>
+          </form>
+        </div>
       )}
 
       {/* Search & List */}
-      {!mostrarForm && (
-        <>
+      <>
           <div className="flex flex-col md:flex-row gap-3 mb-5">
             <div className="relative flex-1">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
@@ -582,8 +474,7 @@ export const Produccion = () => {
               cambiarPagina={setPaginaActual}
             />
           )}
-        </>
-      )}
+      </>
     </div>
   );
 };

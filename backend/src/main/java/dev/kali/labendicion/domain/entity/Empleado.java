@@ -48,4 +48,10 @@ public class Empleado {
 
     /** Valor de pago por hora trabajada (entero, opcional). */
     private Integer valorHora;
+
+    /**
+     * Modalidad de pago para nómina: HORAS, PRODUCCION o AMBOS.
+     * Si es null se asume AMBOS por retrocompatibilidad.
+     */
+    private String tipoPago;
 }
