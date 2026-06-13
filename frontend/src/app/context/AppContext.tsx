@@ -10,6 +10,7 @@ export interface PasoProducto {
   descripcion: string;
   metaUnidadesHora?: number;
   completado?: boolean;
+  valorPorUnidad?: number;
 }
 
 export interface Producto {
@@ -42,6 +43,7 @@ export interface Empleado {
   email?: string;
   fechaIngreso: string;
   estado: 'Activo' | 'Inactivo';
+  valorHora?: number;
 }
 
 export interface Empresa {
@@ -87,11 +89,25 @@ export interface RegistroAseo {
   entries: RegistroAseoEntry[];
 }
 
+export interface MovimientoFinanciero {
+  id: string;
+  mes: string;
+  nombre: string;
+  descripcion?: string;
+  monto: number;
+  porcentaje?: number;
+  tipo: 'GASTO' | 'INGRESO';
+  origen: 'NOMINA' | 'MANUAL';
+  empleadoId?: string;
+  fecha: string;
+}
+
 interface BootstrapResponse {
   productos: Producto[];
   empleados: Empleado[];
   registros: RegistroDiario[];
   registrosAseo: RegistroAseo[];
+  movimientosFinancieros?: MovimientoFinanciero[];
   accionesProduccion?: CatalogoItem[];
   cargos?: CatalogoItem[];
   tiposDocumento?: CatalogoItem[];
@@ -154,6 +170,12 @@ interface AppContextType {
   agregarEmpresa: (emp: Omit<Empresa, 'id'>) => void;
   editarEmpresa: (id: string, emp: Partial<Empresa>) => void;
   eliminarEmpresa: (id: string) => void;
+
+  // Finanzas
+  movimientosFinancieros: MovimientoFinanciero[];
+  agregarMovimiento: (mv: Omit<MovimientoFinanciero, 'id'>) => Promise<void>;
+  eliminarMovimiento: (id: string) => void;
+  registrarNomina: (mes: string) => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -187,6 +209,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [registros, setRegistros] = useState<RegistroDiario[]>([]);
   const [registrosAseo, setRegistrosAseo] = useState<RegistroAseo[]>([]);
   const [empresas, setEmpresas] = useState<Empresa[]>([]);
+  const [movimientosFinancieros, setMovimientosFinancieros] = useState<MovimientoFinanciero[]>([]);
   const [accionesProduccion, setAccionesProduccion] = useState<CatalogoItem[]>([]);
   const [cargos, setCargos] = useState<CatalogoItem[]>([]);
   const [tiposDocumento, setTiposDocumento] = useState<CatalogoItem[]>([]);
@@ -203,6 +226,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           setRegistros(data.registros ?? []);
           setRegistrosAseo((data as any).registrosAseo ?? []);
          setEmpresas((data as any).empresas ?? []);
+         setMovimientosFinancieros((data as any).movimientosFinancieros ?? []);
          const filtrarCatalogo = (items?: CatalogoItem[]) =>
            (items ?? []).filter((c) => c.id && c.id.trim() !== '' && !c.id.startsWith('tmp-'));
          setAccionesProduccion(filtrarCatalogo(data.accionesProduccion));
@@ -674,6 +698,40 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     });
   };
 
+  // Finanzas
+  const agregarMovimiento = async (mv: Omit<MovimientoFinanciero, 'id'>) => {
+    const tmpId = `tmp-mv-${Date.now()}`;
+    const tmp: MovimientoFinanciero = { id: tmpId, ...mv } as MovimientoFinanciero;
+    setMovimientosFinancieros((prev) => [tmp, ...prev]);
+    try {
+      const nuevo = await request<MovimientoFinanciero>('/finanzas/movimientos', {
+        method: 'POST',
+        body: JSON.stringify(mv),
+      });
+      setMovimientosFinancieros((prev) => prev.map((m) => (m.id === tmpId ? nuevo : m)));
+    } catch (err) {
+      setMovimientosFinancieros((prev) => prev.filter((m) => m.id !== tmpId));
+      throw err;
+    }
+  };
+
+  const eliminarMovimiento = (id: string) => {
+    const snapshot = [...movimientosFinancieros];
+    setMovimientosFinancieros((prev) => prev.filter((m) => m.id !== id));
+    request<void>(`/finanzas/movimientos/${id}`, { method: 'DELETE' }).catch((err) => {
+      console.error('Error eliminando movimiento (revirtiendo):', err);
+      setMovimientosFinancieros(snapshot);
+    });
+  };
+
+  const registrarNomina = async (mes: string) => {
+    const nuevos = await request<MovimientoFinanciero[]>(`/finanzas/nomina/${mes}`, { method: 'POST' });
+    setMovimientosFinancieros((prev) => [
+      ...nuevos,
+      ...prev.filter((m) => !(m.mes === mes && m.origen === 'NOMINA')),
+    ]);
+  };
+
   const buildCatalogBody = (item: Partial<CatalogoItem>) => {
     const body: Record<string, unknown> = {};
     if (item.nombre != null) body.nombre = item.nombre;
@@ -750,6 +808,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
        registros, agregarRegistro, editarRegistro, eliminarRegistro, unidadesDisponiblesPaso,
        registrosAseo, crearRegistroAseo, toggleRegistroAseoEntry, actualizarRegistroAseoEntry, eliminarRegistroAseo,
        empresas, agregarEmpresa, editarEmpresa, eliminarEmpresa,
+       movimientosFinancieros, agregarMovimiento, eliminarMovimiento, registrarNomina,
        accionesProduccion, cargos, tiposDocumento, areasTrabajo, accionesAseo,
        agregarAccionProduccion, editarAccionProduccion, eliminarAccionProduccion,
        agregarCargo, editarCargo, eliminarCargo,

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router';
-import { Home, Scissors, Users, Sparkles, TrendingUp, LogOut, Shield, Settings, Mail, UserCircle } from 'lucide-react';
+import { Home, Scissors, Users, Sparkles, TrendingUp, LogOut, Shield, Settings, Mail, UserCircle, Wallet } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export const Layout = () => {
@@ -25,6 +25,7 @@ export const Layout = () => {
       { path: '/rendimiento', icon: TrendingUp, label: 'Desempeño', requiredRoles: ['SUPERADMINISTRADOR', 'ADMINISTRADOR', 'TRABAJADOR'] },
     ]},
     { category: 'Sistema', items: [
+      { path: '/finanzas', icon: Wallet, label: 'Finanzas', requiredRoles: ['SUPERADMINISTRADOR', 'ADMINISTRADOR'] },
       { path: '/configuracion', icon: Settings, label: 'Configuración', requiredRoles: ['SUPERADMINISTRADOR', 'ADMINISTRADOR'] },
       { path: '/mensajes', icon: Mail, label: 'Mensajes', requiredRoles: ['SUPERADMINISTRADOR', 'ADMINISTRADOR'] },
     ]}

@@ -12,6 +12,7 @@ import { GestionarRoles } from "./components/GestionarRoles";
 import { Configuracion } from "./pages/Configuracion";
 import { ContactoFormulario } from "./pages/ContactoFormulario";
 import { MensajesContacto } from "./pages/MensajesContacto";
+import { Finanzas } from "./pages/Finanzas";
 
 export const router = createBrowserRouter([
   { path: "/login", Component: Login },
@@ -32,6 +33,7 @@ export const router = createBrowserRouter([
       { path: "rendimiento", Component: () => <ProtectedRoute requiredRoles={['SUPERADMINISTRADOR', 'ADMINISTRADOR', 'TRABAJADOR']}><Rendimiento /></ProtectedRoute> },
       { path: "configuracion", Component: () => <ProtectedRoute requiredRoles={['SUPERADMINISTRADOR', 'ADMINISTRADOR']}><Configuracion /></ProtectedRoute> },
       { path: "mensajes", Component: () => <ProtectedRoute requiredRoles={['SUPERADMINISTRADOR', 'ADMINISTRADOR']}><MensajesContacto /></ProtectedRoute> },
+      { path: "finanzas", Component: () => <ProtectedRoute requiredRoles={['SUPERADMINISTRADOR', 'ADMINISTRADOR']}><Finanzas /></ProtectedRoute> },
     ],
   },
 ]);

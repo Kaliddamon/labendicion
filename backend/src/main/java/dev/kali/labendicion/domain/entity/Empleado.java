@@ -45,4 +45,7 @@ public class Empleado {
     
     @Pattern(regexp = "^(Activo|Inactivo)$", message = "El estado debe ser Activo o Inactivo")
     private String estado;
+
+    /** Valor de pago por hora trabajada (entero, opcional). */
+    private Integer valorHora;
 }

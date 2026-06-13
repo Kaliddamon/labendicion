@@ -28,5 +28,8 @@ public class PasoProduccion {
     private String descripcion;
     private Integer metaUnidadesHora;
     private Boolean completado;
+
+    /** Valor de pago por unidad producida en este paso (opcional, para cálculo de nómina por producción). */
+    private Double valorPorUnidad;
 }
 

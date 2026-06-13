@@ -25,9 +25,10 @@ export const Produccion = () => {
   const [cantidad, setCantidad] = useState('');
   const [empresa, setEmpresa] = useState('');
   const [ganancia, setGanancia] = useState('');
-  const [pasos, setPasos] = useState<{ id?: string; accionProduccionId?: string; descripcion: string; metaUnidadesHora?: number }[]>([]);
+  const [pasos, setPasos] = useState<{ id?: string; accionProduccionId?: string; descripcion: string; metaUnidadesHora?: number; valorPorUnidad?: number }[]>([]);
   const [accionSeleccionada, setAccionSeleccionada] = useState('');
   const [metaHoraPaso, setMetaHoraPaso] = useState('');
+  const [valorPorUnidadPaso, setValorPorUnidadPaso] = useState('');
   const [fechaAsignacion, setFechaAsignacion] = useState(getColombiaDateString());
   const [fechaTerminacion, setFechaTerminacion] = useState('');
   const [estado, setEstado] = useState<Producto['estado']>('Pendiente');
@@ -75,6 +76,7 @@ export const Produccion = () => {
     setPasos([]);
     setAccionSeleccionada('');
     setMetaHoraPaso('');
+    setValorPorUnidadPaso('');
     setProductoEditando(null); setMostrarForm(false);
   };
 
@@ -107,10 +109,12 @@ export const Produccion = () => {
         accionProduccionId: accion.id,
         descripcion: accion.nombre,
         metaUnidadesHora: metaNum,
+        valorPorUnidad: valorPorUnidadPaso ? parseFloat(valorPorUnidadPaso) : undefined,
       },
     ]);
     setAccionSeleccionada('');
     setMetaHoraPaso('');
+    setValorPorUnidadPaso('');
   };
 
   const iniciarEdicion = (prod: Producto) => {
@@ -355,6 +359,15 @@ export const Produccion = () => {
                     onChange={(e) => setMetaHoraPaso(e.target.value)}
                   />
                 </div>
+                <div className="flex-[1]">
+                  <AccessibleInput
+                    label="Valor/unidad ($) Opcional"
+                    inputMode="numeric"
+                    placeholder="Ej. 500"
+                    value={valorPorUnidadPaso}
+                    onChange={(e) => setValorPorUnidadPaso(e.target.value)}
+                  />
+                </div>
                 <AccessibleButton
                   type="button"
                   variant="secondary"
@@ -373,8 +386,8 @@ export const Produccion = () => {
                 </div>
               )}
               {pasos.map((p, idx) => (
-                <div key={idx} className="flex items-center justify-between bg-white border rounded-xl px-4 py-3" style={{ borderColor: 'var(--border-fiber)' }}>
-                  <div className="flex items-center gap-3 text-sm font-semibold flex-1" style={{ color: 'var(--carbon)' }}>
+                <div key={idx} className="flex flex-col sm:flex-row items-start sm:items-center justify-between bg-white border rounded-xl px-4 py-3 gap-3" style={{ borderColor: 'var(--border-fiber)' }}>
+                  <div className="flex flex-wrap items-center gap-3 text-sm font-semibold flex-1" style={{ color: 'var(--carbon)' }}>
                     <div className="flex items-center gap-2">
                       <input
                         type="number"
@@ -390,7 +403,24 @@ export const Produccion = () => {
                       />
                       <span className="text-xs text-slate-400 font-normal">und/hr</span>
                     </div>
-                    <span className="ml-2">{p.descripcion}</span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs text-slate-400 font-normal">$</span>
+                      <input
+                        type="number"
+                        min={0}
+                        step={0.01}
+                        className="w-20 px-2 py-1.5 text-center rounded-lg text-sm transition-colors"
+                        style={{ background: 'rgba(212,160,18,0.05)', border: '1px solid rgba(212,160,18,0.2)' }}
+                        value={p.valorPorUnidad ?? ''}
+                        onChange={(e) => {
+                          const val = parseFloat(e.target.value);
+                          setPasos(prev => prev.map((paso, i) => i === idx ? { ...paso, valorPorUnidad: isNaN(val) ? undefined : val } : paso));
+                        }}
+                        placeholder="$/und"
+                        title="Valor de pago por unidad (opcional)"
+                      />
+                    </div>
+                    <span className="ml-1">{p.descripcion}</span>
                   </div>
                   <button
                     type="button"

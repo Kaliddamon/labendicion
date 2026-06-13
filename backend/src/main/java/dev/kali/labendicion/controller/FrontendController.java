@@ -70,6 +70,9 @@ public class FrontendController {
     private TipoDocumentoRepository tipoDocumentoRepo;
 
     @Autowired
+    private MovimientoFinancieroRepository movimientoFinancieroRepo;
+
+    @Autowired
     private RegistroValidationService registroValidation;
     
     @Autowired
@@ -116,6 +119,7 @@ public class FrontendController {
                 map.put("descripcion", ps.getDescripcion());
                 map.put("metaUnidadesHora", ps.getMetaUnidadesHora());
                 map.put("completado", ps.getCompletado());
+                map.put("valorPorUnidad", ps.getValorPorUnidad());
                 return map;
             }).collect(Collectors.toList());
             var map = new java.util.HashMap<String, Object>();
@@ -155,7 +159,7 @@ public class FrontendController {
         // Empleados, tareas y empresas: serializables simples
         var empleadosDto = empleados.stream().map(e -> {
             var m = new java.util.HashMap<String, Object>();
-            m.put("id", e.getId()); m.put("nombre", e.getNombre()); m.put("cargo", e.getCargo()); m.put("tipoDocumento", e.getTipoDocumento()); m.put("documento", e.getDocumento()); m.put("telefono", e.getTelefono()); m.put("email", e.getEmail()); m.put("fechaIngreso", e.getFechaIngreso()); m.put("estado", e.getEstado());
+            m.put("id", e.getId()); m.put("nombre", e.getNombre()); m.put("cargo", e.getCargo()); m.put("tipoDocumento", e.getTipoDocumento()); m.put("documento", e.getDocumento()); m.put("telefono", e.getTelefono()); m.put("email", e.getEmail()); m.put("fechaIngreso", e.getFechaIngreso()); m.put("estado", e.getEstado()); m.put("valorHora", e.getValorHora());
             return m;
         }).collect(Collectors.toList());
 
@@ -184,13 +188,28 @@ public class FrontendController {
             return m;
         }).collect(Collectors.toList());
 
+        var movimientosDto = movimientoFinancieroRepo.findAllByOrderByMesDescFechaDesc().stream().map(mv -> {
+            var m = new java.util.HashMap<String, Object>();
+            m.put("id", mv.getId());
+            m.put("mes", mv.getMes());
+            m.put("nombre", mv.getNombre());
+            m.put("descripcion", mv.getDescripcion());
+            m.put("monto", mv.getMonto());
+            m.put("porcentaje", mv.getPorcentaje());
+            m.put("tipo", mv.getTipo());
+            m.put("origen", mv.getOrigen());
+            m.put("empleadoId", mv.getEmpleadoId());
+            m.put("fecha", mv.getFecha());
+            return m;
+        }).collect(Collectors.toList());
+
         var response = new java.util.HashMap<String, Object>();
         response.put("productos", productosDto);
         response.put("empleados", empleadosDto);
         response.put("registros", registrosDto);
-        // Antes se devolvía 'tareasAseo' (nombre histórico). El frontend espera 'registrosAseo'.
         response.put("registrosAseo", tareasDto);
         response.put("empresas", empresasDto);
+        response.put("movimientosFinancieros", movimientosDto);
         response.put("accionesProduccion", accionProduccionRepo.findAllByOrderByOrdenAscNombreAsc());
         response.put("cargos", cargoRepo.findAllByOrderByNombreAsc());
         response.put("areasTrabajo", areaTrabajoRepo.findAllByOrderByNombreAsc());
@@ -887,6 +906,167 @@ public class FrontendController {
         return ResponseEntity.noContent().build();
     }
 
+    // ========== FINANZAS ==========
+
+    @GetMapping("/finanzas")
+    public ResponseEntity<List<Map<String, Object>>> listarMovimientos() {
+        List<Map<String, Object>> dto = movimientoFinancieroRepo.findAllByOrderByMesDescFechaDesc()
+                .stream().map(this::mapMovimientoToDto).collect(Collectors.toList());
+        return ResponseEntity.ok(dto);
+    }
+
+    @PostMapping("/finanzas/movimientos")
+    @Transactional
+    public ResponseEntity<?> crearMovimiento(@RequestBody java.util.Map<String, Object> body) {
+        try {
+            String mes = body.containsKey("mes") && body.get("mes") != null
+                    ? body.get("mes").toString()
+                    : java.time.LocalDate.now(java.time.ZoneId.of("America/Bogota")).toString().substring(0, 7);
+
+            String nombre = body.containsKey("nombre") ? body.get("nombre").toString() : "";
+            if (nombre.isBlank()) return ResponseEntity.badRequest().body(Map.of("error", "El nombre es obligatorio."));
+
+            String montoStr = body.containsKey("monto") && body.get("monto") != null ? body.get("monto").toString() : null;
+            if (montoStr == null || montoStr.isBlank()) return ResponseEntity.badRequest().body(Map.of("error", "El monto es obligatorio."));
+            double monto = Double.parseDouble(montoStr);
+
+            String tipo = body.containsKey("tipo") ? body.get("tipo").toString() : "GASTO";
+            if (!tipo.equals("GASTO") && !tipo.equals("INGRESO")) tipo = "GASTO";
+
+            Double porcentaje = null;
+            if (body.containsKey("porcentaje") && body.get("porcentaje") != null && !body.get("porcentaje").toString().isBlank()) {
+                porcentaje = Double.parseDouble(body.get("porcentaje").toString());
+            }
+
+            dev.kali.labendicion.domain.entity.MovimientoFinanciero mv = new dev.kali.labendicion.domain.entity.MovimientoFinanciero();
+            mv.setId(generateId());
+            mv.setMes(mes);
+            mv.setNombre(nombre);
+            mv.setDescripcion(body.containsKey("descripcion") ? (String) body.get("descripcion") : null);
+            mv.setMonto(monto);
+            mv.setPorcentaje(porcentaje);
+            mv.setTipo(tipo);
+            mv.setOrigen("MANUAL");
+            mv.setFecha(java.time.LocalDate.now(java.time.ZoneId.of("America/Bogota")).toString());
+
+            dev.kali.labendicion.domain.entity.MovimientoFinanciero guardado = movimientoFinancieroRepo.save(mv);
+            eventService.emitAsync("MOVIMIENTO_CREADO", mapMovimientoToDto(guardado));
+            return ResponseEntity.ok(mapMovimientoToDto(guardado));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return serverError(e, "/api/frontend/finanzas/movimientos");
+        }
+    }
+
+    @PostMapping("/finanzas/nomina/{mes}")
+    @Transactional
+    public ResponseEntity<?> registrarNomina(@PathVariable String mes) {
+        try {
+            // Borrar nomina previa del mes para reemplazarla
+            List<dev.kali.labendicion.domain.entity.MovimientoFinanciero> previos =
+                    movimientoFinancieroRepo.findByMesOrderByFechaDesc(mes).stream()
+                            .filter(m -> "NOMINA".equals(m.getOrigen()))
+                            .collect(Collectors.toList());
+            movimientoFinancieroRepo.deleteAll(previos);
+
+            List<dev.kali.labendicion.domain.entity.Empleado> empleados = empleadoRepo.findAll();
+            List<dev.kali.labendicion.domain.entity.Registro> registros = registroRepo.findAllWithProduccionesOrderByFechaDesc();
+            List<dev.kali.labendicion.domain.entity.Producto> productos = productoRepo.findAllWithPasosOrderByNombre();
+
+            String fechaHoy = java.time.LocalDate.now(java.time.ZoneId.of("America/Bogota")).toString();
+            List<dev.kali.labendicion.domain.entity.MovimientoFinanciero> creados = new java.util.ArrayList<>();
+
+            for (dev.kali.labendicion.domain.entity.Empleado emp : empleados) {
+                // Filtrar registros de este empleado en este mes
+                List<dev.kali.labendicion.domain.entity.Registro> regEmp = registros.stream()
+                        .filter(r -> emp.getId().equals(r.getEmpleadoId())
+                                && r.getFecha() != null && r.getFecha().startsWith(mes))
+                        .collect(Collectors.toList());
+
+                if (regEmp.isEmpty()) continue;
+
+                double pagoHoras = 0.0;
+                double pagoProduccion = 0.0;
+
+                for (dev.kali.labendicion.domain.entity.Registro reg : regEmp) {
+                    // Pago por horas
+                    if (emp.getValorHora() != null && reg.getHoraEntrada() != null && reg.getHoraSalida() != null
+                            && !"--:--".equals(reg.getHoraEntrada()) && !"--:--".equals(reg.getHoraSalida())) {
+                        try {
+                            String[] entrada = reg.getHoraEntrada().split(":");
+                            String[] salida = reg.getHoraSalida().split(":");
+                            double hEntrada = Integer.parseInt(entrada[0]) + Integer.parseInt(entrada[1]) / 60.0;
+                            double hSalida = Integer.parseInt(salida[0]) + Integer.parseInt(salida[1]) / 60.0;
+                            double horas = Math.max(0, hSalida - hEntrada);
+                            pagoHoras += horas * emp.getValorHora();
+                        } catch (Exception ignored) {}
+                    }
+                    // Pago por producción
+                    if (reg.getProducciones() != null) {
+                        for (dev.kali.labendicion.domain.entity.ProduccionRegistro pr : reg.getProducciones()) {
+                            // Calcular directamente sin lambda anidado
+                            for (dev.kali.labendicion.domain.entity.Producto prod : productos) {
+                                if (!prod.getId().equals(pr.getProductoId())) continue;
+                                if (prod.getPasos() == null) continue;
+                                for (PasoProduccion ps : prod.getPasos()) {
+                                    if (ps.getId().equals(pr.getPasoId()) && ps.getValorPorUnidad() != null) {
+                                        int unidades = pr.getUnidadesTotales() == null ? 0 : pr.getUnidadesTotales();
+                                        pagoProduccion += unidades * ps.getValorPorUnidad();
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                double totalPago = pagoHoras + pagoProduccion;
+                if (totalPago <= 0) continue;
+
+                dev.kali.labendicion.domain.entity.MovimientoFinanciero mv = new dev.kali.labendicion.domain.entity.MovimientoFinanciero();
+                mv.setId(generateId());
+                mv.setMes(mes);
+                mv.setNombre("Nómina: " + emp.getNombre());
+                mv.setDescripcion(String.format("Horas: $%.0f | Producción: $%.0f", pagoHoras, pagoProduccion));
+                mv.setMonto(totalPago);
+                mv.setTipo("GASTO");
+                mv.setOrigen("NOMINA");
+                mv.setEmpleadoId(emp.getId());
+                mv.setFecha(fechaHoy);
+                creados.add(movimientoFinancieroRepo.save(mv));
+            }
+
+            List<Map<String, Object>> dto = creados.stream().map(this::mapMovimientoToDto).collect(Collectors.toList());
+            eventService.emitAsync("NOMINA_REGISTRADA", Map.of("mes", mes, "movimientos", dto));
+            return ResponseEntity.ok(dto);
+        } catch (Exception e) {
+            e.printStackTrace();
+            try { TransactionAspectSupport.currentTransactionStatus().setRollbackOnly(); } catch (Exception ignore) {}
+            return serverError(e, "/api/frontend/finanzas/nomina/" + mes);
+        }
+    }
+
+    @DeleteMapping("/finanzas/movimientos/{id}")
+    public ResponseEntity<Void> eliminarMovimiento(@PathVariable String id) {
+        movimientoFinancieroRepo.deleteById(id);
+        eventService.emitAsync("MOVIMIENTO_ELIMINADO", Map.of("id", id));
+        return ResponseEntity.noContent().build();
+    }
+
+    private Map<String, Object> mapMovimientoToDto(dev.kali.labendicion.domain.entity.MovimientoFinanciero mv) {
+        var m = new java.util.HashMap<String, Object>();
+        m.put("id", mv.getId());
+        m.put("mes", mv.getMes());
+        m.put("nombre", mv.getNombre());
+        m.put("descripcion", mv.getDescripcion());
+        m.put("monto", mv.getMonto());
+        m.put("porcentaje", mv.getPorcentaje());
+        m.put("tipo", mv.getTipo());
+        m.put("origen", mv.getOrigen());
+        m.put("empleadoId", mv.getEmpleadoId());
+        m.put("fecha", mv.getFecha());
+        return m;
+    }
+
     private static String generateId() {
         return UUID.randomUUID().toString().replace("-", "").substring(0, 12);
     }
@@ -929,6 +1109,11 @@ public class FrontendController {
         }
         paso.setMetaUnidadesHora(pasoMap.get("metaUnidadesHora") == null ? null : Integer.parseInt(pasoMap.get("metaUnidadesHora").toString()));
         paso.setCompletado((Boolean) pasoMap.getOrDefault("completado", false));
+        if (pasoMap.containsKey("valorPorUnidad") && pasoMap.get("valorPorUnidad") != null) {
+            paso.setValorPorUnidad(Double.parseDouble(pasoMap.get("valorPorUnidad").toString()));
+        } else if (pasoMap.containsKey("valorPorUnidad")) {
+            paso.setValorPorUnidad(null);
+        }
     }
 
     private void recalcularTotales(Registro registro) {
@@ -954,6 +1139,7 @@ public class FrontendController {
             m.put("descripcion", ps.getDescripcion());
             m.put("metaUnidadesHora", ps.getMetaUnidadesHora());
             m.put("completado", ps.getCompletado());
+            m.put("valorPorUnidad", ps.getValorPorUnidad());
             return m;
         }).collect(Collectors.toList());
         var map = new java.util.HashMap<String, Object>();

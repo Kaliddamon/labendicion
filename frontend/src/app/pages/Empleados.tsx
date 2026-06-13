@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAppContext, Empleado, ProduccionRegistro } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
-import { Search, Plus, Edit2, Trash2, X, Users, PackageSearch, Save, ArrowRight, UserCircle, Star, BadgeCheck, CheckCircle2, Circle, ClipboardList, History, Clock, MinusCircle, FileText, Filter } from 'lucide-react';
+import { Search, Plus, Edit2, Trash2, X, Users, PackageSearch, Save, ArrowRight, UserCircle, Star, BadgeCheck, CheckCircle2, Circle, ClipboardList, History, Clock, MinusCircle, FileText, Filter, DollarSign, TrendingUp, CalendarDays } from 'lucide-react';
 import { getColombiaDateString } from '../utils/dateUtils';
 import { toast } from 'sonner';
 import { useConfirm } from '../context/ConfirmContext';
@@ -50,6 +50,7 @@ export const Empleados = () => {
   const [email, setEmail] = useState('');
   const [fechaIngreso, setFechaIngreso] = useState('');
   const [estado, setEstado] = useState<'Activo' | 'Inactivo'>('Activo');
+  const [valorHora, setValorHora] = useState<string>('');
   const [busqueda, setBusqueda] = useState('');
   const [filtroEstadoEmp, setFiltroEstadoEmp] = useState<string>('Todos');
   const [filtroCargo, setFiltroCargo] = useState<string>('Todos');
@@ -83,6 +84,7 @@ export const Empleados = () => {
   ]);
 
   const [empleadoViendoHistorial, setEmpleadoViendoHistorial] = useState<string | null>(null);
+  const [filtroHistorial, setFiltroHistorial] = useState<'quincena' | 'mes' | 'todo'>('quincena');
 
   const [modalOrdenProduccion, setModalOrdenProduccion] = useState<{
     fecha: string;
@@ -92,12 +94,13 @@ export const Empleados = () => {
 
   const resetFormEmpleado = () => {
     setNombre(''); setCargo(''); setTipoDocumento('CC'); setDocumento(''); setTelefono(''); setEmail('');
-    setFechaIngreso(''); setEstado('Activo'); setEmpleadoEditando(null); setMostrarFormEmpleado(false);
+    setFechaIngreso(''); setEstado('Activo'); setValorHora(''); setEmpleadoEditando(null); setMostrarFormEmpleado(false);
   };
 
   const iniciarEdicion = (emp: Empleado) => {
     setNombre(emp.nombre); setCargo(emp.cargo?.id || ''); setTipoDocumento(emp.tipoDocumento?.id || 'CC'); setDocumento(emp.documento);
     setTelefono(emp.telefono); setEmail(emp.email || ''); setFechaIngreso(emp.fechaIngreso); setEstado(emp.estado);
+    setValorHora(emp.valorHora != null ? String(emp.valorHora) : '');
     setEmpleadoEditando(emp.id); setMostrarFormEmpleado(true);
     setEmpleadoCalificando(null);
     setEmpleadoViendoHistorial(null);
@@ -121,10 +124,11 @@ export const Empleados = () => {
 
     const cargoObj = cargo ? { id: cargo, nombre: cargos.find(c => c.id === cargo)?.nombre || '' } : null;
     const tipoDocObj = { id: tipoDocumento, nombre: tiposDocumento.find(td => td.id === tipoDocumento)?.nombre || '' };
+    const valorHoraNum = valorHora && /^[0-9]+$/.test(valorHora) ? parseInt(valorHora) : undefined;
     if (empleadoEditando) {
-      editarEmpleado(empleadoEditando, { nombre, cargo: cargoObj, tipoDocumento: tipoDocObj, documento, telefono, email, fechaIngreso, estado });
+      editarEmpleado(empleadoEditando, { nombre, cargo: cargoObj, tipoDocumento: tipoDocObj, documento, telefono, email, fechaIngreso, estado, valorHora: valorHoraNum });
     } else {
-      agregarEmpleado({ nombre, cargo: cargoObj, tipoDocumento: tipoDocObj, documento, telefono, email, fechaIngreso, estado });
+      agregarEmpleado({ nombre, cargo: cargoObj, tipoDocumento: tipoDocObj, documento, telefono, email, fechaIngreso, estado, valorHora: valorHoraNum });
     }
     resetFormEmpleado();
   };
@@ -282,6 +286,69 @@ export const Empleados = () => {
     return registros.filter(r => r.empleadoId === empId).sort((a,b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
   };
 
+  // Filtros de tiempo para el historial: quincena en curso, mes completo, todo
+  const getFiltroFechas = () => {
+    const hoy = new Date(getColombiaDateString());
+    const dia = hoy.getDate();
+    const year = hoy.getFullYear();
+    const mes = hoy.getMonth(); // 0-indexed
+    if (filtroHistorial === 'todo') return { desde: null, hasta: null };
+    if (filtroHistorial === 'mes') {
+      const desde = `${year}-${String(mes + 1).padStart(2, '0')}-01`;
+      const diasMes = new Date(year, mes + 1, 0).getDate();
+      const hasta = `${year}-${String(mes + 1).padStart(2, '0')}-${String(diasMes).padStart(2, '0')}`;
+      return { desde, hasta };
+    }
+    // quincena en curso
+    if (dia <= 15) {
+      const desde = `${year}-${String(mes + 1).padStart(2, '0')}-01`;
+      const hasta = `${year}-${String(mes + 1).padStart(2, '0')}-15`;
+      return { desde, hasta };
+    } else {
+      const desde = `${year}-${String(mes + 1).padStart(2, '0')}-16`;
+      const diasMes = new Date(year, mes + 1, 0).getDate();
+      const hasta = `${year}-${String(mes + 1).padStart(2, '0')}-${String(diasMes).padStart(2, '0')}`;
+      return { desde, hasta };
+    }
+  };
+
+  const getRegistrosFiltrados = (empId: string) => {
+    const todos = getRegistrosEmpleado(empId);
+    const { desde, hasta } = getFiltroFechas();
+    if (!desde || !hasta) return todos;
+    return todos.filter(r => r.fecha >= desde && r.fecha <= hasta);
+  };
+
+  // Calcular paga diaria de un registro para un empleado
+  const calcularPagaDiaria = (reg: typeof registros[0], emp: Empleado) => {
+    let pagoHoras = 0;
+    let pagoProduccion = 0;
+    // Pago por horas
+    if (emp.valorHora && reg.horaEntrada && reg.horaSalida && reg.horaEntrada !== '--:--' && reg.horaSalida !== '--:--') {
+      try {
+        const [hE, mE] = reg.horaEntrada.split(':').map(Number);
+        const [hS, mS] = reg.horaSalida.split(':').map(Number);
+        const horas = Math.max(0, (hS + mS / 60) - (hE + mE / 60));
+        pagoHoras = horas * emp.valorHora;
+      } catch {}
+    }
+    // Pago por producción
+    if (reg.producciones) {
+      for (const prod of reg.producciones) {
+        const orden = productos.find(p => p.id === prod.productoId);
+        if (!orden?.pasos) continue;
+        const paso = orden.pasos.find(ps => ps.id === prod.pasoId);
+        if (paso?.valorPorUnidad) {
+          pagoProduccion += (prod.unidadesTotales || 0) * paso.valorPorUnidad;
+        }
+      }
+    }
+    return { pagoHoras, pagoProduccion };
+  };
+
+  const formatCOP = (n: number) =>
+    n === 0 ? '$0' : `$${Math.round(n).toLocaleString('es-CO')}`;
+
   const inputStyle = {
     background: 'var(--surface-linen)',
     border: '1px solid var(--border-fiber)',
@@ -424,6 +491,22 @@ export const Empleados = () => {
                 <option value="Activo">Activo trabajando</option>
                 <option value="Inactivo">Inactivo / Retirado</option>
               </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-500 mb-1.5" style={{ fontFamily: 'var(--font-heading)' }}>Valor por hora ($) <span className="text-slate-400 font-normal">(Opcional)</span></label>
+              <div className="relative">
+                <DollarSign className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={15} />
+                <input
+                  type="number"
+                  min={0}
+                  step={1}
+                  className="w-full rounded-xl pl-9 pr-4 py-3 text-sm"
+                  style={inputStyle}
+                  value={valorHora}
+                  onChange={e => setValorHora(e.target.value.replace(/[^0-9]/g, ''))}
+                  placeholder="Ej. 8000"
+                />
+              </div>
             </div>
           </div>
           <button type="submit" className="w-full md:w-auto px-6 py-3 rounded-xl font-semibold text-sm text-[#1a1a2e] active:scale-[0.97] transition-all" style={{ background: 'var(--accent-copper)', boxShadow: 'var(--shadow-copper)' }}>
@@ -574,105 +657,200 @@ export const Empleados = () => {
               </div>
 
               {/* History panel */}
-              {empleadoViendoHistorial === emp.id && (
-                <div className="p-5 animate-fade-up" style={{ background: 'var(--surface-linen)' }}>
-                  <h4 className="font-semibold text-sm flex items-center gap-2 mb-4" style={{ fontFamily: 'var(--font-heading)', color: 'var(--carbon)' }}>
-                    <History size={16} className="text-blue-600" /> Historial de Rendimiento
-                  </h4>
+              {empleadoViendoHistorial === emp.id && (() => {
+                const regsFiltrados = getRegistrosFiltrados(emp.id);
+                const { desde, hasta } = getFiltroFechas();
 
-                  {getRegistrosEmpleado(emp.id).length === 0 ? (
-                    <p className="text-slate-500 bg-white p-4 rounded-xl text-center text-sm" style={{ border: '1px solid var(--border-fiber)' }}>
-                      No hay registros guardados para este empleado.
-                    </p>
-                  ) : (
-                    <div className="grid gap-2.5">
-                      {getRegistrosEmpleado(emp.id).map(reg => (
-                        <div key={reg.id} className="bg-white p-4 rounded-xl flex flex-col gap-3" style={{ border: '1px solid var(--border-fiber)' }}>
-                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                            <div className="flex flex-wrap items-center gap-2">
-                              <div className="font-bold text-xs px-3 py-1.5 rounded-lg text-blue-800" style={{ background: 'rgba(37,99,235,0.08)' }}>
-                                {reg.fecha}
-                              </div>
-                              {reg.horaEntrada !== '--:--' ? (
-                                <div className="text-slate-500 text-xs font-medium flex items-center gap-1">
-                                  <Clock size={14} /> {reg.horaEntrada} - {reg.horaSalida}
+                // Calcular totales del período
+                let totalHoras = 0;
+                let totalProduccion = 0;
+                regsFiltrados.forEach(reg => {
+                  const { pagoHoras, pagoProduccion } = calcularPagaDiaria(reg, emp);
+                  totalHoras += pagoHoras;
+                  totalProduccion += pagoProduccion;
+                });
+                const hayPago = emp.valorHora != null || productos.some(p => p.pasos?.some(ps => ps.valorPorUnidad != null));
+
+                return (
+                  <div className="p-5 animate-fade-up" style={{ background: 'var(--surface-linen)' }}>
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+                      <h4 className="font-semibold text-sm flex items-center gap-2" style={{ fontFamily: 'var(--font-heading)', color: 'var(--carbon)' }}>
+                        <History size={16} className="text-blue-600" /> Historial de Rendimiento
+                      </h4>
+                      {/* Filtros de tiempo */}
+                      <div className="flex rounded-xl overflow-hidden border" style={{ borderColor: 'var(--border-fiber)' }}>
+                        {(['quincena', 'mes', 'todo'] as const).map(f => (
+                          <button
+                            key={f}
+                            onClick={() => setFiltroHistorial(f)}
+                            className={`px-3 py-1.5 text-xs font-semibold transition-colors ${
+                              filtroHistorial === f
+                                ? 'text-[#1a1a2e]'
+                                : 'text-slate-500 hover:text-slate-700'
+                            }`}
+                            style={filtroHistorial === f ? { background: 'var(--accent-copper)' } : { background: 'white' }}
+                          >
+                            {f === 'quincena' ? '15 días' : f === 'mes' ? 'Este mes' : 'Todo'}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {desde && hasta && (
+                      <p className="text-xs text-slate-400 mb-3 flex items-center gap-1">
+                        <CalendarDays size={13} />
+                        Mostrando: <span className="font-semibold text-slate-600">{desde}</span> al <span className="font-semibold text-slate-600">{hasta}</span>
+                      </p>
+                    )}
+
+                    {regsFiltrados.length === 0 ? (
+                      <p className="text-slate-500 bg-white p-4 rounded-xl text-center text-sm" style={{ border: '1px solid var(--border-fiber)' }}>
+                        No hay registros para este período.
+                      </p>
+                    ) : (
+                      <div className="grid gap-2.5">
+                        {regsFiltrados.map(reg => {
+                          const { pagoHoras, pagoProduccion } = calcularPagaDiaria(reg, emp);
+                          const tienePago = pagoHoras > 0 || pagoProduccion > 0;
+                          return (
+                          <div key={reg.id} className="bg-white p-4 rounded-xl flex flex-col gap-3" style={{ border: '1px solid var(--border-fiber)' }}>
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <div className="font-bold text-xs px-3 py-1.5 rounded-lg text-blue-800" style={{ background: 'rgba(37,99,235,0.08)' }}>
+                                  {reg.fecha}
                                 </div>
-                              ) : (
-                                <span className="text-rose-600 font-semibold text-xs bg-rose-50 px-2 py-1 rounded-lg">No Asistió</span>
-                              )}
+                                {reg.horaEntrada !== '--:--' ? (
+                                  <div className="text-slate-500 text-xs font-medium flex items-center gap-1">
+                                    <Clock size={14} /> {reg.horaEntrada} - {reg.horaSalida}
+                                  </div>
+                                ) : (
+                                  <span className="text-rose-600 font-semibold text-xs bg-rose-50 px-2 py-1 rounded-lg">No Asistió</span>
+                                )}
+                              </div>
+
+                              <div className="flex gap-3 shrink-0">
+                                {reg.horaEntrada !== '--:--' && (
+                                  <>
+                                    <div className="text-center">
+                                      <span className="block text-[10px] text-slate-400 font-semibold uppercase">Totales</span>
+                                      <span className="font-bold text-base" style={{ fontFamily: 'var(--font-heading)', color: 'var(--carbon)' }}>{reg.unidadesTotales}</span>
+                                    </div>
+                                    <div className="text-center">
+                                      <span className="block text-[10px] text-emerald-600 font-semibold uppercase">Calidad</span>
+                                      <span className="font-bold text-base text-emerald-600" style={{ fontFamily: 'var(--font-heading)' }}>{reg.unidadesBuenas}</span>
+                                    </div>
+                                  </>
+                                )}
+                              </div>
                             </div>
 
-                            {reg.horaEntrada !== '--:--' && (
-                              <div className="flex gap-4 shrink-0">
-                                <div className="text-center">
-                                  <span className="block text-[10px] text-slate-400 font-semibold uppercase">Totales</span>
-                                  <span className="font-bold text-base" style={{ fontFamily: 'var(--font-heading)', color: 'var(--carbon)' }}>{reg.unidadesTotales}</span>
+                            {/* Paga diaria */}
+                            {tienePago && (
+                              <div className="rounded-xl px-3 py-2 flex flex-wrap gap-3" style={{ background: 'linear-gradient(135deg,rgba(212,160,18,0.07),rgba(212,160,18,0.03))', border: '1px solid rgba(212,160,18,0.2)' }}>
+                                <div className="flex items-center gap-1.5">
+                                  <DollarSign size={13} style={{ color: 'var(--accent-copper)' }} />
+                                  <span className="text-[11px] font-semibold text-slate-500">Pago día:</span>
                                 </div>
-                                <div className="text-center">
-                                  <span className="block text-[10px] text-emerald-600 font-semibold uppercase">Calidad</span>
-                                  <span className="font-bold text-base text-emerald-600" style={{ fontFamily: 'var(--font-heading)' }}>{reg.unidadesBuenas}</span>
-                                </div>
+                                {pagoHoras > 0 && (
+                                  <span className="text-[11px] font-bold" style={{ color: 'var(--carbon)' }}>
+                                    Horas: <span style={{ color: 'var(--accent-copper)' }}>{formatCOP(pagoHoras)}</span>
+                                  </span>
+                                )}
+                                {pagoProduccion > 0 && (
+                                  <span className="text-[11px] font-bold" style={{ color: 'var(--carbon)' }}>
+                                    Producción: <span className="text-emerald-700">{formatCOP(pagoProduccion)}</span>
+                                  </span>
+                                )}
+                              </div>
+                            )}
+
+                            {reg.horaEntrada !== '--:--' && (reg.producciones?.length ?? 0) > 0 && (
+                              <div className="pt-2 space-y-1.5" style={{ borderTop: '1px solid var(--border-fiber-light)' }}>
+                                <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
+                                  Órdenes vinculadas este día
+                                </p>
+                                {reg.producciones!.map((prod, index) => (
+                                  <div
+                                    key={`${reg.id}-p-${index}`}
+                                    className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between rounded-lg px-3 py-2 text-xs"
+                                    style={{ background: 'var(--surface-linen)', border: '1px solid var(--border-fiber-light)' }}
+                                  >
+                                    <div className="flex min-w-0 flex-1 flex-col gap-1 sm:flex-row sm:items-center sm:gap-2">
+                                      <span className="font-bold text-slate-500 shrink-0">#{index + 1}</span>
+                                      <span className="truncate font-medium" style={{ color: 'var(--carbon)' }} title={etiquetaOrden(prod.productoId)}>
+                                        {etiquetaOrden(prod.productoId)}
+                                        {prod.pasoId ? ` · ${etiquetaPaso(prod.productoId, prod.pasoId)}` : ''}
+                                      </span>
+                                      <span className="text-slate-500 sm:ml-auto">
+                                        <span className="font-semibold">{prod.unidadesTotales}</span> conf. ·{' '}
+                                        <span className="font-semibold text-emerald-700">{prod.unidadesBuenas}</span>{' '}calidad
+                                      </span>
+                                    </div>
+                                    <div className="flex gap-1.5 shrink-0">
+                                      <button
+                                        type="button"
+                                        onClick={() => setModalOrdenProduccion({ fecha: reg.fecha, indice: index, item: prod })}
+                                        className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[10px] font-semibold text-blue-700 hover:bg-blue-50 border border-blue-200 bg-white"
+                                      >
+                                        <FileText size={12} /> Ver
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => cargarRegistroParaEdicion(reg)}
+                                        className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[10px] font-semibold border bg-white"
+                                        style={{ color: 'var(--accent-copper)', borderColor: 'rgba(212,160,18,0.3)' }}
+                                      >
+                                        <Edit2 size={12} /> Editar
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={async () => { if (await confirm({ title: '¿Eliminar evaluación?', description: '¿Seguro que deseas eliminar esta evaluación?', confirmText: 'Eliminar' })) eliminarRegistro(reg.id); }}
+                                        className="inline-flex items-center gap-1 rounded-lg border border-rose-200 bg-white px-2.5 py-1 text-[10px] font-semibold text-rose-600"
+                                      >
+                                        <Trash2 size={12} /> Eliminar
+                                      </button>
+                                    </div>
+                                  </div>
+                                ))}
                               </div>
                             )}
                           </div>
+                        );
+                        })}
+                      </div>
+                    )}
 
-                          {reg.horaEntrada !== '--:--' && (reg.producciones?.length ?? 0) > 0 && (
-                            <div className="pt-2 space-y-1.5" style={{ borderTop: '1px solid var(--border-fiber-light)' }}>
-                              <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
-                                Órdenes vinculadas este día
-                              </p>
-                              {reg.producciones!.map((prod, index) => (
-                                <div
-                                  key={`${reg.id}-p-${index}`}
-                                  className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between rounded-lg px-3 py-2 text-xs"
-                                  style={{ background: 'var(--surface-linen)', border: '1px solid var(--border-fiber-light)' }}
-                                >
-                                  <div className="flex min-w-0 flex-1 flex-col gap-1 sm:flex-row sm:items-center sm:gap-2">
-                                    <span className="font-bold text-slate-500 shrink-0">#{index + 1}</span>
-                                    <span className="truncate font-medium" style={{ color: 'var(--carbon)' }} title={etiquetaOrden(prod.productoId)}>
-                                      {etiquetaOrden(prod.productoId)}
-                                      {prod.pasoId ? ` · ${etiquetaPaso(prod.productoId, prod.pasoId)}` : ''}
-                                    </span>
-                                    <span className="text-slate-500 sm:ml-auto">
-                                      <span className="font-semibold">{prod.unidadesTotales}</span> conf. ·{' '}
-                                      <span className="font-semibold text-emerald-700">{prod.unidadesBuenas}</span>{' '}
-                                      calidad
-                                    </span>
-                                  </div>
-                                  <div className="flex gap-1.5 shrink-0">
-                                    <button
-                                      type="button"
-                                      onClick={() => setModalOrdenProduccion({ fecha: reg.fecha, indice: index, item: prod })}
-                                      className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[10px] font-semibold text-blue-700 hover:bg-blue-50 border border-blue-200 bg-white"
-                                    >
-                                      <FileText size={12} /> Ver
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={() => cargarRegistroParaEdicion(reg)}
-                                      className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[10px] font-semibold border bg-white"
-                                      style={{ color: 'var(--accent-copper)', borderColor: 'rgba(212,160,18,0.3)' }}
-                                    >
-                                      <Edit2 size={12} /> Editar
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={async () => { if (await confirm({ title: '¿Eliminar evaluación?', description: '¿Seguro que deseas eliminar esta evaluación?', confirmText: 'Eliminar' })) eliminarRegistro(reg.id); }}
-                                      className="inline-flex items-center gap-1 rounded-lg border border-rose-200 bg-white px-2.5 py-1 text-[10px] font-semibold text-rose-600"
-                                    >
-                                      <Trash2 size={12} /> Eliminar
-                                    </button>
-                                  </div>
-                                </div>
-                              ))}
+                    {/* Resumen total del período */}
+                    {hayPago && regsFiltrados.length > 0 && (totalHoras > 0 || totalProduccion > 0) && (
+                      <div className="mt-4 rounded-2xl p-4" style={{ background: 'linear-gradient(135deg,rgba(26,58,92,0.06),rgba(26,58,92,0.02))', border: '1px solid rgba(26,58,92,0.12)' }}>
+                        <p className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3 flex items-center gap-1.5">
+                          <TrendingUp size={14} className="text-blue-600" /> Resumen del período
+                        </p>
+                        <div className="flex flex-wrap gap-4">
+                          {totalHoras > 0 && (
+                            <div>
+                              <span className="text-[10px] text-slate-400 font-semibold uppercase block">Total por horas</span>
+                              <span className="text-xl font-bold" style={{ fontFamily: 'var(--font-heading)', color: 'var(--accent-copper)' }}>{formatCOP(totalHoras)}</span>
+                            </div>
+                          )}
+                          {totalProduccion > 0 && (
+                            <div>
+                              <span className="text-[10px] text-slate-400 font-semibold uppercase block">Total por producción</span>
+                              <span className="text-xl font-bold text-emerald-700" style={{ fontFamily: 'var(--font-heading)' }}>{formatCOP(totalProduccion)}</span>
+                            </div>
+                          )}
+                          {(totalHoras > 0 || totalProduccion > 0) && (
+                            <div className="ml-auto text-right">
+                              <span className="text-[10px] text-slate-400 font-semibold uppercase block">Gran total</span>
+                              <span className="text-xl font-bold text-blue-700" style={{ fontFamily: 'var(--font-heading)' }}>{formatCOP(totalHoras + totalProduccion)}</span>
                             </div>
                           )}
                         </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
 
               {/* Evaluation form */}
               {empleadoCalificando === emp.id && (
