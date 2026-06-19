@@ -4,17 +4,11 @@
  * formateada como YYYY-MM-DD.
  */
 export const getColombiaDateString = (date = new Date()): string => {
-  // 'en-CA' produce formato YYYY-MM-DD nativamente
   return date.toLocaleDateString('en-CA', { timeZone: 'America/Bogota' });
 };
 
 /**
- * Devuelve la fecha actual con hora (o de un Date específico)
- * en la zona horaria de Colombia (America/Bogota)
- * en formato ISO-like: YYYY-MM-DDTHH:mm:ss.SSSZ
- * 
- * Útil para campos de base de datos que requieren timestamps completos.
- * Usamos un approach manual para evitar desajustes.
+ * Devuelve la fecha actual con hora en la zona horaria de Colombia.
  */
 export const getColombiaIsoString = (date = new Date()): string => {
   const parts = new Intl.DateTimeFormat('en-CA', {
@@ -26,16 +20,71 @@ export const getColombiaIsoString = (date = new Date()): string => {
     minute: '2-digit',
     second: '2-digit',
     fractionalSecondDigits: 3,
-    hour12: false
+    hour12: false,
   }).formatToParts(date);
-  
-  // Reconstruimos a formato ISO
+
   const obj: Record<string, string> = {};
   for (const part of parts) {
     obj[part.type] = part.value;
   }
-  // En vez de enviar 'Z' (que es UTC), si el backend espera un string como el ISO
-  // Podemos enviar la hora colombiana. Pero por simplicidad, si la BD acepta strings sin zona, 
-  // armamos el ISO así:
   return `${obj.year}-${obj.month}-${obj.day}T${obj.hour}:${obj.minute}:${obj.second}.${obj.fractionalSecond}Z`;
+};
+
+// ─── Utilidades de quincena ────────────────────────────────────────────────
+
+export type Quincena = 'Q1' | 'Q2';
+
+export interface QuincenaInfo {
+  quincena: Quincena;
+  /** Etiqueta corta: "Q1 (1–15 jun)" */
+  label: string;
+  /** Primer día del período YYYY-MM-DD */
+  inicio: string;
+  /** Último día del período YYYY-MM-DD */
+  fin: string;
+  /** "Junio 2026" */
+  mesLabel: string;
+}
+
+const MES_NOMBRES = [
+  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
+];
+
+/** Determina la quincena a la que pertenece una fecha "YYYY-MM-DD". */
+export const getQuincenaOfDate = (fecha: string): Quincena => {
+  const day = parseInt(fecha.split('-')[2] ?? '1', 10);
+  return day <= 15 ? 'Q1' : 'Q2';
+};
+
+/** Devuelve la quincena actual basada en la fecha colombiana. */
+export const getQuincenaActual = (): Quincena =>
+  getQuincenaOfDate(getColombiaDateString());
+
+/**
+ * Dado un mes "YYYY-MM" y una quincena, retorna el detalle completo del período.
+ */
+export const getQuincenaInfo = (mes: string, quincena: Quincena): QuincenaInfo => {
+  const [year, m] = mes.split('-');
+  const mesIdx = parseInt(m, 10) - 1;
+  const mesNombre = MES_NOMBRES[mesIdx] ?? m;
+  const mesAbrev = mesNombre.toLowerCase().slice(0, 3);
+  const ultimoDia = new Date(parseInt(year, 10), parseInt(m, 10), 0).getDate();
+
+  if (quincena === 'Q1') {
+    return {
+      quincena: 'Q1',
+      label: `Q1 (1–15 ${mesAbrev})`,
+      inicio: `${mes}-01`,
+      fin: `${mes}-15`,
+      mesLabel: `${mesNombre} ${year}`,
+    };
+  }
+  return {
+    quincena: 'Q2',
+    label: `Q2 (16–${ultimoDia} ${mesAbrev})`,
+    inicio: `${mes}-16`,
+    fin: `${mes}-${String(ultimoDia).padStart(2, '0')}`,
+    mesLabel: `${mesNombre} ${year}`,
+  };
 };

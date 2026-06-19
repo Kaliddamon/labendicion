@@ -1,10 +1,10 @@
 import React, { useState, useMemo } from 'react';
 import { useAppContext, MovimientoFinanciero } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
-import { Wallet, Plus, Trash2, X, TrendingUp, TrendingDown, BarChart3, DollarSign, Calendar, Edit2, Save } from 'lucide-react';
+import { Wallet, Plus, Trash2, X, TrendingUp, TrendingDown, BarChart3, DollarSign, Calendar, Edit2, Save, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { useConfirm } from '../context/ConfirmContext';
-import { getColombiaDateString } from '../utils/dateUtils';
+import { getColombiaDateString, getQuincenaInfo, getQuincenaOfDate, Quincena } from '../utils/dateUtils';
 
 const MES_ACTUAL = getColombiaDateString().substring(0, 7);
 
@@ -42,6 +42,9 @@ export const Finanzas = () => {
     registros,
     empleados,
     productos,
+    nominasPagadas,
+    marcarNominaComoPagada,
+    desmarcarNominaComoPagada,
   } = useAppContext();
   const { tieneRol } = useAuth();
   const { confirm } = useConfirm();
@@ -74,66 +77,71 @@ export const Finanzas = () => {
   const nominaCalculada = useMemo(() => {
     const rows: Array<MovimientoFinanciero> = [];
     for (const emp of empleados) {
-      const regsEmp = registros.filter(
-        r => r.empleadoId === emp.id && r.fecha?.startsWith(mesSel)
-      );
-      if (regsEmp.length === 0) continue;
+      for (const q of ['Q1', 'Q2'] as Quincena[]) {
+        const qInfo = getQuincenaInfo(mesSel, q);
+        const regsEmp = registros.filter(
+          r => r.empleadoId === emp.id && r.fecha?.startsWith(mesSel) && getQuincenaOfDate(r.fecha) === q
+        );
+        if (regsEmp.length === 0) continue;
 
-      const modalidad: TipoPago = (emp.tipoPago as TipoPago) || 'AMBOS';
-      let pagoHoras = 0;
-      let pagoProduccion = 0;
+        const modalidad: TipoPago = (emp.tipoPago as TipoPago) || 'AMBOS';
+        let pagoHoras = 0;
+        let pagoProduccion = 0;
 
-      for (const reg of regsEmp) {
-        // Pago por horas (solo si modalidad lo incluye)
-        if (
-          (modalidad === 'HORAS' || modalidad === 'AMBOS') &&
-          emp.valorHora &&
-          reg.horaEntrada && reg.horaSalida &&
-          reg.horaEntrada !== '--:--' && reg.horaSalida !== '--:--'
-        ) {
-          try {
-            const [hE, mE] = reg.horaEntrada.split(':').map(Number);
-            const [hS, mS] = reg.horaSalida.split(':').map(Number);
-            const horas = Math.max(0, (hS + mS / 60) - (hE + mE / 60));
-            pagoHoras += horas * emp.valorHora;
-          } catch {}
-        }
+        for (const reg of regsEmp) {
+          if (
+            (modalidad === 'HORAS' || modalidad === 'AMBOS') &&
+            emp.valorHora &&
+            reg.horaEntrada && reg.horaSalida &&
+            reg.horaEntrada !== '--:--' && reg.horaSalida !== '--:--'
+          ) {
+            try {
+              const [hE, mE] = reg.horaEntrada.split(':').map(Number);
+              const [hS, mS] = reg.horaSalida.split(':').map(Number);
+              const horas = Math.max(0, (hS + mS / 60) - (hE + mE / 60));
+              pagoHoras += horas * emp.valorHora;
+            } catch {}
+          }
 
-        // Pago por producción (solo si modalidad lo incluye)
-        if (modalidad === 'PRODUCCION' || modalidad === 'AMBOS') {
-          for (const prod of reg.producciones ?? []) {
-            const orden = productos.find(p => p.id === prod.productoId);
-            if (!orden?.pasos) continue;
-            const paso = orden.pasos.find(ps => ps.id === prod.pasoId);
-            if (paso?.valorPorUnidad) {
-              pagoProduccion += (prod.unidadesTotales ?? 0) * paso.valorPorUnidad;
+          if (modalidad === 'PRODUCCION' || modalidad === 'AMBOS') {
+            for (const prod of reg.producciones ?? []) {
+              const orden = productos.find(p => p.id === prod.productoId);
+              if (!orden?.pasos) continue;
+              const paso = orden.pasos.find(ps => ps.id === prod.pasoId);
+              if (paso?.valorPorUnidad) {
+                pagoProduccion += (prod.unidadesTotales ?? 0) * paso.valorPorUnidad;
+              }
             }
           }
         }
+
+        const total = pagoHoras + pagoProduccion;
+        if (total <= 0) continue;
+
+        const descripcionParts: string[] = [];
+        if (pagoHoras > 0) descripcionParts.push(`Horas: ${formatCOP(pagoHoras)}`);
+        if (pagoProduccion > 0) descripcionParts.push(`Producción: ${formatCOP(pagoProduccion)}`);
+        const modalidadLabel = modalidad === 'HORAS' ? '⏱ Horas' : modalidad === 'PRODUCCION' ? '📦 Producción' : '⚡ Ambos';
+
+        const idNomina = `nomina-${emp.id}-${mesSel}-${q}`;
+
+        rows.push({
+          id: idNomina,
+          mes: mesSel,
+          nombre: `Nómina ${q}: ${emp.nombre}`,
+          descripcion: `${qInfo.label} | ${modalidadLabel} | ${descripcionParts.join(' | ')}`,
+          monto: total,
+          tipo: 'GASTO',
+          origen: 'NOMINA',
+          empleadoId: emp.id,
+          fecha: qInfo.fin,
+          quincena: q,
+          estadoPago: nominasPagadas.has(idNomina) ? 'PAGADO' : 'PENDIENTE',
+        });
       }
-
-      const total = pagoHoras + pagoProduccion;
-      if (total <= 0) continue;
-
-      const descripcionParts: string[] = [];
-      if (pagoHoras > 0) descripcionParts.push(`Horas: ${formatCOP(pagoHoras)}`);
-      if (pagoProduccion > 0) descripcionParts.push(`Producción: ${formatCOP(pagoProduccion)}`);
-      const modalidadLabel = modalidad === 'HORAS' ? '⏱ Horas' : modalidad === 'PRODUCCION' ? '📦 Producción' : '⚡ Ambos';
-
-      rows.push({
-        id: `nomina-${emp.id}-${mesSel}`,
-        mes: mesSel,
-        nombre: `Nómina: ${emp.nombre}`,
-        descripcion: `${modalidadLabel} | ${descripcionParts.join(' | ')}`,
-        monto: total,
-        tipo: 'GASTO',
-        origen: 'NOMINA',
-        empleadoId: emp.id,
-        fecha: mesSel + '-01',
-      });
     }
     return rows;
-  }, [mesSel, empleados, registros, productos]);
+  }, [mesSel, empleados, registros, productos, nominasPagadas]);
 
   // Meses disponibles
   const mesesDisponibles = useMemo(() => {
@@ -346,16 +354,29 @@ export const Finanzas = () => {
                         {getPorcentaje(mv.monto)}
                       </td>
                       <td className="px-5 py-3.5">
-                        <span
-                          className="px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wide"
-                          style={
-                            mv.origen === 'NOMINA'
-                              ? { background: 'rgba(37,99,235,0.08)', color: '#1d4ed8' }
-                              : { background: 'var(--surface-linen)', color: 'var(--carbon)', border: '1px solid var(--border-fiber)' }
-                          }
-                        >
-                          {mv.origen === 'NOMINA' ? '💼 Nómina' : '✏️ Manual'}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span
+                            className="px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wide"
+                            style={
+                              mv.origen === 'NOMINA'
+                                ? { background: 'rgba(37,99,235,0.08)', color: '#1d4ed8' }
+                                : { background: 'var(--surface-linen)', color: 'var(--carbon)', border: '1px solid var(--border-fiber)' }
+                            }
+                          >
+                            {mv.origen === 'NOMINA' ? '💼 Nómina' : '✏️ Manual'}
+                          </span>
+                          {mv.origen === 'NOMINA' && (
+                            <span
+                              className="px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide"
+                              style={mv.estadoPago === 'PAGADO'
+                                ? { background: '#dcfce7', color: '#166534' }
+                                : { background: '#fef3c7', color: '#92400e' }
+                              }
+                            >
+                              {mv.estadoPago === 'PAGADO' ? 'Pagada' : 'Pendiente'}
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-5 py-3.5">
                         {mv.origen !== 'NOMINA' && (
@@ -376,6 +397,20 @@ export const Finanzas = () => {
                               title="Eliminar"
                             >
                               <Trash2 size={14} />
+                            </button>
+                          </div>
+                        )}
+                        {mv.origen === 'NOMINA' && (
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              onClick={() => mv.estadoPago === 'PAGADO' ? desmarcarNominaComoPagada(mv.id) : marcarNominaComoPagada(mv.id)}
+                              className="px-2 py-1.5 rounded-lg text-[11px] font-semibold flex items-center gap-1.5 transition-colors"
+                              style={mv.estadoPago === 'PAGADO'
+                                ? { background: 'var(--surface-linen)', color: 'var(--carbon)', border: '1px solid var(--border-fiber)' }
+                                : { background: 'var(--accent-copper)', color: '#1a1a2e', boxShadow: 'var(--shadow-copper)' }
+                              }
+                            >
+                              <CheckCircle size={14} /> {mv.estadoPago === 'PAGADO' ? 'Desmarcar' : 'Marcar Pagada'}
                             </button>
                           </div>
                         )}

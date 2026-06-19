@@ -102,6 +102,10 @@ export interface MovimientoFinanciero {
   origen: 'NOMINA' | 'MANUAL';
   empleadoId?: string;
   fecha: string;
+  /** Q1 = días 1-15 · Q2 = días 16-fin de mes */
+  quincena?: 'Q1' | 'Q2';
+  /** Estado de pago de la quincena (solo aplica a nómina) */
+  estadoPago?: 'PENDIENTE' | 'PAGADO';
 }
 
 interface BootstrapResponse {
@@ -178,6 +182,10 @@ interface AppContextType {
   agregarMovimiento: (mv: Omit<MovimientoFinanciero, 'id'>) => Promise<void>;
   eliminarMovimiento: (id: string) => void;
   registrarNomina: (mes: string) => Promise<void>;
+  /** IDs de quincenas de nómina marcadas como pagadas (persiste en localStorage) */
+  nominasPagadas: Set<string>;
+  marcarNominaComoPagada: (nominaId: string) => void;
+  desmarcarNominaComoPagada: (nominaId: string) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -217,6 +225,19 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [tiposDocumento, setTiposDocumento] = useState<CatalogoItem[]>([]);
   const [areasTrabajo, setAreasTrabajo] = useState<CatalogoItem[]>([]);
   const [accionesAseo, setAccionesAseo] = useState<CatalogoItem[]>([]);
+  
+  const [nominasPagadas, setNominasPagadas] = useState<Set<string>>(() => {
+    try {
+      const saved = localStorage.getItem('nominasPagadas');
+      return saved ? new Set(JSON.parse(saved)) : new Set();
+    } catch {
+      return new Set();
+    }
+  });
+
+  useEffect(() => {
+    localStorage.setItem('nominasPagadas', JSON.stringify(Array.from(nominasPagadas)));
+  }, [nominasPagadas]);
 
    useEffect(() => {
      let mounted = true;
@@ -734,6 +755,22 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     ]);
   };
 
+  const marcarNominaComoPagada = (nominaId: string) => {
+    setNominasPagadas((prev) => {
+      const next = new Set(prev);
+      next.add(nominaId);
+      return next;
+    });
+  };
+
+  const desmarcarNominaComoPagada = (nominaId: string) => {
+    setNominasPagadas((prev) => {
+      const next = new Set(prev);
+      next.delete(nominaId);
+      return next;
+    });
+  };
+
   const buildCatalogBody = (item: Partial<CatalogoItem>) => {
     const body: Record<string, unknown> = {};
     if (item.nombre != null) body.nombre = item.nombre;
@@ -810,7 +847,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
        registros, agregarRegistro, editarRegistro, eliminarRegistro, unidadesDisponiblesPaso,
        registrosAseo, crearRegistroAseo, toggleRegistroAseoEntry, actualizarRegistroAseoEntry, eliminarRegistroAseo,
        empresas, agregarEmpresa, editarEmpresa, eliminarEmpresa,
-       movimientosFinancieros, agregarMovimiento, eliminarMovimiento, registrarNomina,
+       movimientosFinancieros, agregarMovimiento, eliminarMovimiento, registrarNomina, nominasPagadas, marcarNominaComoPagada, desmarcarNominaComoPagada,
        accionesProduccion, cargos, tiposDocumento, areasTrabajo, accionesAseo,
        agregarAccionProduccion, editarAccionProduccion, eliminarAccionProduccion,
        agregarCargo, editarCargo, eliminarCargo,
