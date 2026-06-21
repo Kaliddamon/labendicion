@@ -678,14 +678,16 @@ export const Finanzas = () => {
               </div>
             </div>
             <div 
-              className={`flex-1 overflow-hidden p-4 flex items-center justify-center bg-slate-50/50 relative ${zoom > 1 ? 'cursor-grab active:cursor-grabbing' : ''}`}
+              className={`flex-1 overflow-hidden p-4 flex items-center justify-center bg-slate-50/50 relative ${zoom > 1 ? 'cursor-grab active:cursor-grabbing select-none' : ''}`}
               onMouseDown={(e) => {
                 if (zoom <= 1) return;
+                e.preventDefault();
                 setIsDragging(true);
                 setStartPos({ x: e.clientX - position.x, y: e.clientY - position.y });
               }}
               onMouseMove={(e) => {
                 if (!isDragging || zoom <= 1) return;
+                e.preventDefault();
                 setPosition({ x: e.clientX - startPos.x, y: e.clientY - startPos.y });
               }}
               onMouseUp={() => setIsDragging(false)}
