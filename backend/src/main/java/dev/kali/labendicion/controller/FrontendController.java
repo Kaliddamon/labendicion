@@ -949,6 +949,10 @@ public class FrontendController {
             mv.setOrigen("MANUAL");
             mv.setFecha(java.time.LocalDate.now(java.time.ZoneId.of("America/Bogota")).toString());
 
+            if (body.containsKey("evidenciaUrl") && body.get("evidenciaUrl") != null && !body.get("evidenciaUrl").toString().isBlank()) {
+                mv.setEvidenciaUrl(body.get("evidenciaUrl").toString());
+            }
+
             dev.kali.labendicion.domain.entity.MovimientoFinanciero guardado = movimientoFinancieroRepo.save(mv);
             eventService.emitAsync("MOVIMIENTO_CREADO", mapMovimientoToDto(guardado));
             return ResponseEntity.ok(mapMovimientoToDto(guardado));
@@ -1064,6 +1068,9 @@ public class FrontendController {
         m.put("origen", mv.getOrigen());
         m.put("empleadoId", mv.getEmpleadoId());
         m.put("fecha", mv.getFecha());
+        if (mv.getEvidenciaUrl() != null) {
+            m.put("evidenciaUrl", mv.getEvidenciaUrl());
+        }
         return m;
     }
 
