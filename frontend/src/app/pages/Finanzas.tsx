@@ -5,7 +5,7 @@ import { Wallet, Plus, Trash2, X, TrendingUp, TrendingDown, BarChart3, DollarSig
 import { toast } from 'sonner';
 import { useConfirm } from '../context/ConfirmContext';
 import { getColombiaDateString, getQuincenaInfo, getQuincenaOfDate, Quincena } from '../utils/dateUtils';
-import { uploadEvidencia } from '../utils/supabaseClient';
+import { uploadEvidencia, deleteEvidencia } from '../utils/supabaseClient';
 
 const MES_ACTUAL = getColombiaDateString().substring(0, 7);
 
@@ -192,9 +192,13 @@ export const Finanzas = () => {
     try {
       setSubiendo(true);
       let evidenciaUrl = editandoId ? movimientosFinancieros.find(m => m.id === editandoId)?.evidenciaUrl : undefined;
+      const oldEvidenciaUrl = evidenciaUrl;
       
       if (fArchivo) {
         evidenciaUrl = await uploadEvidencia(fArchivo);
+        if (oldEvidenciaUrl && oldEvidenciaUrl !== evidenciaUrl) {
+          await deleteEvidencia(oldEvidenciaUrl);
+        }
       }
 
       if (editandoId) {
@@ -232,8 +236,10 @@ export const Finanzas = () => {
   };
 
   const handleEliminarEvidencia = async (mv: MovimientoFinanciero) => {
-    if (!await confirm('¿Seguro que deseas eliminar la evidencia de este movimiento?')) return;
+    if (!await confirm({ title: 'Eliminar Evidencia', description: '¿Estás seguro que deseas eliminar la evidencia adjunta a este movimiento? Esta acción no se puede deshacer.' })) return;
     try {
+      if (mv.evidenciaUrl) await deleteEvidencia(mv.evidenciaUrl);
+      
       await eliminarMovimiento(mv.id);
       await agregarMovimiento({
         mes: mv.mes,
@@ -467,8 +473,10 @@ export const Finanzas = () => {
                             </button>
                             <button
                               onClick={async () => {
-                                if (await confirm({ title: '¿Eliminar movimiento?', description: '¿Seguro que deseas eliminar este movimiento?', confirmText: 'Eliminar' }))
+                                if (await confirm({ title: '¿Eliminar movimiento?', description: '¿Seguro que deseas eliminar este movimiento?', confirmText: 'Eliminar' })) {
+                                  if (mv.evidenciaUrl) await deleteEvidencia(mv.evidenciaUrl);
                                   eliminarMovimiento(mv.id);
+                                }
                               }}
                               className="p-1.5 rounded-lg text-slate-400 hover:bg-rose-50 hover:text-rose-500 transition-colors"
                               title="Eliminar"

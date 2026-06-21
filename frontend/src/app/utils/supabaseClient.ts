@@ -37,3 +37,26 @@ export const uploadEvidencia = async (file: File): Promise<string> => {
 
   return publicUrlData.publicUrl;
 };
+
+/**
+ * Elimina una evidencia del bucket 'evidencias' a partir de su URL pública.
+ * @param url La URL pública del archivo.
+ */
+export const deleteEvidencia = async (url: string): Promise<void> => {
+  if (!url) return;
+  try {
+    const pathParts = url.split('evidencias/');
+    if (pathParts.length < 2) return;
+    const filePath = pathParts[1];
+    
+    const { error } = await supabase.storage
+      .from('evidencias')
+      .remove([filePath]);
+      
+    if (error) {
+      console.error('Error eliminando evidencia de Supabase:', error);
+    }
+  } catch (e) {
+    console.error('Error procesando eliminación:', e);
+  }
+};
