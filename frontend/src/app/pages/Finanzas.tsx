@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useAppContext, MovimientoFinanciero } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 import { Wallet, Plus, Trash2, X, TrendingUp, TrendingDown, BarChart3, DollarSign, Calendar, Edit2, Save, CheckCircle, Paperclip, Loader2, ZoomIn, ZoomOut, Download } from 'lucide-react';
@@ -63,6 +63,13 @@ export const Finanzas = () => {
   const [subiendo, setSubiendo] = useState(false);
   const [evidenciaPreview, setEvidenciaPreview] = useState<MovimientoFinanciero | null>(null);
   const [zoom, setZoom] = useState(1);
+  const [isDragging, setIsDragging] = useState(false);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [startPos, setStartPos] = useState({ x: 0, y: 0 });
+
+  useEffect(() => {
+    if (zoom <= 1) setPosition({ x: 0, y: 0 });
+  }, [zoom]);
 
   const resetForm = () => {
     setFNombre(''); setFDescripcion(''); setFMontoStr(''); setFTipo('GASTO');
@@ -242,6 +249,26 @@ export const Finanzas = () => {
       setEvidenciaPreview(null);
     } catch {
       toast.error('Error al eliminar evidencia.');
+    }
+  };
+
+  const handleDownload = async (url: string, nombre: string) => {
+    try {
+      const toastId = toast.loading('Descargando...');
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      const extension = url.split('.').pop() || 'png';
+      a.download = `Evidencia_${nombre.replace(/\s+/g, '_')}.${extension}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(blobUrl);
+      toast.dismiss(toastId);
+    } catch (error) {
+      toast.error('Error al descargar el archivo.');
     }
   };
 
@@ -630,16 +657,13 @@ export const Finanzas = () => {
                     <div className="w-px h-6 bg-slate-200 mx-1"></div>
                   </>
                 )}
-                <a
-                  href={evidenciaPreview.evidenciaUrl}
-                  download
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <button
+                  onClick={() => handleDownload(evidenciaPreview.evidenciaUrl!, evidenciaPreview.nombre)}
                   className="p-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 rounded-xl transition-colors"
                   title="Descargar archivo"
                 >
                   <Download size={16} />
-                </a>
+                </button>
                 <button 
                   onClick={() => handleEliminarEvidencia(evidenciaPreview)}
                   className="p-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl transition-colors"
@@ -653,19 +677,34 @@ export const Finanzas = () => {
                 </button>
               </div>
             </div>
-            <div className="flex-1 overflow-auto p-4 flex items-center justify-center bg-slate-50/50 relative cursor-move">
+            <div 
+              className={`flex-1 overflow-hidden p-4 flex items-center justify-center bg-slate-50/50 relative ${zoom > 1 ? 'cursor-grab active:cursor-grabbing' : ''}`}
+              onMouseDown={(e) => {
+                if (zoom <= 1) return;
+                setIsDragging(true);
+                setStartPos({ x: e.clientX - position.x, y: e.clientY - position.y });
+              }}
+              onMouseMove={(e) => {
+                if (!isDragging || zoom <= 1) return;
+                setPosition({ x: e.clientX - startPos.x, y: e.clientY - startPos.y });
+              }}
+              onMouseUp={() => setIsDragging(false)}
+              onMouseLeave={() => setIsDragging(false)}
+            >
               {evidenciaPreview.evidenciaUrl.toLowerCase().endsWith('.pdf') ? (
                 <iframe src={evidenciaPreview.evidenciaUrl} className="w-full h-[75vh] rounded-xl shadow-sm border border-slate-200" title="Evidencia PDF" />
               ) : (
                 <img 
                   src={evidenciaPreview.evidenciaUrl} 
                   alt="Evidencia" 
-                  className="rounded-xl shadow-sm transition-transform duration-200 origin-center" 
+                  className="rounded-xl shadow-sm transition-transform origin-center select-none pointer-events-none" 
                   style={{ 
-                    transform: `scale(${zoom})`,
-                    maxHeight: zoom <= 1 ? '75vh' : 'none',
-                    maxWidth: zoom <= 1 ? '100%' : 'none',
+                    transform: `translate(${position.x}px, ${position.y}px) scale(${zoom})`,
+                    maxHeight: '75vh',
+                    maxWidth: '100%',
+                    transitionDuration: isDragging ? '0ms' : '200ms'
                   }} 
+                  draggable={false}
                 />
               )}
             </div>
