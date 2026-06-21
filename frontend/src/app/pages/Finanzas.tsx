@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useAppContext, MovimientoFinanciero } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
-import { Wallet, Plus, Trash2, X, TrendingUp, TrendingDown, BarChart3, DollarSign, Calendar, Edit2, Save, CheckCircle, Paperclip, Loader2 } from 'lucide-react';
+import { Wallet, Plus, Trash2, X, TrendingUp, TrendingDown, BarChart3, DollarSign, Calendar, Edit2, Save, CheckCircle, Paperclip, Loader2, ZoomIn, ZoomOut, Download } from 'lucide-react';
 import { toast } from 'sonner';
 import { useConfirm } from '../context/ConfirmContext';
 import { getColombiaDateString, getQuincenaInfo, getQuincenaOfDate, Quincena } from '../utils/dateUtils';
@@ -61,7 +61,8 @@ export const Finanzas = () => {
   const [fTipo, setFTipo] = useState<'GASTO' | 'INGRESO'>('GASTO');
   const [fArchivo, setFArchivo] = useState<File | null>(null);
   const [subiendo, setSubiendo] = useState(false);
-  const [evidenciaPreview, setEvidenciaPreview] = useState<string | null>(null);
+  const [evidenciaPreview, setEvidenciaPreview] = useState<MovimientoFinanciero | null>(null);
+  const [zoom, setZoom] = useState(1);
 
   const resetForm = () => {
     setFNombre(''); setFDescripcion(''); setFMontoStr(''); setFTipo('GASTO');
@@ -220,6 +221,27 @@ export const Finanzas = () => {
     } catch (err: any) {
       toast.error(err.message || 'Error al guardar el movimiento.');
       setSubiendo(false);
+    }
+  };
+
+  const handleEliminarEvidencia = async (mv: MovimientoFinanciero) => {
+    if (!await confirm('¿Seguro que deseas eliminar la evidencia de este movimiento?')) return;
+    try {
+      await eliminarMovimiento(mv.id);
+      await agregarMovimiento({
+        mes: mv.mes,
+        nombre: mv.nombre,
+        descripcion: mv.descripcion,
+        monto: mv.monto,
+        tipo: mv.tipo as 'GASTO' | 'INGRESO',
+        origen: 'MANUAL',
+        fecha: mv.fecha,
+        evidenciaUrl: undefined,
+      });
+      toast.success('Evidencia eliminada correctamente.');
+      setEvidenciaPreview(null);
+    } catch {
+      toast.error('Error al eliminar evidencia.');
     }
   };
 
@@ -396,7 +418,7 @@ export const Finanzas = () => {
                       <td className="px-5 py-3.5">
                         {mv.evidenciaUrl ? (
                           <button
-                            onClick={() => setEvidenciaPreview(mv.evidenciaUrl!)}
+                            onClick={() => { setZoom(1); setEvidenciaPreview(mv); }}
                             className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-700 transition-colors"
                             title="Ver evidencia adjunta"
                           >
@@ -577,7 +599,7 @@ export const Finanzas = () => {
       )}
 
       {/* Modal de previsualización de evidencia */}
-      {evidenciaPreview && (
+      {evidenciaPreview && evidenciaPreview.evidenciaUrl && (
         <div
           className="fixed inset-0 z-[300] flex items-center justify-center p-4"
           style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}
@@ -588,19 +610,63 @@ export const Finanzas = () => {
             style={{ background: 'var(--surface-silk)' }}
             onClick={e => e.stopPropagation()}
           >
-            <div className="flex justify-between items-center p-4 border-b" style={{ borderColor: 'var(--border-fiber)' }}>
-              <h3 className="font-bold text-lg" style={{ fontFamily: 'var(--font-heading)', color: 'var(--carbon)' }}>
-                Vista Previa de Evidencia
-              </h3>
-              <button onClick={() => setEvidenciaPreview(null)} className="p-2 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors text-slate-500">
-                <X size={18} />
-              </button>
+            <div className="flex justify-between items-center p-4 border-b gap-3" style={{ borderColor: 'var(--border-fiber)' }}>
+              <div>
+                <h3 className="font-bold text-lg leading-none" style={{ fontFamily: 'var(--font-heading)', color: 'var(--carbon)' }}>
+                  Vista Previa de Evidencia
+                </h3>
+                <p className="text-xs text-slate-500 mt-1">Movimiento: {evidenciaPreview.nombre}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                {!evidenciaPreview.evidenciaUrl.toLowerCase().endsWith('.pdf') && (
+                  <>
+                    <button onClick={() => setZoom(z => Math.max(0.5, z - 0.25))} className="p-2 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors text-slate-600" title="Alejar">
+                      <ZoomOut size={16} />
+                    </button>
+                    <span className="text-xs font-bold text-slate-500 w-12 text-center">{Math.round(zoom * 100)}%</span>
+                    <button onClick={() => setZoom(z => Math.min(3, z + 0.25))} className="p-2 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors text-slate-600" title="Acercar">
+                      <ZoomIn size={16} />
+                    </button>
+                    <div className="w-px h-6 bg-slate-200 mx-1"></div>
+                  </>
+                )}
+                <a
+                  href={evidenciaPreview.evidenciaUrl}
+                  download
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 rounded-xl transition-colors"
+                  title="Descargar archivo"
+                >
+                  <Download size={16} />
+                </a>
+                <button 
+                  onClick={() => handleEliminarEvidencia(evidenciaPreview)}
+                  className="p-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl transition-colors"
+                  title="Eliminar evidencia"
+                >
+                  <Trash2 size={16} />
+                </button>
+                <div className="w-px h-6 bg-slate-200 mx-1"></div>
+                <button onClick={() => setEvidenciaPreview(null)} className="p-2 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors text-slate-500">
+                  <X size={18} />
+                </button>
+              </div>
             </div>
-            <div className="flex-1 overflow-auto p-4 flex items-center justify-center bg-slate-50/50">
-              {evidenciaPreview.toLowerCase().endsWith('.pdf') ? (
-                <iframe src={evidenciaPreview} className="w-full h-[75vh] rounded-xl shadow-sm border border-slate-200" title="Evidencia PDF" />
+            <div className="flex-1 overflow-auto p-4 flex items-center justify-center bg-slate-50/50 relative cursor-move">
+              {evidenciaPreview.evidenciaUrl.toLowerCase().endsWith('.pdf') ? (
+                <iframe src={evidenciaPreview.evidenciaUrl} className="w-full h-[75vh] rounded-xl shadow-sm border border-slate-200" title="Evidencia PDF" />
               ) : (
-                <img src={evidenciaPreview} alt="Evidencia" className="max-w-full max-h-[75vh] rounded-xl shadow-sm object-contain" />
+                <img 
+                  src={evidenciaPreview.evidenciaUrl} 
+                  alt="Evidencia" 
+                  className="rounded-xl shadow-sm transition-transform duration-200 origin-center" 
+                  style={{ 
+                    transform: `scale(${zoom})`,
+                    maxHeight: zoom <= 1 ? '75vh' : 'none',
+                    maxWidth: zoom <= 1 ? '100%' : 'none',
+                  }} 
+                />
               )}
             </div>
           </div>
