@@ -188,20 +188,7 @@ public class FrontendController {
             return m;
         }).collect(Collectors.toList());
 
-        var movimientosDto = movimientoFinancieroRepo.findAllByOrderByMesDescFechaDesc().stream().map(mv -> {
-            var m = new java.util.HashMap<String, Object>();
-            m.put("id", mv.getId());
-            m.put("mes", mv.getMes());
-            m.put("nombre", mv.getNombre());
-            m.put("descripcion", mv.getDescripcion());
-            m.put("monto", mv.getMonto());
-            m.put("porcentaje", mv.getPorcentaje());
-            m.put("tipo", mv.getTipo());
-            m.put("origen", mv.getOrigen());
-            m.put("empleadoId", mv.getEmpleadoId());
-            m.put("fecha", mv.getFecha());
-            return m;
-        }).collect(Collectors.toList());
+        var movimientosDto = movimientoFinancieroRepo.findAllByOrderByMesDescFechaDesc().stream().map(this::mapMovimientoToDto).collect(Collectors.toList());
 
         var response = new java.util.HashMap<String, Object>();
         response.put("productos", productosDto);

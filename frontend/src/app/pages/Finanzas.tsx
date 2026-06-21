@@ -61,6 +61,7 @@ export const Finanzas = () => {
   const [fTipo, setFTipo] = useState<'GASTO' | 'INGRESO'>('GASTO');
   const [fArchivo, setFArchivo] = useState<File | null>(null);
   const [subiendo, setSubiendo] = useState(false);
+  const [evidenciaPreview, setEvidenciaPreview] = useState<string | null>(null);
 
   const resetForm = () => {
     setFNombre(''); setFDescripcion(''); setFMontoStr(''); setFTipo('GASTO');
@@ -394,15 +395,13 @@ export const Finanzas = () => {
                       </td>
                       <td className="px-5 py-3.5">
                         {mv.evidenciaUrl ? (
-                          <a
-                            href={mv.evidenciaUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
+                          <button
+                            onClick={() => setEvidenciaPreview(mv.evidenciaUrl!)}
                             className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-700 transition-colors"
                             title="Ver evidencia adjunta"
                           >
                             <Paperclip size={14} />
-                          </a>
+                          </button>
                         ) : (
                           <span className="text-slate-300 pl-3">—</span>
                         )}
@@ -574,6 +573,37 @@ export const Finanzas = () => {
               </button>
             </div>
           </form>
+        </div>
+      )}
+
+      {/* Modal de previsualización de evidencia */}
+      {evidenciaPreview && (
+        <div
+          className="fixed inset-0 z-[300] flex items-center justify-center p-4"
+          style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}
+          onClick={() => setEvidenciaPreview(null)}
+        >
+          <div
+            className="relative w-full max-w-4xl max-h-[90vh] rounded-2xl flex flex-col overflow-hidden shadow-2xl animate-fade-up"
+            style={{ background: 'var(--surface-silk)' }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-center p-4 border-b" style={{ borderColor: 'var(--border-fiber)' }}>
+              <h3 className="font-bold text-lg" style={{ fontFamily: 'var(--font-heading)', color: 'var(--carbon)' }}>
+                Vista Previa de Evidencia
+              </h3>
+              <button onClick={() => setEvidenciaPreview(null)} className="p-2 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors text-slate-500">
+                <X size={18} />
+              </button>
+            </div>
+            <div className="flex-1 overflow-auto p-4 flex items-center justify-center bg-slate-50/50">
+              {evidenciaPreview.toLowerCase().endsWith('.pdf') ? (
+                <iframe src={evidenciaPreview} className="w-full h-[75vh] rounded-xl shadow-sm border border-slate-200" title="Evidencia PDF" />
+              ) : (
+                <img src={evidenciaPreview} alt="Evidencia" className="max-w-full max-h-[75vh] rounded-xl shadow-sm object-contain" />
+              )}
+            </div>
+          </div>
         </div>
       )}
     </>
