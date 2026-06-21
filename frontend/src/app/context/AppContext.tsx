@@ -106,6 +106,8 @@ export interface MovimientoFinanciero {
   quincena?: 'Q1' | 'Q2';
   /** Estado de pago de la quincena (solo aplica a nómina) */
   estadoPago?: 'PENDIENTE' | 'PAGADO';
+  /** URL de la evidencia en Supabase Storage (opcional) */
+  evidenciaUrl?: string;
 }
 
 interface BootstrapResponse {

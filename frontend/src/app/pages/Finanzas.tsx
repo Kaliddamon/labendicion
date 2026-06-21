@@ -1,10 +1,11 @@
 import React, { useState, useMemo } from 'react';
 import { useAppContext, MovimientoFinanciero } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
-import { Wallet, Plus, Trash2, X, TrendingUp, TrendingDown, BarChart3, DollarSign, Calendar, Edit2, Save, CheckCircle } from 'lucide-react';
+import { Wallet, Plus, Trash2, X, TrendingUp, TrendingDown, BarChart3, DollarSign, Calendar, Edit2, Save, CheckCircle, Paperclip, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useConfirm } from '../context/ConfirmContext';
 import { getColombiaDateString, getQuincenaInfo, getQuincenaOfDate, Quincena } from '../utils/dateUtils';
+import { uploadEvidencia } from '../utils/supabaseClient';
 
 const MES_ACTUAL = getColombiaDateString().substring(0, 7);
 
@@ -58,9 +59,12 @@ export const Finanzas = () => {
   const [fDescripcion, setFDescripcion] = useState('');
   const [fMontoStr, setFMontoStr] = useState('');
   const [fTipo, setFTipo] = useState<'GASTO' | 'INGRESO'>('GASTO');
+  const [fArchivo, setFArchivo] = useState<File | null>(null);
+  const [subiendo, setSubiendo] = useState(false);
 
   const resetForm = () => {
     setFNombre(''); setFDescripcion(''); setFMontoStr(''); setFTipo('GASTO');
+    setFArchivo(null); setSubiendo(false);
     setMostrarForm(false); setEditandoId(null);
   };
 
@@ -177,6 +181,13 @@ export const Finanzas = () => {
     if (isNaN(monto) || monto <= 0) return toast.warning('El monto debe ser mayor a cero.');
 
     try {
+      setSubiendo(true);
+      let evidenciaUrl = editandoId ? movimientosFinancieros.find(m => m.id === editandoId)?.evidenciaUrl : undefined;
+      
+      if (fArchivo) {
+        evidenciaUrl = await uploadEvidencia(fArchivo);
+      }
+
       if (editandoId) {
         // Para editar, eliminamos el anterior y creamos uno nuevo
         await eliminarMovimiento(editandoId);
@@ -188,6 +199,7 @@ export const Finanzas = () => {
           tipo: fTipo,
           origen: 'MANUAL',
           fecha: getColombiaDateString(),
+          evidenciaUrl,
         });
         toast.success('Movimiento actualizado.');
       } else {
@@ -199,12 +211,14 @@ export const Finanzas = () => {
           tipo: fTipo,
           origen: 'MANUAL',
           fecha: getColombiaDateString(),
+          evidenciaUrl,
         });
         toast.success('Movimiento añadido.');
       }
       resetForm();
-    } catch {
-      toast.error('Error al guardar el movimiento.');
+    } catch (err: any) {
+      toast.error(err.message || 'Error al guardar el movimiento.');
+      setSubiendo(false);
     }
   };
 
@@ -321,7 +335,7 @@ export const Finanzas = () => {
               <table className="w-full text-sm">
                 <thead>
                   <tr style={{ background: 'var(--surface-linen)', borderBottom: '1px solid var(--border-fiber)' }}>
-                    {['Nombre', 'Descripción', 'Monto', '%', 'Origen', ''].map(h => (
+                    {['Nombre', 'Descripción', 'Monto', '%', 'Origen', 'Evidencia', ''].map(h => (
                       <th key={h} className="text-left px-5 py-3.5 text-[11px] font-bold uppercase tracking-widest text-slate-400">
                         {h}
                       </th>
@@ -377,6 +391,21 @@ export const Finanzas = () => {
                             </span>
                           )}
                         </div>
+                      </td>
+                      <td className="px-5 py-3.5">
+                        {mv.evidenciaUrl ? (
+                          <a
+                            href={mv.evidenciaUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-700 transition-colors"
+                            title="Ver evidencia adjunta"
+                          >
+                            <Paperclip size={14} />
+                          </a>
+                        ) : (
+                          <span className="text-slate-300 pl-3">—</span>
+                        )}
                       </td>
                       <td className="px-5 py-3.5">
                         {mv.origen !== 'NOMINA' && (
@@ -507,6 +536,28 @@ export const Finanzas = () => {
                   El porcentaje se calcula automáticamente como proporción del total del mes.
                 </p>
               </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 mb-1.5">Evidencia (opcional)</label>
+                <div className="relative">
+                  <input
+                    type="file"
+                    accept="image/*,application/pdf"
+                    onChange={e => setFArchivo(e.target.files?.[0] || null)}
+                    className="block w-full text-sm text-slate-500
+                      file:mr-4 file:py-2.5 file:px-4
+                      file:rounded-xl file:border-0
+                      file:text-xs file:font-bold
+                      file:bg-slate-100 file:text-slate-600
+                      hover:file:bg-slate-200 transition-colors cursor-pointer"
+                  />
+                </div>
+                {editandoId && movimientosFinancieros.find(m => m.id === editandoId)?.evidenciaUrl && (
+                  <p className="text-[10px] text-emerald-600 mt-1.5 flex items-center gap-1">
+                    <CheckCircle size={12} /> Ya tiene una evidencia adjunta.
+                  </p>
+                )}
+              </div>
             </div>
 
             <div className="flex gap-3 mt-6">
@@ -515,10 +566,11 @@ export const Finanzas = () => {
               </button>
               <button
                 type="submit"
-                className="flex-1 py-3 rounded-xl text-sm font-bold text-[#1a1a2e] active:scale-[0.97] transition-all flex items-center justify-center gap-2"
+                disabled={subiendo}
+                className="flex-1 py-3 rounded-xl text-sm font-bold text-[#1a1a2e] active:scale-[0.97] transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:pointer-events-none"
                 style={{ background: 'var(--accent-copper)', boxShadow: 'var(--shadow-copper)' }}
               >
-                {editandoId ? <><Save size={15} /> Actualizar</> : 'Guardar'}
+                {subiendo ? <><Loader2 size={15} className="animate-spin" /> Subiendo...</> : (editandoId ? <><Save size={15} /> Actualizar</> : 'Guardar')}
               </button>
             </div>
           </form>

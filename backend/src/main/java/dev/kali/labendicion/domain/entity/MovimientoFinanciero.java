@@ -46,4 +46,7 @@ public class MovimientoFinanciero {
 
     /** Fecha de creación del registro "YYYY-MM-DD". */
     private String fecha;
+
+    /** URL de la evidencia en Supabase Storage (opcional). */
+    private String evidenciaUrl;
 }
