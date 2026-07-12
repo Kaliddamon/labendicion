@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { AlertCircle, Check, X, Shield, Crown, Briefcase, User } from 'lucide-react';
+import { AlertCircle, Check, X, Shield, Crown, Briefcase, User, Eye } from 'lucide-react';
 
 export const GestionarRoles = () => {
   const { user, tieneRol } = useAuth();
@@ -30,8 +30,8 @@ export const GestionarRoles = () => {
   }
 
   const salAllowedRoles = tieneRol('SUPERADMINISTRADOR')
-    ? ['ADMINISTRADOR', 'TRABAJADOR', 'USUARIO']
-    : ['TRABAJADOR', 'USUARIO'];
+    ? ['ADMINISTRADOR', 'SUPERVISOR', 'TRABAJADOR', 'USUARIO']
+    : ['SUPERVISOR', 'TRABAJADOR', 'USUARIO'];
 
   const handleAsignarRol = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,6 +79,14 @@ export const GestionarRoles = () => {
       gradient: 'from-blue-500 to-blue-600',
       bg: 'rgba(37, 99, 235, 0.06)',
       border: 'rgba(37, 99, 235, 0.15)',
+    },
+    {
+      name: 'Supervisor',
+      desc: 'Gestionar operaciones (sin finanzas ni roles)',
+      icon: Eye,
+      gradient: 'from-emerald-500 to-emerald-600',
+      bg: 'rgba(16, 185, 129, 0.06)',
+      border: 'rgba(16, 185, 129, 0.15)',
     },
     {
       name: 'Trabajador',

@@ -14,19 +14,22 @@ export const Layout = () => {
     navigate('/login');
   };
 
-  const navItems = [
+  type NavItem = { path: string; icon: React.ElementType; label: string; requiredRoles?: string[] };
+  type NavGroup = { category: string; items: NavItem[] };
+
+  const navItems: NavGroup[] = [
     { category: 'General', items: [
       { path: '/', icon: Home, label: 'Inicio' },
     ]},
     { category: 'Operación', items: [
-      { path: '/produccion', icon: Scissors, label: 'Producción', requiredRoles: ['SUPERADMINISTRADOR', 'ADMINISTRADOR'] },
-      { path: '/empleados', icon: Users, label: 'Empleados', requiredRoles: ['SUPERADMINISTRADOR', 'ADMINISTRADOR'] },
-      { path: '/aseo', icon: Sparkles, label: 'Aseo', requiredRoles: ['SUPERADMINISTRADOR', 'ADMINISTRADOR', 'TRABAJADOR'] },
-      { path: '/rendimiento', icon: TrendingUp, label: 'Desempeño', requiredRoles: ['SUPERADMINISTRADOR', 'ADMINISTRADOR', 'TRABAJADOR'] },
+      { path: '/produccion', icon: Scissors, label: 'Producción', requiredRoles: ['SUPERADMINISTRADOR', 'ADMINISTRADOR', 'SUPERVISOR'] },
+      { path: '/empleados', icon: Users, label: 'Empleados', requiredRoles: ['SUPERADMINISTRADOR', 'ADMINISTRADOR', 'SUPERVISOR'] },
+      { path: '/aseo', icon: Sparkles, label: 'Aseo', requiredRoles: ['SUPERADMINISTRADOR', 'ADMINISTRADOR', 'SUPERVISOR', 'TRABAJADOR'] },
+      { path: '/rendimiento', icon: TrendingUp, label: 'Desempeño', requiredRoles: ['SUPERADMINISTRADOR', 'ADMINISTRADOR', 'SUPERVISOR', 'TRABAJADOR'] },
     ]},
     { category: 'Sistema', items: [
       { path: '/finanzas', icon: Wallet, label: 'Finanzas', requiredRoles: ['SUPERADMINISTRADOR', 'ADMINISTRADOR'] },
-      { path: '/configuracion', icon: Settings, label: 'Configuración', requiredRoles: ['SUPERADMINISTRADOR', 'ADMINISTRADOR'] },
+      { path: '/configuracion', icon: Settings, label: 'Configuración', requiredRoles: ['SUPERADMINISTRADOR', 'ADMINISTRADOR', 'SUPERVISOR'] },
       { path: '/mensajes', icon: Mail, label: 'Mensajes', requiredRoles: ['SUPERADMINISTRADOR', 'ADMINISTRADOR'] },
     ]}
   ];
@@ -71,7 +74,7 @@ export const Layout = () => {
         {/* Navigation */}
         <nav className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-4 custom-scrollbar">
           {navItems.map((group, idx) => {
-            const visibleItems = group.items.filter(item => !item.requiredRoles || item.requiredRoles.some(rol => roles.includes(rol)));
+            const visibleItems = group.items.filter(item => !item.requiredRoles || item.requiredRoles.some((rol: string) => roles.includes(rol)));
             if (visibleItems.length === 0) return null;
 
             return (
@@ -172,7 +175,7 @@ export const Layout = () => {
       <aside className="md:hidden fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom,0px))] z-50 flex shrink-0 justify-center">
         <div className="w-full max-w-md rounded-2xl border border-slate-200/50 bg-white/90 p-1.5 shadow-[0_8px_30px_rgb(0,0,0,0.08)] backdrop-blur-xl flex justify-around items-center">
           {navItems.flatMap(g => g.items)
-            .filter(item => !item.requiredRoles || item.requiredRoles.some(rol => roles.includes(rol)))
+            .filter(item => !item.requiredRoles || item.requiredRoles.some((rol: string) => roles.includes(rol)))
             .map(({ path, icon: Icon, label }) => (
             <NavLink
               key={path}

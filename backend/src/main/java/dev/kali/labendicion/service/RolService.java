@@ -31,8 +31,12 @@ public class RolService {
      */
     @Transactional
     public void inicializarRolesYPermisos() {
-        // Si ya existen, no hacer nada
+        // Si ya existen, solo verificar si falta alguno nuevo como SUPERVISOR
         if (rolRepository.existsByNombre("SUPERADMINISTRADOR")) {
+            if (!rolRepository.existsByNombre("SUPERVISOR")) {
+                Set<Permiso> permisosTotal = Set.copyOf(permisoRepository.findAll());
+                crearRolSupervisor(permisosTotal);
+            }
             return;
         }
         
@@ -83,6 +87,7 @@ public class RolService {
         crearRolSuperAdministrador(permisosTotal);
         crearRolAdministrador(permisosTotal);
         crearRolTrabajador(permisosTotal);
+        crearRolSupervisor(permisosTotal);
         crearRolUsuario(permisosTotal);
     }
     
@@ -106,6 +111,23 @@ public class RolService {
         admin.getPermisos().removeIf(p -> p.getNombre().equals("ASIGNAR_ADMINISTRADOR"));
         
         rolRepository.save(admin);
+    }
+    
+    private void crearRolSupervisor(Set<Permiso> todosPermisos) {
+        Rol supervisor = Rol.builder()
+            .nombre("SUPERVISOR")
+            .descripcion("Puede gestionar operaciones pero no tiene acceso a finanzas, asignación de roles ni mensajes.")
+            .permisos(new java.util.HashSet<>(todosPermisos))
+            .build();
+        
+        supervisor.getPermisos().removeIf(p -> 
+            p.getNombre().equals("ASIGNAR_ADMINISTRADOR") || 
+            p.getNombre().equals("ASIGNAR_TRABAJADOR") ||
+            p.getCategoria().equals("FINANZAS") ||
+            p.getCategoria().equals("MENSAJES")
+        );
+        
+        rolRepository.save(supervisor);
     }
     
     private void crearRolTrabajador(Set<Permiso> todosPermisos) {

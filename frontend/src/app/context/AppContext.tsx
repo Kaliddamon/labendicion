@@ -365,7 +365,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   // Empleados
   const agregarEmpleado = (emp: Omit<Empleado, 'id'>) => {
     const tmpId = `tmp-emp-${Date.now()}`;
-    const tmpEmp: Empleado = { id: tmpId, fechaIngreso: getColombiaIsoString(), estado: 'Activo', ...emp } as Empleado;
+    const tmpEmp: Empleado = { id: tmpId, ...emp } as Empleado;
     setEmpleados((prev) => [tmpEmp, ...prev]);
 
     request<Empleado>('/empleados', {

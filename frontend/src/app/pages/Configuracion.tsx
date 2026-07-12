@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAppContext, CatalogoItem, Empresa } from '../context/AppContext';
+import { useAuth } from '../context/AuthContext';
 import { Settings, Plus, Edit2, Trash2, Search, X, Check, CheckCircle2, Shield, AlertCircle, Eye, Users } from 'lucide-react';
 import { toast } from 'sonner';
 import { useConfirm } from '../context/ConfirmContext';
@@ -17,6 +18,8 @@ export const Configuracion = () => {
     agregarAccionAseo, editarAccionAseo, eliminarAccionAseo,
     agregarEmpresa, editarEmpresa, eliminarEmpresa,
   } = useAppContext();
+  
+  const { tieneRol } = useAuth();
 
   const [tab, setTab] = useState<Tab>('accionesProduccion');
   const [nombre, setNombre] = useState('');
@@ -34,7 +37,7 @@ export const Configuracion = () => {
     { id: 'areas', label: 'Áreas de trabajo' },
     { id: 'accionesAseo', label: 'Acciones de aseo' },
     { id: 'empresas', label: 'Empresas' },
-    { id: 'roles', label: 'Gestión de roles' },
+    ...(tieneRol('SUPERADMINISTRADOR') || tieneRol('ADMINISTRADOR') ? [{ id: 'roles' as Tab, label: 'Gestión de roles' }] : []),
   ];
 
   const listaActual = (): CatalogoItem[] => {
@@ -323,7 +326,7 @@ export const Configuracion = () => {
             ))
         )}
       </ul>
-      {tab !== 'roles' && totalPaginas > 1 && (
+      {totalPaginas > 1 && (
         <Paginador
           paginaActual={paginaActual}
           totalPaginas={totalPaginas}

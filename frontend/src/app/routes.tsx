@@ -27,11 +27,11 @@ export const router = createBrowserRouter([
           return <ProtectedRoute allowNoRole><HomeOrContact /></ProtectedRoute>;
         } 
       },
-      { path: "produccion", Component: () => <ProtectedRoute requiredRoles={['SUPERADMINISTRADOR', 'ADMINISTRADOR']}><Produccion /></ProtectedRoute> },
-      { path: "empleados", Component: () => <ProtectedRoute requiredRoles={['SUPERADMINISTRADOR', 'ADMINISTRADOR']}><Empleados /></ProtectedRoute> },
-      { path: "aseo", Component: () => <ProtectedRoute requiredRoles={['SUPERADMINISTRADOR', 'ADMINISTRADOR', 'TRABAJADOR']}><Aseo /></ProtectedRoute> },
-      { path: "rendimiento", Component: () => <ProtectedRoute requiredRoles={['SUPERADMINISTRADOR', 'ADMINISTRADOR', 'TRABAJADOR']}><Rendimiento /></ProtectedRoute> },
-      { path: "configuracion", Component: () => <ProtectedRoute requiredRoles={['SUPERADMINISTRADOR', 'ADMINISTRADOR']}><Configuracion /></ProtectedRoute> },
+      { path: "produccion", Component: () => <ProtectedRoute requiredRoles={['SUPERADMINISTRADOR', 'ADMINISTRADOR', 'SUPERVISOR']}><Produccion /></ProtectedRoute> },
+      { path: "empleados", Component: () => <ProtectedRoute requiredRoles={['SUPERADMINISTRADOR', 'ADMINISTRADOR', 'SUPERVISOR']}><Empleados /></ProtectedRoute> },
+      { path: "aseo", Component: () => <ProtectedRoute requiredRoles={['SUPERADMINISTRADOR', 'ADMINISTRADOR', 'SUPERVISOR', 'TRABAJADOR']}><Aseo /></ProtectedRoute> },
+      { path: "rendimiento", Component: () => <ProtectedRoute requiredRoles={['SUPERADMINISTRADOR', 'ADMINISTRADOR', 'SUPERVISOR', 'TRABAJADOR']}><Rendimiento /></ProtectedRoute> },
+      { path: "configuracion", Component: () => <ProtectedRoute requiredRoles={['SUPERADMINISTRADOR', 'ADMINISTRADOR', 'SUPERVISOR']}><Configuracion /></ProtectedRoute> },
       { path: "mensajes", Component: () => <ProtectedRoute requiredRoles={['SUPERADMINISTRADOR', 'ADMINISTRADOR']}><MensajesContacto /></ProtectedRoute> },
       { path: "finanzas", Component: () => <ProtectedRoute requiredRoles={['SUPERADMINISTRADOR', 'ADMINISTRADOR']}><Finanzas /></ProtectedRoute> },
     ],

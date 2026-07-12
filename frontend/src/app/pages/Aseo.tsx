@@ -122,7 +122,7 @@ export const Aseo = () => {
           <p className="text-slate-500 mt-1.5 text-sm">Mantengamos nuestro taller impecable</p>
         </div>
 
-        {(tieneRol('ADMINISTRADOR') || tieneRol('SUPERADMINISTRADOR')) && (
+        {(tieneRol('ADMINISTRADOR') || tieneRol('SUPERADMINISTRADOR') || tieneRol('SUPERVISOR')) && (
           <button
             onClick={() => handleCrearRegistroHoy()}
             disabled={yaExisteHoy}
@@ -206,7 +206,7 @@ export const Aseo = () => {
                   <th className="px-5 py-3.5 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500" style={{ fontFamily: 'var(--font-heading)' }}>Empleado</th>
                   <th className="px-5 py-3.5 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500" style={{ fontFamily: 'var(--font-heading)' }}>Acciones</th>
                   <th className="px-5 py-3.5 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500" style={{ fontFamily: 'var(--font-heading)' }}>Áreas</th>
-                  {(tieneRol('ADMINISTRADOR') || tieneRol('SUPERADMINISTRADOR')) && (
+                  {(tieneRol('ADMINISTRADOR') || tieneRol('SUPERADMINISTRADOR') || tieneRol('SUPERVISOR')) && (
                     <th className="px-5 py-3.5 text-center text-[11px] font-semibold uppercase tracking-wider text-slate-500" style={{ fontFamily: 'var(--font-heading)' }}>Opciones</th>
                   )}
                 </tr>
@@ -224,8 +224,8 @@ export const Aseo = () => {
                     <td className="px-5 py-4">
                       <button
                         onClick={() => toggleRegistroAseoEntry(ultimoRegistro!.id, entry.id)}
-                        className={`transition-transform ${(!tieneRol('ADMINISTRADOR') && !tieneRol('SUPERADMINISTRADOR')) ? 'cursor-default opacity-80' : 'active:scale-[0.92]'}`}
-                        disabled={!tieneRol('ADMINISTRADOR') && !tieneRol('SUPERADMINISTRADOR')}
+                        className={`transition-transform ${(!tieneRol('ADMINISTRADOR') && !tieneRol('SUPERADMINISTRADOR') && !tieneRol('SUPERVISOR')) ? 'cursor-default opacity-80' : 'active:scale-[0.92]'}`}
+                        disabled={!tieneRol('ADMINISTRADOR') && !tieneRol('SUPERADMINISTRADOR') && !tieneRol('SUPERVISOR')}
                       >
                         {entry.completada ? (
                           <CheckCircle2 size={24} style={{ color: 'var(--status-success)' }} />
@@ -306,7 +306,7 @@ export const Aseo = () => {
                       )}
                     </td>
 
-                    {(tieneRol('ADMINISTRADOR') || tieneRol('SUPERADMINISTRADOR')) && (
+                    {(tieneRol('ADMINISTRADOR') || tieneRol('SUPERADMINISTRADOR') || tieneRol('SUPERVISOR')) && (
                       <td className="px-5 py-4 text-center">
                         {editandoEntry === entry.id ? (
                           <div className="flex justify-center gap-1.5">

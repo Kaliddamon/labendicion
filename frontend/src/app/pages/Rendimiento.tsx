@@ -74,7 +74,7 @@ export const Rendimiento = () => {
   const [empleadoSeleccionado, setEmpleadoSeleccionado] = useState<string>('todos');
   const [modoGrafica, setModoGrafica] = useState<'volumen' | 'eficiencia'>('volumen');
 
-  const esAdmin = tieneRol('SUPERADMINISTRADOR') || tieneRol('ADMINISTRADOR');
+  const esAdmin = tieneRol('SUPERADMINISTRADOR') || tieneRol('ADMINISTRADOR') || tieneRol('SUPERVISOR');
   const empleadoUsuarioId = useMemo(() => empleados.find(e => e.email === user?.email)?.id, [empleados, user]);
 
   useEffect(() => {

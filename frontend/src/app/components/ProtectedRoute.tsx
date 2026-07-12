@@ -8,6 +8,7 @@ interface ProtectedRouteProps {
   requiredRoles?: string[];
   requiredPermissions?: string[];
   fallback?: React.ReactNode;
+  allowNoRole?: boolean;
 }
 
 /**
@@ -23,6 +24,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   requiredRoles = [],
   requiredPermissions = [],
   fallback,
+  allowNoRole,
 }) => {
   const { isAuthenticated, roles, tienePermiso } = useAuth();
 
