@@ -64,15 +64,18 @@ export const Home = () => {
       {} as Record<string, { fecha: string; total: number; buenas: number }>
     );
 
-    const dias: { dia: string; total: number; buenas: number }[] = [];
+    const dias: { dia: string; fecha: string; total: number; buenas: number }[] = [];
     const diasSemana = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
     for (let i = 6; i >= 0; i--) {
       const d = new Date();
       d.setDate(hoy.getDate() - i);
       const key = getColombiaDateString(d);
       const entry = agrupado[key];
+      // Format as DD/MM for x-axis label
+      const [_year, month, day] = key.split('-');
       dias.push({
         dia: diasSemana[d.getDay()],
+        fecha: `${day}/${month}`,
         total: entry?.total ?? 0,
         buenas: entry?.buenas ?? 0,
       });
@@ -350,10 +353,10 @@ export const Home = () => {
                   stroke="#e8e2d9"
                 />
                 <XAxis
-                  dataKey="dia"
+                  dataKey="fecha"
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fill: '#94a3b8', fontSize: 12, fontWeight: 500 }}
+                  tick={{ fill: '#94a3b8', fontSize: 11, fontWeight: 500 }}
                 />
                 <YAxis
                   axisLine={false}
@@ -368,6 +371,10 @@ export const Home = () => {
                     boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
                     fontSize: '13px',
                     fontFamily: 'var(--font-body)',
+                  }}
+                  labelFormatter={(label, payload) => {
+                    const entry = payload?.[0]?.payload;
+                    return entry ? `${entry.dia} ${label}` : label;
                   }}
                 />
                 <Area
