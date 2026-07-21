@@ -429,33 +429,37 @@ public class FrontendController {
     @DeleteMapping("/productos/{id}")
     @Transactional
     public ResponseEntity<?> eliminarProducto(@PathVariable String id) {
-        try {
-            boolean tieneReportes = registroRepo.findAll().stream()
-                    .filter(r -> r.getProducciones() != null)
-                    .anyMatch(r -> r.getProducciones().stream().anyMatch(p -> id.equals(p.getProductoId())));
-            
-            if (tieneReportes) {
-                return ResponseEntity.badRequest().body(Map.of("error", "No se puede eliminar esta orden de producción porque ya tiene reportes de trabajo (evaluaciones) asociados."));
-            }
+        boolean tieneReportes = registroRepo.findAll().stream()
+                .filter(r -> r.getProducciones() != null)
+                .anyMatch(r -> r.getProducciones().stream().anyMatch(p -> id.equals(p.getProductoId())));
+        
+        if (tieneReportes) {
+            return ResponseEntity.badRequest().body(Map.of("error", "No se puede eliminar esta orden de producción porque ya tiene reportes de trabajo (evaluaciones) asociados."));
+        }
 
-            productoRepo.deleteById(id);
-            
-            // Actualizar estado de empresa asociada si ya no tiene órdenes
-            List<Empresa> todas = empresaRepo.findAll();
-            for (Empresa emp : todas) {
-                boolean tiene = productoRepo.findAll().stream().anyMatch(p -> emp.getRazonSocial().equals(p.getEmpresa()));
-                if (!tiene) {
+        Producto producto = productoRepo.findById(id).orElse(null);
+        if (producto == null) {
+            return ResponseEntity.noContent().build();
+        }
+        String nombreEmpresa = producto.getEmpresa();
+
+        productoRepo.delete(producto);
+        productoRepo.flush();
+        
+        // Actualizar estado de empresa asociada si ya no tiene órdenes
+        if (nombreEmpresa != null && !nombreEmpresa.isBlank()) {
+            boolean tieneMas = productoRepo.findAll().stream()
+                    .anyMatch(p -> nombreEmpresa.equals(p.getEmpresa()));
+            if (!tieneMas) {
+                empresaRepo.findByRazonSocial(nombreEmpresa).forEach(emp -> {
                     emp.setEstado("Sin ordenes");
                     empresaRepo.save(emp);
-                }
+                });
             }
-            eventService.emitAsync("PRODUCTO_ELIMINADO", Map.of("id", id));
-            return ResponseEntity.noContent().build();
-        } catch (Exception e) {
-            e.printStackTrace();
-            try { TransactionAspectSupport.currentTransactionStatus().setRollbackOnly(); } catch (Exception ignore) {}
-            return serverError(e, "/api/frontend/productos/" + id);
         }
+        
+        eventService.emitAsync("PRODUCTO_ELIMINADO", Map.of("id", id));
+        return ResponseEntity.noContent().build();
     }
 
     // Empresas CRUD

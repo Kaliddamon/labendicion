@@ -13,6 +13,18 @@ import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    @ExceptionHandler(org.springframework.dao.DataIntegrityViolationException.class)
+    public ResponseEntity<Map<String, Object>> manejarDataIntegrityViolationException(org.springframework.dao.DataIntegrityViolationException ex, WebRequest request) {
+        Map<String, Object> respuesta = new HashMap<>();
+        respuesta.put("timestamp", LocalDateTime.now());
+        respuesta.put("estado", HttpStatus.BAD_REQUEST.value());
+        respuesta.put("error", "Conflicto de integridad de datos");
+        respuesta.put("mensaje", "No se puede eliminar porque este registro está referenciado por otros datos en el sistema (por ejemplo, reportes de trabajo).");
+        respuesta.put("ruta", request.getDescription(false).replace("uri=", ""));
+        
+        return new ResponseEntity<>(respuesta, HttpStatus.BAD_REQUEST);
+    }
     
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<Map<String, Object>> manejarRuntimeException(RuntimeException ex, WebRequest request) {
