@@ -53,6 +53,8 @@ export const Finanzas = () => {
   const [mesSel, setMesSel] = useState(MES_ACTUAL);
   const [mostrarForm, setMostrarForm] = useState(false);
   const [editandoId, setEditandoId] = useState<string | null>(null);
+  const [mostrarModalMes, setMostrarModalMes] = useState(false);
+  const [mesNuevo, setMesNuevo] = useState(MES_ACTUAL);
 
   // Form state
   const [fNombre, setFNombre] = useState('');
@@ -160,8 +162,9 @@ export const Finanzas = () => {
   const mesesDisponibles = useMemo(() => {
     const set = new Set(movimientosFinancieros.map(m => m.mes));
     set.add(MES_ACTUAL);
+    set.add(mesSel);
     return Array.from(set).sort((a, b) => b.localeCompare(a));
-  }, [movimientosFinancieros]);
+  }, [movimientosFinancieros, mesSel]);
 
   // Movimientos manuales del mes
   const manualesMes = useMemo(
@@ -322,7 +325,15 @@ export const Finanzas = () => {
         {/* Selector de mes */}
         <div className="flex items-center gap-3 mb-6">
           <Calendar size={17} className="text-slate-400 shrink-0" />
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 items-center">
+            <button
+              onClick={() => { setMesNuevo(MES_ACTUAL); setMostrarModalMes(true); }}
+              className="px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all text-slate-500 hover:text-slate-800 flex items-center gap-1 active:scale-[0.97]"
+              style={{ background: 'var(--surface-silk)', border: '1px dashed var(--border-fiber)' }}
+              title="Añadir mes"
+            >
+              <Plus size={14} />
+            </button>
             {mesesDisponibles.map(mes => (
               <button
                 key={mes}
@@ -630,6 +641,67 @@ export const Finanzas = () => {
               </button>
             </div>
           </form>
+        </div>
+      )}
+
+      {/* Modal para añadir mes */}
+      {mostrarModalMes && (
+        <div
+          className="fixed inset-0 z-[200] flex items-center justify-center p-4"
+          style={{ background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(4px)' }}
+          onClick={(e) => { if (e.target === e.currentTarget) setMostrarModalMes(false); }}
+        >
+          <div
+            className="w-full max-w-sm rounded-2xl p-6 shadow-2xl animate-fade-up"
+            style={{ background: 'var(--surface-silk)', border: '1px solid var(--border-fiber)' }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-lg font-bold" style={{ fontFamily: 'var(--font-heading)', color: 'var(--carbon)' }}>
+                Añadir Mes
+              </h2>
+              <button type="button" onClick={() => setMostrarModalMes(false)} className="p-2 rounded-xl hover:bg-slate-100 text-slate-400">
+                <X size={18} />
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 mb-1.5">Selecciona el mes y año</label>
+                <input
+                  type="month"
+                  className="w-full rounded-xl px-4 py-3 text-sm font-semibold"
+                  style={{ background: 'var(--surface-linen)', border: '1px solid var(--border-fiber)', color: 'var(--carbon)' }}
+                  value={mesNuevo}
+                  onChange={e => setMesNuevo(e.target.value)}
+                  max={MES_ACTUAL}
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button
+                type="button"
+                onClick={() => setMostrarModalMes(false)}
+                className="flex-1 py-3 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-100 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (mesNuevo) {
+                    setMesSel(mesNuevo);
+                    setMostrarModalMes(false);
+                  }
+                }}
+                className="flex-1 py-3 rounded-xl text-sm font-bold text-[#1a1a2e] active:scale-[0.97] transition-all"
+                style={{ background: 'var(--accent-copper)', boxShadow: 'var(--shadow-copper)' }}
+              >
+                Aceptar
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
