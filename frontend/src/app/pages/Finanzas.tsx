@@ -169,6 +169,58 @@ export const Finanzas = () => {
     return rows;
   }, [mesSel, empleados, registros, productos, nominasPagadas]);
 
+  // Resumen Histórico (Todos los tiempos)
+  const historico = useMemo(() => {
+    let ingresos = 0;
+    let gastos = 0;
+
+    // 1. Movimientos manuales
+    for (const m of movimientosFinancieros) {
+      if (m.tipo === 'INGRESO') ingresos += m.monto;
+      else if (m.tipo === 'GASTO') gastos += m.monto;
+    }
+
+    // 2. Nóminas calculadas de todos los registros históricos
+    let gastosNomina = 0;
+    for (const reg of registros) {
+      const emp = empleados.find(e => e.id === reg.empleadoId);
+      if (!emp) continue;
+      
+      const modalidad = (emp.tipoPago as TipoPago) || 'AMBOS';
+      let pagoHoras = 0;
+      let pagoProduccion = 0;
+
+      if ((modalidad === 'HORAS' || modalidad === 'AMBOS') && emp.valorHora && reg.horaEntrada && reg.horaSalida && reg.horaEntrada !== '--:--' && reg.horaSalida !== '--:--') {
+        try {
+          const [hE, mE] = reg.horaEntrada.split(':').map(Number);
+          const [hS, mS] = reg.horaSalida.split(':').map(Number);
+          const horas = Math.max(0, (hS + mS / 60) - (hE + mE / 60));
+          pagoHoras += horas * emp.valorHora;
+        } catch {}
+      }
+
+      if ((modalidad === 'PRODUCCION' || modalidad === 'AMBOS') && reg.producciones) {
+        for (const prod of reg.producciones) {
+          const orden = productos.find(p => p.id === prod.productoId);
+          if (!orden?.pasos) continue;
+          const paso = orden.pasos.find(ps => ps.id === prod.pasoId);
+          if (paso?.valorPorUnidad) {
+            pagoProduccion += (prod.unidadesTotales ?? 0) * paso.valorPorUnidad;
+          }
+        }
+      }
+      gastosNomina += (pagoHoras + pagoProduccion);
+    }
+    
+    gastos += gastosNomina;
+
+    return {
+      ingresos,
+      gastos,
+      balance: ingresos - gastos
+    };
+  }, [movimientosFinancieros, registros, empleados, productos]);
+
   // Meses disponibles
   const mesesDisponibles = useMemo(() => {
     const set = new Set(movimientosFinancieros.map(m => m.mes));
@@ -331,6 +383,45 @@ export const Finanzas = () => {
           >
             <Plus size={18} /> Añadir movimiento
           </button>
+        </div>
+
+        {/* Resumen Histórico Global */}
+        <div className="mb-10 animate-fade-up" style={{ animationDelay: '0.1s' }}>
+          <div className="p-6 rounded-3xl relative overflow-hidden" style={{ background: 'linear-gradient(135deg, var(--carbon) 0%, #0f172a 100%)', boxShadow: '0 20px 40px -15px rgba(0,0,0,0.3)' }}>
+            {/* Decorative background glows */}
+            <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500 rounded-full blur-[100px] opacity-10 -translate-y-1/2 translate-x-1/3"></div>
+            <div className="absolute bottom-0 left-0 w-64 h-64 bg-blue-500 rounded-full blur-[100px] opacity-10 translate-y-1/2 -translate-x-1/3"></div>
+            
+            <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+              <div>
+                <p className="text-slate-400 text-sm font-semibold uppercase tracking-widest mb-1 flex items-center gap-2">
+                  <BarChart3 size={16} className="text-emerald-400" />
+                  Balance Histórico Global
+                </p>
+                <h2 className="text-4xl md:text-5xl font-bold text-white mb-2" style={{ fontFamily: 'var(--font-heading)' }}>
+                  {historico.balance >= 0 ? '+' : ''}{formatCOP(historico.balance)}
+                </h2>
+                <div className="flex flex-wrap items-center gap-4 text-sm mt-4">
+                  <div className="flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded-lg border border-white/10 backdrop-blur-md">
+                    <TrendingUp size={16} className="text-emerald-400" />
+                    <span className="text-slate-300">Ingresos:</span>
+                    <span className="text-white font-semibold">{formatCOP(historico.ingresos)}</span>
+                  </div>
+                  <div className="flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded-lg border border-white/10 backdrop-blur-md">
+                    <TrendingDown size={16} className="text-rose-400" />
+                    <span className="text-slate-300">Gastos:</span>
+                    <span className="text-white font-semibold">{formatCOP(historico.gastos)}</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="hidden md:flex flex-col items-end justify-center">
+                <div className="w-20 h-20 rounded-full bg-white/5 border border-white/10 flex items-center justify-center backdrop-blur-md shadow-[0_0_30px_rgba(255,255,255,0.05)]">
+                  <Wallet size={36} className="text-emerald-400/80" />
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Selector de mes */}
