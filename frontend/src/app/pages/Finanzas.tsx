@@ -15,18 +15,29 @@ const NOMBRE_MES: Record<string, string> = {
   '09': 'Septiembre', '10': 'Octubre', '11': 'Noviembre', '12': 'Diciembre',
 };
 
-const formatCOP = (n: number) => `$${Math.round(n).toLocaleString('es-CO')}`;
+const formatCOP = (n: number) => {
+  return `$${n.toLocaleString('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
+};
 
 const labelMes = (mes: string) => {
   const [year, m] = mes.split('-');
   return `${NOMBRE_MES[m] || m} ${year}`;
 };
 
-/** Formatea un string numérico separando miles con punto (Colombia) */
 const formatMiles = (raw: string): string => {
-  const digits = raw.replace(/\D/g, '');
-  if (!digits) return '';
-  return Number(digits).toLocaleString('es-CO');
+  let cleaned = raw.replace(/[^\d,]/g, '');
+  if (raw.endsWith('.')) {
+    cleaned += ',';
+  }
+  const parts = cleaned.split(',');
+  const integerPart = parts[0];
+  const decimalPart = parts.length > 1 ? ',' + parts.slice(1).join('').slice(0, 2) : '';
+  
+  if (!integerPart && !decimalPart) return '';
+  if (!integerPart) return '0' + decimalPart;
+  
+  const formattedInteger = Number(integerPart).toLocaleString('es-CO');
+  return formattedInteger + decimalPart;
 };
 
 /** Convierte el string formateado de vuelta a número */
@@ -83,7 +94,7 @@ export const Finanzas = () => {
     setEditandoId(mv.id);
     setFNombre(mv.nombre);
     setFDescripcion(mv.descripcion || '');
-    setFMontoStr(formatMiles(String(Math.round(mv.monto))));
+    setFMontoStr(formatMiles(mv.monto.toString().replace('.', ',')));
     setFTipo(mv.tipo);
     setMostrarForm(true);
   };
