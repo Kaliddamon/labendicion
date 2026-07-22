@@ -24,6 +24,9 @@ public class Registro {
     private String horaSalida;
     private Integer unidadesTotales;
     private Integer unidadesBuenas;
+    
+    private Integer valorHora;
+    private String tipoPago;
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "registro_id")

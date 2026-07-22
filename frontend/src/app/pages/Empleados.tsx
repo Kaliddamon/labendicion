@@ -50,8 +50,7 @@ export const Empleados = () => {
   const [email, setEmail] = useState('');
   const [fechaIngreso, setFechaIngreso] = useState('');
   const [estado, setEstado] = useState<'Activo' | 'Inactivo'>('Activo');
-  const [valorHora, setValorHora] = useState<string>('');
-  const [tipoPago, setTipoPago] = useState<'HORAS' | 'PRODUCCION' | 'AMBOS'>('AMBOS');
+
   const [busqueda, setBusqueda] = useState('');
   const [filtroEstadoEmp, setFiltroEstadoEmp] = useState<string>('Todos');
   const [filtroCargo, setFiltroCargo] = useState<string>('Todos');
@@ -83,6 +82,8 @@ export const Empleados = () => {
   const [calificacionProducciones, setCalificacionProducciones] = useState<ProduccionRegistro[]>([
     crearLineaProduccionVacia(),
   ]);
+  const [calificacionValorHora, setCalificacionValorHora] = useState<string>('');
+  const [calificacionTipoPago, setCalificacionTipoPago] = useState<'HORAS' | 'PRODUCCION' | 'AMBOS'>('AMBOS');
 
   const [empleadoViendoHistorial, setEmpleadoViendoHistorial] = useState<string | null>(null);
   const [filtroHistorial, setFiltroHistorial] = useState<'quincena' | 'mes' | 'todo'>('quincena');
@@ -101,8 +102,6 @@ export const Empleados = () => {
   const iniciarEdicion = (emp: Empleado) => {
     setNombre(emp.nombre); setCargo(emp.cargo?.id || ''); setTipoDocumento(emp.tipoDocumento?.id || 'CC'); setDocumento(emp.documento);
     setTelefono(emp.telefono); setEmail(emp.email || ''); setFechaIngreso(emp.fechaIngreso); setEstado(emp.estado);
-    setValorHora(emp.valorHora != null ? String(emp.valorHora) : '');
-    setTipoPago(emp.tipoPago || 'AMBOS');
     setEmpleadoEditando(emp.id); setMostrarFormEmpleado(true);
     setEmpleadoCalificando(null);
     setEmpleadoViendoHistorial(null);
@@ -126,11 +125,10 @@ export const Empleados = () => {
 
     const cargoObj = cargo ? { id: cargo, nombre: cargos.find(c => c.id === cargo)?.nombre || '' } : null;
     const tipoDocObj = { id: tipoDocumento, nombre: tiposDocumento.find(td => td.id === tipoDocumento)?.nombre || '' };
-    const valorHoraNum = valorHora && /^[0-9]+$/.test(valorHora) ? parseInt(valorHora) : undefined;
     if (empleadoEditando) {
-      editarEmpleado(empleadoEditando, { nombre, cargo: cargoObj, tipoDocumento: tipoDocObj, documento, telefono, email, fechaIngreso, estado, valorHora: valorHoraNum, tipoPago });
+      editarEmpleado(empleadoEditando, { nombre, cargo: cargoObj, tipoDocumento: tipoDocObj, documento, telefono, email, fechaIngreso, estado });
     } else {
-      agregarEmpleado({ nombre, cargo: cargoObj, tipoDocumento: tipoDocObj, documento, telefono, email, fechaIngreso, estado, valorHora: valorHoraNum, tipoPago });
+      agregarEmpleado({ nombre, cargo: cargoObj, tipoDocumento: tipoDocObj, documento, telefono, email, fechaIngreso, estado });
     }
     resetFormEmpleado();
   };
@@ -143,6 +141,8 @@ export const Empleados = () => {
     setCalificacionFecha(getColombiaDateString());
     setCalificacionHoraEntrada('07:00');
     setCalificacionHoraSalida('16:00');
+    setCalificacionValorHora('');
+    setCalificacionTipoPago('AMBOS');
   };
 
   const abrirCalificacion = (empId: string) => {
@@ -178,6 +178,8 @@ export const Empleados = () => {
         ? reg.producciones.map((p) => ({ ...p, pasoId: p.pasoId ?? '' }))
         : [crearLineaProduccionVacia()]
     );
+    setCalificacionValorHora(reg.valorHora != null ? String(reg.valorHora) : '');
+    setCalificacionTipoPago(reg.tipoPago || 'AMBOS');
     setEmpleadoCalificando(reg.empleadoId);
     setEmpleadoViendoHistorial(null);
   };
@@ -238,6 +240,8 @@ export const Empleados = () => {
       ? calificacionProducciones.reduce((acc, prod) => acc + Number(prod.unidadesBuenas || 0), 0)
       : 0;
 
+    const valorHoraNum = calificacionValorHora && /^[0-9]+$/.test(calificacionValorHora) ? parseInt(calificacionValorHora) : undefined;
+
     const payload = {
       empleadoId: empleadoCalificando,
       fecha: calificacionFecha,
@@ -245,6 +249,8 @@ export const Empleados = () => {
       horaSalida: calificacionAsistencia ? calificacionHoraSalida : '--:--',
       unidadesTotales: totalUnidades,
       unidadesBuenas: totalBuenas,
+      valorHora: valorHoraNum,
+      tipoPago: calificacionTipoPago,
       producciones: calificacionAsistencia ? calificacionProducciones : [],
     };
 
@@ -321,17 +327,16 @@ export const Empleados = () => {
     return todos.filter(r => r.fecha >= desde && r.fecha <= hasta);
   };
 
-  // Calcular paga diaria de un registro para un empleado
   const calcularPagaDiaria = (reg: typeof registros[0], emp: Empleado) => {
     let pagoHoras = 0;
     let pagoProduccion = 0;
     // Pago por horas
-    if (emp.valorHora && reg.horaEntrada && reg.horaSalida && reg.horaEntrada !== '--:--' && reg.horaSalida !== '--:--') {
+    if (reg.valorHora && reg.horaEntrada && reg.horaSalida && reg.horaEntrada !== '--:--' && reg.horaSalida !== '--:--') {
       try {
         const [hE, mE] = reg.horaEntrada.split(':').map(Number);
         const [hS, mS] = reg.horaSalida.split(':').map(Number);
         const horas = Math.max(0, (hS + mS / 60) - (hE + mE / 60));
-        pagoHoras = horas * emp.valorHora;
+        pagoHoras = horas * reg.valorHora;
       } catch { }
     }
     // Pago por producción
@@ -396,15 +401,7 @@ export const Empleados = () => {
                   {cargos.filter(c => c.activa !== false).map(c => <option key={c.id} value={c.id}>{c.nombre}</option>)}
                 </select>
               </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1.5" style={{ fontFamily: 'var(--font-heading)' }}>Modalidad de pago nómina</label>
-                <select className="w-full rounded-xl px-4 py-3 text-sm" style={inputStyle} value={tipoPago} onChange={e => setTipoPago(e.target.value as 'HORAS' | 'PRODUCCION' | 'AMBOS')}>
-                  <option value="HORAS">⏱ Por Horas</option>
-                  <option value="PRODUCCION">📦 Por Producción</option>
-                  <option value="AMBOS">⚡ Ambos (Horas + Producción)</option>
-                </select>
-                <p className="text-[10px] text-slate-400 mt-1.5">Define qué se suma al calcular la nómina automática.</p>
-              </div>
+
               <div>
                 <label className="block text-xs font-medium text-slate-500 mb-1.5" style={{ fontFamily: 'var(--font-heading)' }}>Teléfono</label>
                 <input type="tel" className="w-full rounded-xl px-4 py-3 text-sm" style={inputStyle} value={telefono} onChange={e => setTelefono(e.target.value)} pattern="[0-9+\- ]{7,15}" title="Entre 7 y 15 caracteres" />
@@ -424,13 +421,7 @@ export const Empleados = () => {
                   <option value="Inactivo">Inactivo / Retirado</option>
                 </select>
               </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1.5" style={{ fontFamily: 'var(--font-heading)' }}>Valor por hora ($) <span className="text-slate-400 font-normal">(Opcional)</span></label>
-                <div className="relative">
-                  <DollarSign className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={15} />
-                  <input type="number" min={0} step={1} className="w-full rounded-xl pl-9 pr-4 py-3 text-sm" style={inputStyle} value={valorHora} onChange={e => setValorHora(e.target.value.replace(/[^0-9]/g, ''))} placeholder="Ej. 8000" />
-                </div>
-              </div>
+
             </div>
 
             <div className="flex justify-end gap-3">
@@ -670,7 +661,7 @@ export const Empleados = () => {
                     totalCalidad += reg.unidadesBuenas ?? 0;
                   }
                 });
-                const hayPago = emp.valorHora != null || productos.some(p => p.pasos?.some(ps => ps.valorPorUnidad != null));
+                const hayPago = regsFiltrados.some(r => r.valorHora != null) || productos.some(p => p.pasos?.some(ps => ps.valorPorUnidad != null));
 
                 return (
                   <div className="p-5 animate-fade-up" style={{ background: 'var(--surface-linen)' }}>
@@ -879,6 +870,27 @@ export const Empleados = () => {
                             <div>
                               <label className="block text-[10px] font-medium text-slate-400 mb-1">Salida</label>
                               <input type="time" value={calificacionHoraSalida} onChange={e => setCalificacionHoraSalida(e.target.value)} className="w-full rounded-xl px-3 py-2 text-sm" style={inputStyle} required />
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="col-span-2 pb-3 mb-1" style={{ borderBottom: '1px solid var(--border-fiber-light)' }}>
+                          <p className="text-xs font-semibold text-slate-400 mb-3 uppercase tracking-wider">💰 Remuneración del día</p>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-[10px] font-medium text-slate-400 mb-1">Modalidad de pago</label>
+                              <select className="w-full rounded-xl px-3 py-2 text-sm" style={inputStyle} value={calificacionTipoPago} onChange={e => setCalificacionTipoPago(e.target.value as 'HORAS' | 'PRODUCCION' | 'AMBOS')}>
+                                <option value="HORAS">⏱ Por Horas</option>
+                                <option value="PRODUCCION">📦 Por Producción</option>
+                                <option value="AMBOS">⚡ Ambos (Horas + Prod.)</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label className="block text-[10px] font-medium text-slate-400 mb-1">Valor por hora ($) <span className="font-normal opacity-70">(Opcional)</span></label>
+                              <div className="relative">
+                                <DollarSign className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={13} />
+                                <input type="number" min={0} step={1} className="w-full rounded-xl pl-8 pr-3 py-2 text-sm" style={inputStyle} value={calificacionValorHora} onChange={e => setCalificacionValorHora(e.target.value.replace(/[^0-9]/g, ''))} placeholder="Ej. 8000" />
+                              </div>
                             </div>
                           </div>
                         </div>

@@ -43,9 +43,6 @@ export interface Empleado {
   email?: string;
   fechaIngreso: string;
   estado: 'Activo' | 'Inactivo';
-  valorHora?: number;
-  /** HORAS | PRODUCCION | AMBOS — si null/undefined se asume AMBOS */
-  tipoPago?: 'HORAS' | 'PRODUCCION' | 'AMBOS';
 }
 
 export interface Empresa {
@@ -65,6 +62,8 @@ export interface RegistroDiario {
   horaSalida: string;
   unidadesTotales: number;
   unidadesBuenas: number; // Reemplaza la calificación 1-5 por número entero
+  valorHora?: number;
+  tipoPago?: 'HORAS' | 'PRODUCCION' | 'AMBOS';
   producciones?: ProduccionRegistro[];
 }
 
