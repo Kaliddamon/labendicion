@@ -152,6 +152,8 @@ public class FrontendController {
             m2.put("horaSalida", r.getHoraSalida());
             m2.put("unidadesTotales", r.getUnidadesTotales());
             m2.put("unidadesBuenas", r.getUnidadesBuenas());
+            m2.put("valorHora", r.getValorHora());
+            m2.put("tipoPago", r.getTipoPago());
             m2.put("producciones", prodDto);
             return m2;
         }).collect(Collectors.toList());
@@ -159,7 +161,7 @@ public class FrontendController {
         // Empleados, tareas y empresas: serializables simples
         var empleadosDto = empleados.stream().map(e -> {
             var m = new java.util.HashMap<String, Object>();
-            m.put("id", e.getId()); m.put("nombre", e.getNombre()); m.put("cargo", e.getCargo()); m.put("tipoDocumento", e.getTipoDocumento()); m.put("documento", e.getDocumento()); m.put("telefono", e.getTelefono()); m.put("email", e.getEmail()); m.put("fechaIngreso", e.getFechaIngreso()); m.put("estado", e.getEstado()); m.put("valorHora", e.getValorHora()); m.put("tipoPago", e.getTipoPago());
+            m.put("id", e.getId()); m.put("nombre", e.getNombre()); m.put("cargo", e.getCargo()); m.put("tipoDocumento", e.getTipoDocumento()); m.put("documento", e.getDocumento()); m.put("telefono", e.getTelefono()); m.put("email", e.getEmail()); m.put("fechaIngreso", e.getFechaIngreso()); m.put("estado", e.getEstado());
             return m;
         }).collect(Collectors.toList());
 
@@ -985,7 +987,7 @@ public class FrontendController {
 
                 for (dev.kali.labendicion.domain.entity.Registro reg : regEmp) {
                     // Pago por horas
-                    if (emp.getValorHora() != null && reg.getHoraEntrada() != null && reg.getHoraSalida() != null
+                    if (reg.getValorHora() != null && reg.getHoraEntrada() != null && reg.getHoraSalida() != null
                             && !"--:--".equals(reg.getHoraEntrada()) && !"--:--".equals(reg.getHoraSalida())) {
                         try {
                             String[] entrada = reg.getHoraEntrada().split(":");
@@ -993,7 +995,7 @@ public class FrontendController {
                             double hEntrada = Integer.parseInt(entrada[0]) + Integer.parseInt(entrada[1]) / 60.0;
                             double hSalida = Integer.parseInt(salida[0]) + Integer.parseInt(salida[1]) / 60.0;
                             double horas = Math.max(0, hSalida - hEntrada);
-                            pagoHoras += horas * emp.getValorHora();
+                            pagoHoras += horas * reg.getValorHora();
                         } catch (Exception ignored) {}
                     }
                     // Pago por producción
