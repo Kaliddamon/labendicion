@@ -110,14 +110,21 @@ export const Finanzas = () => {
         );
         if (regsEmp.length === 0) continue;
 
-        const modalidad: TipoPago = (emp.tipoPago as TipoPago) || 'AMBOS';
         let pagoHoras = 0;
         let pagoProduccion = 0;
+        let modalidadesUsadas = new Set<string>();
 
         for (const reg of regsEmp) {
+          // Determinar modalidad de pago y valor de hora.
+          // Priorizamos lo configurado en la evaluación (reg), y como fallback lo del empleado (emp).
+          const regModalidad: TipoPago = (reg.tipoPago as TipoPago) || (emp.tipoPago as TipoPago) || 'AMBOS';
+          const regValorHora = reg.valorHora ?? emp.valorHora;
+
+          modalidadesUsadas.add(regModalidad);
+
           if (
-            (modalidad === 'HORAS' || modalidad === 'AMBOS') &&
-            emp.valorHora &&
+            (regModalidad === 'HORAS' || regModalidad === 'AMBOS') &&
+            regValorHora &&
             reg.horaEntrada && reg.horaSalida &&
             reg.horaEntrada !== '--:--' && reg.horaSalida !== '--:--'
           ) {
@@ -125,11 +132,11 @@ export const Finanzas = () => {
               const [hE, mE] = reg.horaEntrada.split(':').map(Number);
               const [hS, mS] = reg.horaSalida.split(':').map(Number);
               const horas = Math.max(0, (hS + mS / 60) - (hE + mE / 60));
-              pagoHoras += horas * emp.valorHora;
+              pagoHoras += horas * regValorHora;
             } catch {}
           }
 
-          if (modalidad === 'PRODUCCION' || modalidad === 'AMBOS') {
+          if (regModalidad === 'PRODUCCION' || regModalidad === 'AMBOS') {
             for (const prod of reg.producciones ?? []) {
               const orden = productos.find(p => p.id === prod.productoId);
               if (!orden?.pasos) continue;
@@ -147,7 +154,16 @@ export const Finanzas = () => {
         const descripcionParts: string[] = [];
         if (pagoHoras > 0) descripcionParts.push(`Horas: ${formatCOP(pagoHoras)}`);
         if (pagoProduccion > 0) descripcionParts.push(`Producción: ${formatCOP(pagoProduccion)}`);
-        const modalidadLabel = modalidad === 'HORAS' ? '⏱ Horas' : modalidad === 'PRODUCCION' ? '📦 Producción' : '⚡ Ambos';
+        
+        // Si hay múltiples modalidades usadas en la misma quincena (porque cambiaron por día), decimos 'Variable'
+        let modalidadLabel = '⚡ Ambos';
+        if (modalidadesUsadas.size > 1) {
+          modalidadLabel = '🔄 Variable';
+        } else if (modalidadesUsadas.has('HORAS')) {
+          modalidadLabel = '⏱ Horas';
+        } else if (modalidadesUsadas.has('PRODUCCION')) {
+          modalidadLabel = '📦 Producción';
+        }
 
         const idNomina = `nomina-${emp.id}-${mesSel}-${q}`;
 

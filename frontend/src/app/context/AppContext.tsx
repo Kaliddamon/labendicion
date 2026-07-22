@@ -66,6 +66,8 @@ export interface RegistroDiario {
   unidadesTotales: number;
   unidadesBuenas: number; // Reemplaza la calificación 1-5 por número entero
   producciones?: ProduccionRegistro[];
+  valorHora?: number;
+  tipoPago?: 'HORAS' | 'PRODUCCION' | 'AMBOS';
 }
 
 /** Aporte del empleado vinculado a una orden y acción (paso) de producción. */
