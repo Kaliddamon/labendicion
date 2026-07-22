@@ -36,7 +36,7 @@ export const Empleados = () => {
   const etiquetaOrden = (productoId: string) => {
     const p = productos.find((x) => x.id === productoId);
     if (!p) return 'Orden no encontrada';
-    return `${p.nombre} ┬À ${p.empresa}`;
+    return `${p.nombre} · ${p.empresa}`;
   };
 
   const [mostrarFormEmpleado, setMostrarFormEmpleado] = useState(false);
@@ -111,7 +111,7 @@ export const Empleados = () => {
   const guardarEmpleado = (e: React.FormEvent) => {
     e.preventDefault();
     if (!nombre || !documento) return toast.warning('El nombre y documento son obligatorios');
-    if (!/^[0-9]+$/.test(documento)) return toast.warning('El documento debe contener ├║nicamente n├║meros.');
+    if (!/^[0-9]+$/.test(documento)) return toast.warning('El documento debe contener únicamente números.');
     if (!cargo) return toast.warning('El cargo es obligatorio. Por favor selecciona uno.');
 
     if (fechaIngreso) {
@@ -121,7 +121,7 @@ export const Empleados = () => {
 
     if (telefono) {
       const telefonoValido = /^[0-9+\- ]{7,15}$/.test(telefono);
-      if (!telefonoValido) return toast.warning('El formato del tel├®fono es inv├ílido. Usa solo n├║meros, espacios, + o -, entre 7 y 15 caracteres.');
+      if (!telefonoValido) return toast.warning('El formato del teléfono es inválido. Usa solo números, espacios, + o -, entre 7 y 15 caracteres.');
     }
 
     const cargoObj = cargo ? { id: cargo, nombre: cargos.find(c => c.id === cargo)?.nombre || '' } : null;
@@ -166,7 +166,7 @@ export const Empleados = () => {
   const etiquetaPaso = (productoId: string, pasoId: string) => {
     const p = productos.find((x) => x.id === productoId);
     const paso = p?.pasos?.find((ps) => ps.id === pasoId || (ps as { id?: string }).id === pasoId);
-    return paso?.descripcion ?? 'Acci├│n';
+    return paso?.descripcion ?? 'Acción';
   };
 
   const cargarRegistroParaEdicion = (reg: typeof registros[0]) => {
@@ -267,9 +267,9 @@ export const Empleados = () => {
       setEmpleadoCalificando(null);
       setRegistroEditando(null);
       setCalificacionProducciones([crearLineaProduccionVacia()]);
-      toast.success('Evaluaci├│n guardada correctamente Ô£à');
+      toast.success('Evaluación guardada correctamente ✅');
     } catch {
-      toast.error('No se pudo guardar la evaluaci├│n. Revisa los datos o intenta de nuevo.');
+      toast.error('No se pudo guardar la evaluación. Revisa los datos o intenta de nuevo.');
     }
   };
 
@@ -343,7 +343,7 @@ export const Empleados = () => {
         pagoHoras = horas * reg.valorHora;
       } catch { }
     }
-    // Pago por producci├│n
+    // Pago por producción
     if (reg.producciones) {
       for (const prod of reg.producciones) {
         const orden = productos.find(p => p.id === prod.productoId);
@@ -367,7 +367,7 @@ export const Empleados = () => {
 
   return (
     <>
-      {/* Modal formulario empleado ÔÇö FUERA del div animado para que fixed cubra todo el viewport */}
+      {/* Modal formulario empleado — FUERA del div animado para que fixed cubra todo el viewport */}
       {mostrarFormEmpleado && (
         <div
           className="fixed inset-0 z-[200] flex items-center justify-center p-4"
@@ -396,22 +396,22 @@ export const Empleados = () => {
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-500 mb-1.5" style={{ fontFamily: 'var(--font-heading)' }}>Documento de Identidad</label>
-                <input type="text" className="w-full rounded-xl px-4 py-3 text-sm" style={inputStyle} value={documento} onChange={e => setDocumento(e.target.value)} pattern="[0-9]+" title="Solo se permiten n├║meros" required />
+                <input type="text" className="w-full rounded-xl px-4 py-3 text-sm" style={inputStyle} value={documento} onChange={e => setDocumento(e.target.value)} pattern="[0-9]+" title="Solo se permiten números" required />
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-500 mb-1.5" style={{ fontFamily: 'var(--font-heading)' }}>Cargo / Rol</label>
                 <select className="w-full rounded-xl px-4 py-3 text-sm" style={inputStyle} value={cargo} onChange={e => setCargo(e.target.value)} required>
-                  <option value="">Seleccione un cargoÔÇª</option>
+                  <option value="">Seleccione un cargo…</option>
                   {cargos.filter(c => c.activa !== false).map(c => <option key={c.id} value={c.id}>{c.nombre}</option>)}
                 </select>
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1.5" style={{ fontFamily: 'var(--font-heading)' }}>Tel├®fono</label>
+                <label className="block text-xs font-medium text-slate-500 mb-1.5" style={{ fontFamily: 'var(--font-heading)' }}>Teléfono</label>
                 <input type="tel" className="w-full rounded-xl px-4 py-3 text-sm" style={inputStyle} value={telefono} onChange={e => setTelefono(e.target.value)} pattern="[0-9+\- ]{7,15}" title="Entre 7 y 15 caracteres" />
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1.5" style={{ fontFamily: 'var(--font-heading)' }}>Correo Electr├│nico</label>
+                <label className="block text-xs font-medium text-slate-500 mb-1.5" style={{ fontFamily: 'var(--font-heading)' }}>Correo Electrónico</label>
                 <input type="email" className="w-full rounded-xl px-4 py-3 text-sm" style={inputStyle} value={email} onChange={e => setEmail(e.target.value)} />
               </div>
               <div>
@@ -438,7 +438,7 @@ export const Empleados = () => {
         </div>
       )}
 
-      {/* Contenido de la p├ígina */}
+      {/* Contenido de la página */}
       <div className="animate-fade-up">
         <Dialog
           open={modalOrdenProduccion !== null}
@@ -448,8 +448,8 @@ export const Empleados = () => {
             <DialogHeader>
               <DialogTitle>
                 {modalOrdenProduccion
-                  ? `Orden ┬À ${modalOrdenProduccion.fecha} (l├¡nea ${modalOrdenProduccion.indice + 1})`
-                  : 'Orden de producci├│n'}
+                  ? `Orden · ${modalOrdenProduccion.fecha} (línea ${modalOrdenProduccion.indice + 1})`
+                  : 'Orden de producción'}
               </DialogTitle>
             </DialogHeader>
             {(() => {
@@ -458,8 +458,8 @@ export const Empleados = () => {
               if (!item) return null;
               if (!orden) return (
                 <p className="text-sm text-rose-700">
-                  Esta orden ya no existe en Producci├│n (pudo haberse eliminado). Subtotales guardados:{' '}
-                  {item.unidadesTotales} confeccionadas ┬À {item.unidadesBuenas} calidad.
+                  Esta orden ya no existe en Producción (pudo haberse eliminado). Subtotales guardados:{' '}
+                  {item.unidadesTotales} confeccionadas · {item.unidadesBuenas} calidad.
                 </p>
               );
               return (
@@ -467,16 +467,16 @@ export const Empleados = () => {
                   <p><span className="font-bold">{orden.nombre}</span></p>
                   <p className="text-slate-500">Cliente: {orden.empresa}</p>
                   <p className="text-slate-500">
-                    Cantidad: <span className="font-semibold">{orden.cantidad}</span> ┬À Estado:{' '}
+                    Cantidad: <span className="font-semibold">{orden.cantidad}</span> · Estado:{' '}
                     <span className="font-semibold">{orden.estado}</span>
                   </p>
                   <p className="text-slate-500">
-                    Asignaci├│n: {orden.fechaAsignacion}
-                    {orden.fechaTerminacion ? ` ┬À Entrega: ${orden.fechaTerminacion}` : ''}
+                    Asignación: {orden.fechaAsignacion}
+                    {orden.fechaTerminacion ? ` · Entrega: ${orden.fechaTerminacion}` : ''}
                   </p>
                   <div className="rounded-xl px-3 py-2" style={{ background: 'var(--surface-linen)', border: '1px solid var(--border-fiber)' }}>
-                    Aporte este d├¡a:{' '}
-                    <span className="font-bold">{item.unidadesTotales}</span> confeccionadas ┬À{' '}
+                    Aporte este día:{' '}
+                    <span className="font-bold">{item.unidadesTotales}</span> confeccionadas ·{' '}
                     <span className="font-bold text-emerald-700">{item.unidadesBuenas}</span> calidad
                   </div>
                 </div>
@@ -498,7 +498,7 @@ export const Empleados = () => {
                 <Users size={18} className="text-emerald-600" />
               </div>
             </h1>
-            <p className="text-slate-500 mt-1.5 text-sm">Gestiona el personal y revisa su desempe├▒o</p>
+            <p className="text-slate-500 mt-1.5 text-sm">Gestiona el personal y revisa su desempeño</p>
           </div>
           <button
             onClick={() => { resetFormEmpleado(); setMostrarFormEmpleado(true); }}
@@ -574,7 +574,7 @@ export const Empleados = () => {
         {empleadosFiltrados.length === 0 ? (
           <div className="text-center py-12 rounded-2xl border-2 border-dashed text-slate-400" style={{ background: 'var(--surface-silk)', borderColor: 'var(--border-fiber)' }}>
             <p className="text-base font-medium" style={{ color: 'var(--carbon)' }}>
-              {empleados.length === 0 ? 'No hay empleados registrados a├║n.' : 'No se encontraron empleados.'}
+              {empleados.length === 0 ? 'No hay empleados registrados aún.' : 'No se encontraron empleados.'}
             </p>
           </div>
         ) : (
@@ -605,11 +605,11 @@ export const Empleados = () => {
                         {emp.tipoDocumento?.id || 'C.C.'} {emp.documento}
                       </span>
                       <span className="text-xs px-2.5 py-1 rounded-lg" style={{ background: 'var(--surface-linen)', color: 'var(--carbon)', border: '1px solid var(--border-fiber)' }}>
-                        ­ƒô× {emp.telefono || 'Sin tel├®fono'}
+                        📞 {emp.telefono || 'Sin teléfono'}
                       </span>
                       {emp.email && (
                         <span className="text-xs px-2.5 py-1 rounded-lg" style={{ background: 'var(--surface-linen)', color: 'var(--carbon)', border: '1px solid var(--border-fiber)' }}>
-                          ­ƒôº {emp.email}
+                          📧 {emp.email}
                         </span>
                       )}
                     </div>
@@ -639,7 +639,7 @@ export const Empleados = () => {
                     <Edit2 size={16} className="text-slate-500" />
                   </button>
                   {tieneRol('SUPERADMINISTRADOR') && (
-                    <button onClick={async () => { if (await confirm({ title: '┬┐Eliminar empleado?', description: '┬┐Seguro que deseas eliminar este empleado definitivamente? Se borrar├í todo su historial asociado.', confirmText: 'Eliminar definitivamente', requireInput: emp.nombre })) eliminarEmpleado(emp.id); }} className="p-2.5 rounded-xl transition-all active:scale-[0.97] bg-rose-50 hover:bg-rose-100 border border-rose-200">
+                    <button onClick={async () => { if (await confirm({ title: '¿Eliminar empleado?', description: '¿Seguro que deseas eliminar este empleado definitivamente? Se borrará todo su historial asociado.', confirmText: 'Eliminar definitivamente', requireInput: emp.nombre })) eliminarEmpleado(emp.id); }} className="p-2.5 rounded-xl transition-all active:scale-[0.97] bg-rose-50 hover:bg-rose-100 border border-rose-200">
                       <Trash2 size={16} className="text-rose-500" />
                     </button>
                   )}
@@ -651,7 +651,7 @@ export const Empleados = () => {
                 const regsFiltrados = getRegistrosFiltrados(emp.id);
                 const { desde, hasta } = getFiltroFechas();
 
-                // Calcular totales del per├¡odo
+                // Calcular totales del período
                 let totalHoras = 0;
                 let totalProduccion = 0;
                 let totalConfeccionadas = 0;
@@ -685,7 +685,7 @@ export const Empleados = () => {
                               }`}
                             style={filtroHistorial === f ? { background: 'var(--accent-copper)' } : { background: 'white' }}
                           >
-                            {f === 'quincena' ? '15 d├¡as' : f === 'mes' ? 'Este mes' : 'Todo'}
+                            {f === 'quincena' ? '15 días' : f === 'mes' ? 'Este mes' : 'Todo'}
                           </button>
                         ))}
                       </div>
@@ -700,7 +700,7 @@ export const Empleados = () => {
 
                     {regsFiltrados.length === 0 ? (
                       <p className="text-slate-500 bg-white p-4 rounded-xl text-center text-sm" style={{ border: '1px solid var(--border-fiber)' }}>
-                        No hay registros para este per├¡odo.
+                        No hay registros para este período.
                       </p>
                     ) : (
                       <div className="grid gap-2.5">
@@ -718,11 +718,11 @@ export const Empleados = () => {
                                       <Clock size={14} /> {reg.horaEntrada} - {reg.horaSalida}
                                     </div>
                                   ) : (
-                                    <span className="text-rose-600 font-semibold text-xs bg-rose-50 px-2 py-1 rounded-lg">No Asisti├│</span>
+                                    <span className="text-rose-600 font-semibold text-xs bg-rose-50 px-2 py-1 rounded-lg">No Asistió</span>
                                   )}
                                 </div>
 
-                                {/* Chips: totales + calidad + pago horas + pago producci├│n */}
+                                {/* Chips: totales + calidad + pago horas + pago producción */}
                                 {reg.horaEntrada !== '--:--' && (
                                   <div className="flex gap-3 shrink-0 flex-wrap justify-end">
                                     <div className="text-center">
@@ -752,7 +752,7 @@ export const Empleados = () => {
                               {reg.horaEntrada !== '--:--' && (reg.producciones?.length ?? 0) > 0 && (
                                 <div className="pt-2 space-y-1.5" style={{ borderTop: '1px solid var(--border-fiber-light)' }}>
                                   <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
-                                    ├ôrdenes vinculadas este d├¡a
+                                    Órdenes vinculadas este día
                                   </p>
                                   {reg.producciones!.map((prod, index) => (
                                     <div
@@ -764,10 +764,10 @@ export const Empleados = () => {
                                         <span className="font-bold text-slate-500 shrink-0">#{index + 1}</span>
                                         <span className="truncate font-medium" style={{ color: 'var(--carbon)' }} title={etiquetaOrden(prod.productoId)}>
                                           {etiquetaOrden(prod.productoId)}
-                                          {prod.pasoId ? ` ┬À ${etiquetaPaso(prod.productoId, prod.pasoId)}` : ''}
+                                          {prod.pasoId ? ` · ${etiquetaPaso(prod.productoId, prod.pasoId)}` : ''}
                                         </span>
                                         <span className="text-slate-500 sm:ml-auto">
-                                          <span className="font-semibold">{prod.unidadesTotales}</span> conf. ┬À{' '}
+                                          <span className="font-semibold">{prod.unidadesTotales}</span> conf. ·{' '}
                                           <span className="font-semibold text-emerald-700">{prod.unidadesBuenas}</span>{' '}calidad
                                         </span>
                                       </div>
@@ -789,7 +789,7 @@ export const Empleados = () => {
                                         </button>
                                         <button
                                           type="button"
-                                          onClick={async () => { if (await confirm({ title: '┬┐Eliminar evaluaci├│n?', description: '┬┐Seguro que deseas eliminar esta evaluaci├│n?', confirmText: 'Eliminar' })) eliminarRegistro(reg.id); }}
+                                          onClick={async () => { if (await confirm({ title: '¿Eliminar evaluación?', description: '¿Seguro que deseas eliminar esta evaluación?', confirmText: 'Eliminar' })) eliminarRegistro(reg.id); }}
                                           className="inline-flex items-center gap-1 rounded-lg border border-rose-200 bg-white px-2.5 py-1 text-[10px] font-semibold text-rose-600"
                                         >
                                           <Trash2 size={12} /> Eliminar
@@ -805,10 +805,10 @@ export const Empleados = () => {
                       </div>
                     )}
 
-                    {/* Resumen compacto del per├¡odo */}
+                    {/* Resumen compacto del período */}
                     {regsFiltrados.length > 0 && (
                       <div className="mt-4 pt-4" style={{ borderTop: '1px solid var(--border-fiber)' }}>
-                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2.5">Resumen del per├¡odo</p>
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2.5">Resumen del período</p>
                         <div className="flex flex-wrap gap-x-5 gap-y-2">
                           <div className="text-center">
                             <span className="block text-[10px] text-slate-400 font-semibold uppercase">Confeccionadas</span>
@@ -842,7 +842,7 @@ export const Empleados = () => {
                 <form onSubmit={guardarCalificacion} className="p-5 animate-fade-up" style={{ background: 'rgba(212,160,18,0.04)' }}>
                   <h4 className="font-semibold text-sm flex items-center gap-2 mb-4" style={{ fontFamily: 'var(--font-heading)', color: 'var(--carbon)' }}>
                     <Star size={16} style={{ color: 'var(--accent-copper)' }} />
-                    {registroEditando ? 'Editar evaluaci├│n' : 'Registrar trabajo de hoy'}
+                    {registroEditando ? 'Editar evaluación' : 'Registrar trabajo de hoy'}
                   </h4>
 
                   <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 items-start">
@@ -852,20 +852,20 @@ export const Empleados = () => {
                     </div>
 
                     <div className="flex flex-col gap-1.5">
-                      <label className="block text-xs font-medium text-slate-500" style={{ fontFamily: 'var(--font-heading)' }}>┬┐Asisti├│ a trabajar?</label>
+                      <label className="block text-xs font-medium text-slate-500" style={{ fontFamily: 'var(--font-heading)' }}>¿Asistió a trabajar?</label>
                       <button
                         type="button"
                         onClick={() => setCalificacionAsistencia(!calificacionAsistencia)}
                         className={`w-full py-2.5 px-4 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 border-2 transition-colors ${calificacionAsistencia ? 'bg-emerald-50 border-emerald-400 text-emerald-700' : 'bg-rose-50 border-rose-400 text-rose-700'}`}
                       >
-                        {calificacionAsistencia ? <><CheckCircle2 size={18} /> S├¡ asisti├│</> : 'Falt├│ hoy'}
+                        {calificacionAsistencia ? <><CheckCircle2 size={18} /> Sí asistió</> : 'Faltó hoy'}
                       </button>
                     </div>
 
                     {calificacionAsistencia && (
                       <div className="lg:col-span-2 grid grid-cols-2 gap-4 bg-white p-4 rounded-2xl" style={{ border: '1px solid var(--border-fiber)' }}>
                         <div className="col-span-2 pb-3 mb-1" style={{ borderBottom: '1px solid var(--border-fiber-light)' }}>
-                          <p className="text-xs font-semibold text-slate-400 mb-3 uppercase tracking-wider">ÔÅ▒´©Å Horario</p>
+                          <p className="text-xs font-semibold text-slate-400 mb-3 uppercase tracking-wider">⏱️ Horario</p>
                           <div className="grid grid-cols-2 gap-4">
                             <div>
                               <label className="block text-[10px] font-medium text-slate-400 mb-1">Entrada</label>
@@ -879,14 +879,14 @@ export const Empleados = () => {
                         </div>
 
                         <div className="col-span-2 pb-3 mb-1" style={{ borderBottom: '1px solid var(--border-fiber-light)' }}>
-                          <p className="text-xs font-semibold text-slate-400 mb-3 uppercase tracking-wider">­ƒÆ░ Remuneraci├│n del d├¡a</p>
+                          <p className="text-xs font-semibold text-slate-400 mb-3 uppercase tracking-wider">💰 Remuneración del día</p>
                           <div className="grid grid-cols-2 gap-4">
                             <div>
                               <label className="block text-[10px] font-medium text-slate-400 mb-1">Modalidad de pago</label>
                               <select className="w-full rounded-xl px-3 py-2 text-sm" style={inputStyle} value={calificacionTipoPago} onChange={e => setCalificacionTipoPago(e.target.value as 'HORAS' | 'PRODUCCION' | 'AMBOS')}>
-                                <option value="HORAS">ÔÅ▒ Por Horas</option>
-                                <option value="PRODUCCION">­ƒôª Por Producci├│n</option>
-                                <option value="AMBOS">ÔÜí Ambos (Horas + Prod.)</option>
+                                <option value="HORAS">⏱ Por Horas</option>
+                                <option value="PRODUCCION">📦 Por Producción</option>
+                                <option value="AMBOS">⚡ Ambos (Horas + Prod.)</option>
                               </select>
                             </div>
                             <div>
@@ -905,7 +905,7 @@ export const Empleados = () => {
 
                         <div className="col-span-2 pt-1">
                           <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                            <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Ô£é´©Å Vincular a orden</p>
+                            <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">✂️ Vincular a orden</p>
                             <button
                               type="button"
                               onClick={agregarProduccion}
@@ -918,7 +918,7 @@ export const Empleados = () => {
                           </div>
                           {productos.length === 0 ? (
                             <p className="rounded-xl px-4 py-3 text-xs" style={{ background: 'var(--surface-linen)', border: '1px solid var(--border-fiber)', color: 'var(--carbon)' }}>
-                              No hay ├│rdenes en Producci├│n. Crea una orden all├¡ primero.
+                              No hay órdenes en Producción. Crea una orden allí primero.
                             </p>
                           ) : (
                             <div className="space-y-2.5">
@@ -935,7 +935,7 @@ export const Empleados = () => {
                                 return (
                                   <div key={`prod-${index}`} className="rounded-xl p-3" style={{ background: 'var(--surface-linen)', border: '1px solid var(--border-fiber-light)' }}>
                                     <div className="mb-2 flex items-center justify-between">
-                                      <p className="text-[10px] font-semibold uppercase text-slate-500">L├¡nea {index + 1}</p>
+                                      <p className="text-[10px] font-semibold uppercase text-slate-500">Línea {index + 1}</p>
                                       <button
                                         type="button"
                                         onClick={() => quitarProduccion(index)}
@@ -947,7 +947,7 @@ export const Empleados = () => {
                                     </div>
                                     <div className="space-y-2.5">
                                       <div>
-                                        <label className="mb-1 block text-[10px] font-medium text-slate-400">Orden de producci├│n</label>
+                                        <label className="mb-1 block text-[10px] font-medium text-slate-400">Orden de producción</label>
                                         <select
                                           value={prod.productoId}
                                           onChange={(e) => {
@@ -958,19 +958,19 @@ export const Empleados = () => {
                                           className="w-full rounded-xl bg-white px-3 py-2 text-xs font-medium"
                                           style={{ border: '1px solid var(--border-fiber)' }}
                                         >
-                                          <option value="">Selecciona una ordenÔÇª</option>
+                                          <option value="">Selecciona una orden…</option>
                                           {productos.map((p) => (
                                             <option key={p.id} value={p.id}>
-                                              {p.nombre} ÔÇö {p.empresa} ({p.estado}, meta {p.cantidad} u.)
+                                              {p.nombre} — {p.empresa} ({p.estado}, meta {p.cantidad} u.)
                                             </option>
                                           ))}
                                         </select>
                                       </div>
                                       <div>
-                                        <label className="mb-1 block text-[10px] font-medium text-slate-400">Acci├│n de la orden</label>
+                                        <label className="mb-1 block text-[10px] font-medium text-slate-400">Acción de la orden</label>
                                         {prod.productoId && pasosOrden.length === 0 && (
                                           <p className="mb-2 text-[10px] text-rose-600 bg-rose-50 border border-rose-200 rounded-lg px-3 py-1.5">
-                                            Esta orden no tiene acciones. Ed├¡tala en Producci├│n.
+                                            Esta orden no tiene acciones. Edítala en Producción.
                                           </p>
                                         )}
                                         <select
@@ -981,7 +981,7 @@ export const Empleados = () => {
                                           className="w-full rounded-xl bg-white px-3 py-2 text-xs font-medium disabled:opacity-50"
                                           style={{ border: '1px solid var(--border-fiber)' }}
                                         >
-                                          <option value="">Selecciona la acci├│nÔÇª</option>
+                                          <option value="">Selecciona la acción…</option>
                                           {pasosOrden.map((ps, pi) => {
                                             const pasoKey = ps.id || `paso-${pi}`;
                                             const clave = `${prod.productoId}:${pasoKey}`;
@@ -1069,7 +1069,7 @@ export const Empleados = () => {
                       className="w-full md:w-auto px-6 py-2.5 rounded-xl font-semibold text-sm text-[#1a1a2e] active:scale-[0.97] transition-all"
                       style={{ background: 'var(--accent-copper)', boxShadow: 'var(--shadow-copper)' }}
                     >
-                      {registroEditando ? 'Actualizar evaluaci├│n' : 'Guardar evaluaci├│n'}
+                      {registroEditando ? 'Actualizar evaluación' : 'Guardar evaluación'}
                     </button>
                   </div>
                 </form>
