@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAppContext, Empleado, ProduccionRegistro } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 import { Search, Plus, Edit2, Trash2, X, Users, PackageSearch, Save, ArrowRight, UserCircle, Star, BadgeCheck, CheckCircle2, Circle, ClipboardList, History, Clock, MinusCircle, FileText, Filter, DollarSign, CalendarDays } from 'lucide-react';
@@ -36,7 +36,7 @@ export const Empleados = () => {
   const etiquetaOrden = (productoId: string) => {
     const p = productos.find((x) => x.id === productoId);
     if (!p) return 'Orden no encontrada';
-    return `${p.nombre} Â· ${p.empresa}`;
+    return `${p.nombre} ┬À ${p.empresa}`;
   };
 
   const [mostrarFormEmpleado, setMostrarFormEmpleado] = useState(false);
@@ -83,8 +83,8 @@ export const Empleados = () => {
     crearLineaProduccionVacia(),
   ]);
   const [calificacionValorHora, setCalificacionValorHora] = useState<string>('');
-  const [calificacionTipoPago, setCalificacionTipoPago] = useState<'HORAS' | 'PRODUCCION' | 'AMBOS'>('AMBOS');
   const [calificacionValorHoraStr, setCalificacionValorHoraStr] = useState<string>('');
+  const [calificacionTipoPago, setCalificacionTipoPago] = useState<'HORAS' | 'PRODUCCION' | 'AMBOS'>('AMBOS');
 
   const [empleadoViendoHistorial, setEmpleadoViendoHistorial] = useState<string | null>(null);
   const [filtroHistorial, setFiltroHistorial] = useState<'quincena' | 'mes' | 'todo'>('quincena');
@@ -111,7 +111,7 @@ export const Empleados = () => {
   const guardarEmpleado = (e: React.FormEvent) => {
     e.preventDefault();
     if (!nombre || !documento) return toast.warning('El nombre y documento son obligatorios');
-    if (!/^[0-9]+$/.test(documento)) return toast.warning('El documento debe contener Ãºnicamente nÃºmeros.');
+    if (!/^[0-9]+$/.test(documento)) return toast.warning('El documento debe contener ├║nicamente n├║meros.');
     if (!cargo) return toast.warning('El cargo es obligatorio. Por favor selecciona uno.');
 
     if (fechaIngreso) {
@@ -121,7 +121,7 @@ export const Empleados = () => {
 
     if (telefono) {
       const telefonoValido = /^[0-9+\- ]{7,15}$/.test(telefono);
-      if (!telefonoValido) return toast.warning('El formato del telÃ©fono es invÃ¡lido. Usa solo nÃºmeros, espacios, + o -, entre 7 y 15 caracteres.');
+      if (!telefonoValido) return toast.warning('El formato del tel├®fono es inv├ílido. Usa solo n├║meros, espacios, + o -, entre 7 y 15 caracteres.');
     }
 
     const cargoObj = cargo ? { id: cargo, nombre: cargos.find(c => c.id === cargo)?.nombre || '' } : null;
@@ -166,7 +166,7 @@ export const Empleados = () => {
   const etiquetaPaso = (productoId: string, pasoId: string) => {
     const p = productos.find((x) => x.id === productoId);
     const paso = p?.pasos?.find((ps) => ps.id === pasoId || (ps as { id?: string }).id === pasoId);
-    return paso?.descripcion ?? 'AcciÃ³n';
+    return paso?.descripcion ?? 'Acci├│n';
   };
 
   const cargarRegistroParaEdicion = (reg: typeof registros[0]) => {
@@ -180,8 +180,9 @@ export const Empleados = () => {
         ? reg.producciones.map((p) => ({ ...p, pasoId: p.pasoId ?? '' }))
         : [crearLineaProduccionVacia()]
     );
-    setCalificacionValorHora(reg.valorHora != null ? String(reg.valorHora) : '');
-    setCalificacionValorHoraStr(reg.valorHora != null ? Number(reg.valorHora).toLocaleString('es-CO') : '');
+    const val = reg.valorHora != null ? String(reg.valorHora) : '';
+    setCalificacionValorHora(val);
+    setCalificacionValorHoraStr(val ? Number(val).toLocaleString('es-CO') : '');
     setCalificacionTipoPago(reg.tipoPago || 'AMBOS');
     setEmpleadoCalificando(reg.empleadoId);
     setEmpleadoViendoHistorial(null);
@@ -191,13 +192,56 @@ export const Empleados = () => {
     e.preventDefault();
     if (!empleadoCalificando) return;
 
+    if (calificacionAsistencia) {
+      const hoy = getColombiaDateString();
+      if (calificacionFecha > hoy) {
+        return toast.warning('No se puede registrar una evaluación con fecha futura.');
+      }
 
+      const produccionesValidas = calificacionProducciones.filter(p => p.productoId && p.pasoId);
+      
+      const hayIncompletas = calificacionProducciones.some(p => (!p.productoId || !p.pasoId) && (p.productoId || p.pasoId || p.unidadesTotales > 0 || p.unidadesBuenas > 0));
+      if (hayIncompletas) {
+        return toast.warning('Cada línea de producción que intentes agregar debe tener una orden y una acción válida.');
+      }
+
+      const claves = produccionesValidas.map((p) => `${p.productoId}:${p.pasoId}`);
+      if (new Set(claves).size !== claves.length) {
+        return toast.warning('No puedes repetir la misma acción de la misma orden en dos líneas.');
+      }
+
+      for (const prod of produccionesValidas) {
+        const orden = productos.find((p) => p.id === prod.productoId);
+        const pasoOk = orden?.pasos?.some((ps) => ps.id === prod.pasoId);
+        if (!orden || !pasoOk) {
+          return toast.warning('Cada línea debe tener una orden y una acción válida de esa orden.');
+        }
+        if (prod.unidadesTotales <= 0) {
+          return toast.warning('Las unidades confeccionadas deben ser mayores a cero.');
+        }
+        if (prod.unidadesBuenas > prod.unidadesTotales) {
+          return toast.warning('La calidad no puede superar las unidades confeccionadas.');
+        }
+        const disponible = unidadesDisponiblesPaso(
+          prod.productoId,
+          prod.pasoId,
+          registroEditando ?? undefined
+        );
+        if (prod.unidadesTotales > disponible) {
+          return toast.warning(
+            `Para "${etiquetaPaso(prod.productoId, prod.pasoId)}" en ${orden.nombre} solo quedan ${disponible} unidades disponibles (meta: ${orden.cantidad}).`
+          );
+        }
+      }
+    }
+
+    const produccionesValidas = calificacionProducciones.filter(p => p.productoId && p.pasoId);
 
     const totalUnidades = calificacionAsistencia
-      ? calificacionProducciones.reduce((acc, prod) => acc + Number(prod.unidadesTotales || 0), 0)
+      ? produccionesValidas.reduce((acc, prod) => acc + Number(prod.unidadesTotales || 0), 0)
       : 0;
     const totalBuenas = calificacionAsistencia
-      ? calificacionProducciones.reduce((acc, prod) => acc + Number(prod.unidadesBuenas || 0), 0)
+      ? produccionesValidas.reduce((acc, prod) => acc + Number(prod.unidadesBuenas || 0), 0)
       : 0;
 
     const valorHoraNum = calificacionValorHora && /^[0-9]+$/.test(calificacionValorHora) ? parseInt(calificacionValorHora) : undefined;
@@ -211,7 +255,7 @@ export const Empleados = () => {
       unidadesBuenas: totalBuenas,
       valorHora: valorHoraNum,
       tipoPago: calificacionTipoPago,
-      producciones: calificacionAsistencia ? calificacionProducciones : [],
+      producciones: calificacionAsistencia ? produccionesValidas : [],
     };
 
     try {
@@ -223,9 +267,9 @@ export const Empleados = () => {
       setEmpleadoCalificando(null);
       setRegistroEditando(null);
       setCalificacionProducciones([crearLineaProduccionVacia()]);
-      toast.success('EvaluaciÃ³n guardada correctamente âœ…');
+      toast.success('Evaluaci├│n guardada correctamente Ô£à');
     } catch {
-      toast.error('No se pudo guardar la evaluaciÃ³n. Revisa los datos o intenta de nuevo.');
+      toast.error('No se pudo guardar la evaluaci├│n. Revisa los datos o intenta de nuevo.');
     }
   };
 
@@ -299,7 +343,7 @@ export const Empleados = () => {
         pagoHoras = horas * reg.valorHora;
       } catch { }
     }
-    // Pago por producciÃ³n
+    // Pago por producci├│n
     if (reg.producciones) {
       for (const prod of reg.producciones) {
         const orden = productos.find(p => p.id === prod.productoId);
@@ -323,7 +367,7 @@ export const Empleados = () => {
 
   return (
     <>
-      {/* Modal formulario empleado â€” FUERA del div animado para que fixed cubra todo el viewport */}
+      {/* Modal formulario empleado ÔÇö FUERA del div animado para que fixed cubra todo el viewport */}
       {mostrarFormEmpleado && (
         <div
           className="fixed inset-0 z-[200] flex items-center justify-center p-4"
@@ -352,22 +396,22 @@ export const Empleados = () => {
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-500 mb-1.5" style={{ fontFamily: 'var(--font-heading)' }}>Documento de Identidad</label>
-                <input type="text" className="w-full rounded-xl px-4 py-3 text-sm" style={inputStyle} value={documento} onChange={e => setDocumento(e.target.value)} pattern="[0-9]+" title="Solo se permiten nÃºmeros" required />
+                <input type="text" className="w-full rounded-xl px-4 py-3 text-sm" style={inputStyle} value={documento} onChange={e => setDocumento(e.target.value)} pattern="[0-9]+" title="Solo se permiten n├║meros" required />
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-500 mb-1.5" style={{ fontFamily: 'var(--font-heading)' }}>Cargo / Rol</label>
                 <select className="w-full rounded-xl px-4 py-3 text-sm" style={inputStyle} value={cargo} onChange={e => setCargo(e.target.value)} required>
-                  <option value="">Seleccione un cargoâ€¦</option>
+                  <option value="">Seleccione un cargoÔÇª</option>
                   {cargos.filter(c => c.activa !== false).map(c => <option key={c.id} value={c.id}>{c.nombre}</option>)}
                 </select>
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1.5" style={{ fontFamily: 'var(--font-heading)' }}>TelÃ©fono</label>
+                <label className="block text-xs font-medium text-slate-500 mb-1.5" style={{ fontFamily: 'var(--font-heading)' }}>Tel├®fono</label>
                 <input type="tel" className="w-full rounded-xl px-4 py-3 text-sm" style={inputStyle} value={telefono} onChange={e => setTelefono(e.target.value)} pattern="[0-9+\- ]{7,15}" title="Entre 7 y 15 caracteres" />
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1.5" style={{ fontFamily: 'var(--font-heading)' }}>Correo ElectrÃ³nico</label>
+                <label className="block text-xs font-medium text-slate-500 mb-1.5" style={{ fontFamily: 'var(--font-heading)' }}>Correo Electr├│nico</label>
                 <input type="email" className="w-full rounded-xl px-4 py-3 text-sm" style={inputStyle} value={email} onChange={e => setEmail(e.target.value)} />
               </div>
               <div>
@@ -394,7 +438,7 @@ export const Empleados = () => {
         </div>
       )}
 
-      {/* Contenido de la pÃ¡gina */}
+      {/* Contenido de la p├ígina */}
       <div className="animate-fade-up">
         <Dialog
           open={modalOrdenProduccion !== null}
@@ -404,8 +448,8 @@ export const Empleados = () => {
             <DialogHeader>
               <DialogTitle>
                 {modalOrdenProduccion
-                  ? `Orden Â· ${modalOrdenProduccion.fecha} (lÃ­nea ${modalOrdenProduccion.indice + 1})`
-                  : 'Orden de producciÃ³n'}
+                  ? `Orden ┬À ${modalOrdenProduccion.fecha} (l├¡nea ${modalOrdenProduccion.indice + 1})`
+                  : 'Orden de producci├│n'}
               </DialogTitle>
             </DialogHeader>
             {(() => {
@@ -414,8 +458,8 @@ export const Empleados = () => {
               if (!item) return null;
               if (!orden) return (
                 <p className="text-sm text-rose-700">
-                  Esta orden ya no existe en ProducciÃ³n (pudo haberse eliminado). Subtotales guardados:{' '}
-                  {item.unidadesTotales} confeccionadas Â· {item.unidadesBuenas} calidad.
+                  Esta orden ya no existe en Producci├│n (pudo haberse eliminado). Subtotales guardados:{' '}
+                  {item.unidadesTotales} confeccionadas ┬À {item.unidadesBuenas} calidad.
                 </p>
               );
               return (
@@ -423,16 +467,16 @@ export const Empleados = () => {
                   <p><span className="font-bold">{orden.nombre}</span></p>
                   <p className="text-slate-500">Cliente: {orden.empresa}</p>
                   <p className="text-slate-500">
-                    Cantidad: <span className="font-semibold">{orden.cantidad}</span> Â· Estado:{' '}
+                    Cantidad: <span className="font-semibold">{orden.cantidad}</span> ┬À Estado:{' '}
                     <span className="font-semibold">{orden.estado}</span>
                   </p>
                   <p className="text-slate-500">
-                    AsignaciÃ³n: {orden.fechaAsignacion}
-                    {orden.fechaTerminacion ? ` Â· Entrega: ${orden.fechaTerminacion}` : ''}
+                    Asignaci├│n: {orden.fechaAsignacion}
+                    {orden.fechaTerminacion ? ` ┬À Entrega: ${orden.fechaTerminacion}` : ''}
                   </p>
                   <div className="rounded-xl px-3 py-2" style={{ background: 'var(--surface-linen)', border: '1px solid var(--border-fiber)' }}>
-                    Aporte este dÃ­a:{' '}
-                    <span className="font-bold">{item.unidadesTotales}</span> confeccionadas Â·{' '}
+                    Aporte este d├¡a:{' '}
+                    <span className="font-bold">{item.unidadesTotales}</span> confeccionadas ┬À{' '}
                     <span className="font-bold text-emerald-700">{item.unidadesBuenas}</span> calidad
                   </div>
                 </div>
@@ -454,7 +498,7 @@ export const Empleados = () => {
                 <Users size={18} className="text-emerald-600" />
               </div>
             </h1>
-            <p className="text-slate-500 mt-1.5 text-sm">Gestiona el personal y revisa su desempeÃ±o</p>
+            <p className="text-slate-500 mt-1.5 text-sm">Gestiona el personal y revisa su desempe├▒o</p>
           </div>
           <button
             onClick={() => { resetFormEmpleado(); setMostrarFormEmpleado(true); }}
@@ -530,7 +574,7 @@ export const Empleados = () => {
         {empleadosFiltrados.length === 0 ? (
           <div className="text-center py-12 rounded-2xl border-2 border-dashed text-slate-400" style={{ background: 'var(--surface-silk)', borderColor: 'var(--border-fiber)' }}>
             <p className="text-base font-medium" style={{ color: 'var(--carbon)' }}>
-              {empleados.length === 0 ? 'No hay empleados registrados aÃºn.' : 'No se encontraron empleados.'}
+              {empleados.length === 0 ? 'No hay empleados registrados a├║n.' : 'No se encontraron empleados.'}
             </p>
           </div>
         ) : (
@@ -561,11 +605,11 @@ export const Empleados = () => {
                         {emp.tipoDocumento?.id || 'C.C.'} {emp.documento}
                       </span>
                       <span className="text-xs px-2.5 py-1 rounded-lg" style={{ background: 'var(--surface-linen)', color: 'var(--carbon)', border: '1px solid var(--border-fiber)' }}>
-                        ðŸ“ž {emp.telefono || 'Sin telÃ©fono'}
+                        ­ƒô× {emp.telefono || 'Sin tel├®fono'}
                       </span>
                       {emp.email && (
                         <span className="text-xs px-2.5 py-1 rounded-lg" style={{ background: 'var(--surface-linen)', color: 'var(--carbon)', border: '1px solid var(--border-fiber)' }}>
-                          ðŸ“§ {emp.email}
+                          ­ƒôº {emp.email}
                         </span>
                       )}
                     </div>
@@ -595,7 +639,7 @@ export const Empleados = () => {
                     <Edit2 size={16} className="text-slate-500" />
                   </button>
                   {tieneRol('SUPERADMINISTRADOR') && (
-                    <button onClick={async () => { if (await confirm({ title: 'Â¿Eliminar empleado?', description: 'Â¿Seguro que deseas eliminar este empleado definitivamente? Se borrarÃ¡ todo su historial asociado.', confirmText: 'Eliminar definitivamente', requireInput: emp.nombre })) eliminarEmpleado(emp.id); }} className="p-2.5 rounded-xl transition-all active:scale-[0.97] bg-rose-50 hover:bg-rose-100 border border-rose-200">
+                    <button onClick={async () => { if (await confirm({ title: '┬┐Eliminar empleado?', description: '┬┐Seguro que deseas eliminar este empleado definitivamente? Se borrar├í todo su historial asociado.', confirmText: 'Eliminar definitivamente', requireInput: emp.nombre })) eliminarEmpleado(emp.id); }} className="p-2.5 rounded-xl transition-all active:scale-[0.97] bg-rose-50 hover:bg-rose-100 border border-rose-200">
                       <Trash2 size={16} className="text-rose-500" />
                     </button>
                   )}
@@ -607,7 +651,7 @@ export const Empleados = () => {
                 const regsFiltrados = getRegistrosFiltrados(emp.id);
                 const { desde, hasta } = getFiltroFechas();
 
-                // Calcular totales del perÃ­odo
+                // Calcular totales del per├¡odo
                 let totalHoras = 0;
                 let totalProduccion = 0;
                 let totalConfeccionadas = 0;
@@ -641,7 +685,7 @@ export const Empleados = () => {
                               }`}
                             style={filtroHistorial === f ? { background: 'var(--accent-copper)' } : { background: 'white' }}
                           >
-                            {f === 'quincena' ? '15 dÃ­as' : f === 'mes' ? 'Este mes' : 'Todo'}
+                            {f === 'quincena' ? '15 d├¡as' : f === 'mes' ? 'Este mes' : 'Todo'}
                           </button>
                         ))}
                       </div>
@@ -656,7 +700,7 @@ export const Empleados = () => {
 
                     {regsFiltrados.length === 0 ? (
                       <p className="text-slate-500 bg-white p-4 rounded-xl text-center text-sm" style={{ border: '1px solid var(--border-fiber)' }}>
-                        No hay registros para este perÃ­odo.
+                        No hay registros para este per├¡odo.
                       </p>
                     ) : (
                       <div className="grid gap-2.5">
@@ -674,11 +718,11 @@ export const Empleados = () => {
                                       <Clock size={14} /> {reg.horaEntrada} - {reg.horaSalida}
                                     </div>
                                   ) : (
-                                    <span className="text-rose-600 font-semibold text-xs bg-rose-50 px-2 py-1 rounded-lg">No AsistiÃ³</span>
+                                    <span className="text-rose-600 font-semibold text-xs bg-rose-50 px-2 py-1 rounded-lg">No Asisti├│</span>
                                   )}
                                 </div>
 
-                                {/* Chips: totales + calidad + pago horas + pago producciÃ³n */}
+                                {/* Chips: totales + calidad + pago horas + pago producci├│n */}
                                 {reg.horaEntrada !== '--:--' && (
                                   <div className="flex gap-3 shrink-0 flex-wrap justify-end">
                                     <div className="text-center">
@@ -708,7 +752,7 @@ export const Empleados = () => {
                               {reg.horaEntrada !== '--:--' && (reg.producciones?.length ?? 0) > 0 && (
                                 <div className="pt-2 space-y-1.5" style={{ borderTop: '1px solid var(--border-fiber-light)' }}>
                                   <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
-                                    Ã“rdenes vinculadas este dÃ­a
+                                    ├ôrdenes vinculadas este d├¡a
                                   </p>
                                   {reg.producciones!.map((prod, index) => (
                                     <div
@@ -720,10 +764,10 @@ export const Empleados = () => {
                                         <span className="font-bold text-slate-500 shrink-0">#{index + 1}</span>
                                         <span className="truncate font-medium" style={{ color: 'var(--carbon)' }} title={etiquetaOrden(prod.productoId)}>
                                           {etiquetaOrden(prod.productoId)}
-                                          {prod.pasoId ? ` Â· ${etiquetaPaso(prod.productoId, prod.pasoId)}` : ''}
+                                          {prod.pasoId ? ` ┬À ${etiquetaPaso(prod.productoId, prod.pasoId)}` : ''}
                                         </span>
                                         <span className="text-slate-500 sm:ml-auto">
-                                          <span className="font-semibold">{prod.unidadesTotales}</span> conf. Â·{' '}
+                                          <span className="font-semibold">{prod.unidadesTotales}</span> conf. ┬À{' '}
                                           <span className="font-semibold text-emerald-700">{prod.unidadesBuenas}</span>{' '}calidad
                                         </span>
                                       </div>
@@ -745,7 +789,7 @@ export const Empleados = () => {
                                         </button>
                                         <button
                                           type="button"
-                                          onClick={async () => { if (await confirm({ title: 'Â¿Eliminar evaluaciÃ³n?', description: 'Â¿Seguro que deseas eliminar esta evaluaciÃ³n?', confirmText: 'Eliminar' })) eliminarRegistro(reg.id); }}
+                                          onClick={async () => { if (await confirm({ title: '┬┐Eliminar evaluaci├│n?', description: '┬┐Seguro que deseas eliminar esta evaluaci├│n?', confirmText: 'Eliminar' })) eliminarRegistro(reg.id); }}
                                           className="inline-flex items-center gap-1 rounded-lg border border-rose-200 bg-white px-2.5 py-1 text-[10px] font-semibold text-rose-600"
                                         >
                                           <Trash2 size={12} /> Eliminar
@@ -761,10 +805,10 @@ export const Empleados = () => {
                       </div>
                     )}
 
-                    {/* Resumen compacto del perÃ­odo */}
+                    {/* Resumen compacto del per├¡odo */}
                     {regsFiltrados.length > 0 && (
                       <div className="mt-4 pt-4" style={{ borderTop: '1px solid var(--border-fiber)' }}>
-                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2.5">Resumen del perÃ­odo</p>
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2.5">Resumen del per├¡odo</p>
                         <div className="flex flex-wrap gap-x-5 gap-y-2">
                           <div className="text-center">
                             <span className="block text-[10px] text-slate-400 font-semibold uppercase">Confeccionadas</span>
@@ -798,7 +842,7 @@ export const Empleados = () => {
                 <form onSubmit={guardarCalificacion} className="p-5 animate-fade-up" style={{ background: 'rgba(212,160,18,0.04)' }}>
                   <h4 className="font-semibold text-sm flex items-center gap-2 mb-4" style={{ fontFamily: 'var(--font-heading)', color: 'var(--carbon)' }}>
                     <Star size={16} style={{ color: 'var(--accent-copper)' }} />
-                    {registroEditando ? 'Editar evaluaciÃ³n' : 'Registrar trabajo de hoy'}
+                    {registroEditando ? 'Editar evaluaci├│n' : 'Registrar trabajo de hoy'}
                   </h4>
 
                   <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 items-start">
@@ -808,20 +852,20 @@ export const Empleados = () => {
                     </div>
 
                     <div className="flex flex-col gap-1.5">
-                      <label className="block text-xs font-medium text-slate-500" style={{ fontFamily: 'var(--font-heading)' }}>Â¿AsistiÃ³ a trabajar?</label>
+                      <label className="block text-xs font-medium text-slate-500" style={{ fontFamily: 'var(--font-heading)' }}>┬┐Asisti├│ a trabajar?</label>
                       <button
                         type="button"
                         onClick={() => setCalificacionAsistencia(!calificacionAsistencia)}
                         className={`w-full py-2.5 px-4 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 border-2 transition-colors ${calificacionAsistencia ? 'bg-emerald-50 border-emerald-400 text-emerald-700' : 'bg-rose-50 border-rose-400 text-rose-700'}`}
                       >
-                        {calificacionAsistencia ? <><CheckCircle2 size={18} /> SÃ­ asistiÃ³</> : 'FaltÃ³ hoy'}
+                        {calificacionAsistencia ? <><CheckCircle2 size={18} /> S├¡ asisti├│</> : 'Falt├│ hoy'}
                       </button>
                     </div>
 
                     {calificacionAsistencia && (
                       <div className="lg:col-span-2 grid grid-cols-2 gap-4 bg-white p-4 rounded-2xl" style={{ border: '1px solid var(--border-fiber)' }}>
                         <div className="col-span-2 pb-3 mb-1" style={{ borderBottom: '1px solid var(--border-fiber-light)' }}>
-                          <p className="text-xs font-semibold text-slate-400 mb-3 uppercase tracking-wider">â±ï¸ Horario</p>
+                          <p className="text-xs font-semibold text-slate-400 mb-3 uppercase tracking-wider">ÔÅ▒´©Å Horario</p>
                           <div className="grid grid-cols-2 gap-4">
                             <div>
                               <label className="block text-[10px] font-medium text-slate-400 mb-1">Entrada</label>
@@ -835,14 +879,14 @@ export const Empleados = () => {
                         </div>
 
                         <div className="col-span-2 pb-3 mb-1" style={{ borderBottom: '1px solid var(--border-fiber-light)' }}>
-                          <p className="text-xs font-semibold text-slate-400 mb-3 uppercase tracking-wider">ðŸ’° RemuneraciÃ³n del dÃ­a</p>
+                          <p className="text-xs font-semibold text-slate-400 mb-3 uppercase tracking-wider">­ƒÆ░ Remuneraci├│n del d├¡a</p>
                           <div className="grid grid-cols-2 gap-4">
                             <div>
                               <label className="block text-[10px] font-medium text-slate-400 mb-1">Modalidad de pago</label>
                               <select className="w-full rounded-xl px-3 py-2 text-sm" style={inputStyle} value={calificacionTipoPago} onChange={e => setCalificacionTipoPago(e.target.value as 'HORAS' | 'PRODUCCION' | 'AMBOS')}>
-                                <option value="HORAS">â± Por Horas</option>
-                                <option value="PRODUCCION">ðŸ“¦ Por ProducciÃ³n</option>
-                                <option value="AMBOS">âš¡ Ambos (Horas + Prod.)</option>
+                                <option value="HORAS">ÔÅ▒ Por Horas</option>
+                                <option value="PRODUCCION">­ƒôª Por Producci├│n</option>
+                                <option value="AMBOS">ÔÜí Ambos (Horas + Prod.)</option>
                               </select>
                             </div>
                             <div>
@@ -861,7 +905,7 @@ export const Empleados = () => {
 
                         <div className="col-span-2 pt-1">
                           <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                            <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">âœ‚ï¸ Vincular a orden</p>
+                            <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Ô£é´©Å Vincular a orden</p>
                             <button
                               type="button"
                               onClick={agregarProduccion}
@@ -874,7 +918,7 @@ export const Empleados = () => {
                           </div>
                           {productos.length === 0 ? (
                             <p className="rounded-xl px-4 py-3 text-xs" style={{ background: 'var(--surface-linen)', border: '1px solid var(--border-fiber)', color: 'var(--carbon)' }}>
-                              No hay Ã³rdenes en ProducciÃ³n. Crea una orden allÃ­ primero.
+                              No hay ├│rdenes en Producci├│n. Crea una orden all├¡ primero.
                             </p>
                           ) : (
                             <div className="space-y-2.5">
@@ -891,7 +935,7 @@ export const Empleados = () => {
                                 return (
                                   <div key={`prod-${index}`} className="rounded-xl p-3" style={{ background: 'var(--surface-linen)', border: '1px solid var(--border-fiber-light)' }}>
                                     <div className="mb-2 flex items-center justify-between">
-                                      <p className="text-[10px] font-semibold uppercase text-slate-500">LÃ­nea {index + 1}</p>
+                                      <p className="text-[10px] font-semibold uppercase text-slate-500">L├¡nea {index + 1}</p>
                                       <button
                                         type="button"
                                         onClick={() => quitarProduccion(index)}
@@ -903,7 +947,7 @@ export const Empleados = () => {
                                     </div>
                                     <div className="space-y-2.5">
                                       <div>
-                                        <label className="mb-1 block text-[10px] font-medium text-slate-400">Orden de producciÃ³n</label>
+                                        <label className="mb-1 block text-[10px] font-medium text-slate-400">Orden de producci├│n</label>
                                         <select
                                           value={prod.productoId}
                                           onChange={(e) => {
@@ -914,19 +958,19 @@ export const Empleados = () => {
                                           className="w-full rounded-xl bg-white px-3 py-2 text-xs font-medium"
                                           style={{ border: '1px solid var(--border-fiber)' }}
                                         >
-                                          <option value="">Selecciona una ordenâ€¦</option>
+                                          <option value="">Selecciona una ordenÔÇª</option>
                                           {productos.map((p) => (
                                             <option key={p.id} value={p.id}>
-                                              {p.nombre} â€” {p.empresa} ({p.estado}, meta {p.cantidad} u.)
+                                              {p.nombre} ÔÇö {p.empresa} ({p.estado}, meta {p.cantidad} u.)
                                             </option>
                                           ))}
                                         </select>
                                       </div>
                                       <div>
-                                        <label className="mb-1 block text-[10px] font-medium text-slate-400">AcciÃ³n de la orden</label>
+                                        <label className="mb-1 block text-[10px] font-medium text-slate-400">Acci├│n de la orden</label>
                                         {prod.productoId && pasosOrden.length === 0 && (
                                           <p className="mb-2 text-[10px] text-rose-600 bg-rose-50 border border-rose-200 rounded-lg px-3 py-1.5">
-                                            Esta orden no tiene acciones. EdÃ­tala en ProducciÃ³n.
+                                            Esta orden no tiene acciones. Ed├¡tala en Producci├│n.
                                           </p>
                                         )}
                                         <select
@@ -937,7 +981,7 @@ export const Empleados = () => {
                                           className="w-full rounded-xl bg-white px-3 py-2 text-xs font-medium disabled:opacity-50"
                                           style={{ border: '1px solid var(--border-fiber)' }}
                                         >
-                                          <option value="">Selecciona la acciÃ³nâ€¦</option>
+                                          <option value="">Selecciona la acci├│nÔÇª</option>
                                           {pasosOrden.map((ps, pi) => {
                                             const pasoKey = ps.id || `paso-${pi}`;
                                             const clave = `${prod.productoId}:${pasoKey}`;
@@ -1025,7 +1069,7 @@ export const Empleados = () => {
                       className="w-full md:w-auto px-6 py-2.5 rounded-xl font-semibold text-sm text-[#1a1a2e] active:scale-[0.97] transition-all"
                       style={{ background: 'var(--accent-copper)', boxShadow: 'var(--shadow-copper)' }}
                     >
-                      {registroEditando ? 'Actualizar evaluaciÃ³n' : 'Guardar evaluaciÃ³n'}
+                      {registroEditando ? 'Actualizar evaluaci├│n' : 'Guardar evaluaci├│n'}
                     </button>
                   </div>
                 </form>

@@ -43,6 +43,9 @@ export interface Empleado {
   email?: string;
   fechaIngreso: string;
   estado: 'Activo' | 'Inactivo';
+  valorHora?: number;
+  /** HORAS | PRODUCCION | AMBOS — si null/undefined se asume AMBOS */
+  tipoPago?: 'HORAS' | 'PRODUCCION' | 'AMBOS';
 }
 
 export interface Empresa {
@@ -62,8 +65,6 @@ export interface RegistroDiario {
   horaSalida: string;
   unidadesTotales: number;
   unidadesBuenas: number; // Reemplaza la calificación 1-5 por número entero
-  valorHora?: number;
-  tipoPago?: 'HORAS' | 'PRODUCCION' | 'AMBOS';
   producciones?: ProduccionRegistro[];
 }
 
@@ -165,12 +166,12 @@ interface AppContextType {
 
   cambiarEstadoProducto: (id: string, estado: Producto['estado']) => void;
 
-   // Registros de Aseo
-   registrosAseo: RegistroAseo[];
-   crearRegistroAseo: (payload?: object, prevEntries?: RegistroAseoEntry[]) => void;
-   toggleRegistroAseoEntry: (registroId: string, entryId: string) => void;
-   actualizarRegistroAseoEntry: (registroId: string, entryId: string, acciones: string[], areas: string[]) => void;
-   eliminarRegistroAseo: (id: string) => void;
+  // Registros de Aseo
+  registrosAseo: RegistroAseo[];
+  crearRegistroAseo: (payload?: object, prevEntries?: RegistroAseoEntry[]) => void;
+  toggleRegistroAseoEntry: (registroId: string, entryId: string) => void;
+  actualizarRegistroAseoEntry: (registroId: string, entryId: string, acciones: string[], areas: string[]) => void;
+  eliminarRegistroAseo: (id: string) => void;
 
   // Empresas
   empresas: Empresa[];
@@ -226,7 +227,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [tiposDocumento, setTiposDocumento] = useState<CatalogoItem[]>([]);
   const [areasTrabajo, setAreasTrabajo] = useState<CatalogoItem[]>([]);
   const [accionesAseo, setAccionesAseo] = useState<CatalogoItem[]>([]);
-  
+
   const [nominasPagadas, setNominasPagadas] = useState<Set<string>>(() => {
     try {
       const saved = localStorage.getItem('nominasPagadas');
@@ -240,69 +241,69 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem('nominasPagadas', JSON.stringify(Array.from(nominasPagadas)));
   }, [nominasPagadas]);
 
-   useEffect(() => {
-     let mounted = true;
-     request<BootstrapResponse>('/bootstrap')
-       .then((data) => {
-         if (!mounted) return;
-         setProductos(data.productos ?? []);
-         setEmpleados(data.empleados ?? []);
-          setRegistros(data.registros ?? []);
-          setRegistrosAseo((data as any).registrosAseo ?? []);
-         setEmpresas((data as any).empresas ?? []);
-         setMovimientosFinancieros((data as any).movimientosFinancieros ?? []);
-         const filtrarCatalogo = (items?: CatalogoItem[]) =>
-           (items ?? []).filter((c) => c.id && c.id.trim() !== '' && !c.id.startsWith('tmp-'));
-         setAccionesProduccion(filtrarCatalogo(data.accionesProduccion));
-         setCargos(filtrarCatalogo(data.cargos));
-         setTiposDocumento(filtrarCatalogo(data.tiposDocumento));
-         setAreasTrabajo(filtrarCatalogo(data.areasTrabajo));
-         setAccionesAseo(filtrarCatalogo(data.accionesAseo));
-         console.log('Bootstrap cargado:', data.productos);
-       })
-       .catch((err) => {
-         console.warn('No se pudo cargar bootstrap del backend:', err);
-       });
-     return () => {
-       mounted = false;
-     };
-   }, []);
+  useEffect(() => {
+    let mounted = true;
+    request<BootstrapResponse>('/bootstrap')
+      .then((data) => {
+        if (!mounted) return;
+        setProductos(data.productos ?? []);
+        setEmpleados(data.empleados ?? []);
+        setRegistros(data.registros ?? []);
+        setRegistrosAseo((data as any).registrosAseo ?? []);
+        setEmpresas((data as any).empresas ?? []);
+        setMovimientosFinancieros((data as any).movimientosFinancieros ?? []);
+        const filtrarCatalogo = (items?: CatalogoItem[]) =>
+          (items ?? []).filter((c) => c.id && c.id.trim() !== '' && !c.id.startsWith('tmp-'));
+        setAccionesProduccion(filtrarCatalogo(data.accionesProduccion));
+        setCargos(filtrarCatalogo(data.cargos));
+        setTiposDocumento(filtrarCatalogo(data.tiposDocumento));
+        setAreasTrabajo(filtrarCatalogo(data.areasTrabajo));
+        setAccionesAseo(filtrarCatalogo(data.accionesAseo));
+        console.log('Bootstrap cargado:', data.productos);
+      })
+      .catch((err) => {
+        console.warn('No se pudo cargar bootstrap del backend:', err);
+      });
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   // === FUNCIONES CRUD ===
 
   // Producción
-   const agregarProducto = (prod: Omit<Producto, 'id'>) => {
-     // Optimistic create: insert a temporary product immediately
-     const tmpId = `tmp-prod-${Date.now()}`;
-     const tmpProd: Producto = { id: tmpId, pasos: prod.pasos ?? [], ...prod } as Producto;
-     setProductos((prev) => [tmpProd, ...prev]);
+  const agregarProducto = (prod: Omit<Producto, 'id'>) => {
+    // Optimistic create: insert a temporary product immediately
+    const tmpId = `tmp-prod-${Date.now()}`;
+    const tmpProd: Producto = { id: tmpId, pasos: prod.pasos ?? [], ...prod } as Producto;
+    setProductos((prev) => [tmpProd, ...prev]);
 
-     request<Producto>('/productos', {
-       method: 'POST',
-       body: JSON.stringify(prod),
-     })
-       .then((nuevo) => {
-         if (!nuevo || !nuevo.id) {
-           // Replace temp with server response (if any) or remove
-           setProductos((prev) => prev.filter((p) => p.id !== tmpId));
-           return;
-         }
-         // Fetch pasos and replace tmp
-         request<any[]>(`/productos/${nuevo.id}/pasos`)
-           .then((pasos) => {
-             nuevo.pasos = pasos;
-             setProductos((prev) => prev.map((p) => (p.id === tmpId ? nuevo : p)));
-           })
-           .catch(() => {
-             // If pasos fail, still replace the tmp with producto basic
-             setProductos((prev) => prev.map((p) => (p.id === tmpId ? nuevo : p)));
-           });
-       })
-       .catch((err) => {
-         console.error('Error creando producto (revirtiendo):', err);
-         setProductos((prev) => prev.filter((p) => p.id !== tmpId));
-       });
-   };
+    request<Producto>('/productos', {
+      method: 'POST',
+      body: JSON.stringify(prod),
+    })
+      .then((nuevo) => {
+        if (!nuevo || !nuevo.id) {
+          // Replace temp with server response (if any) or remove
+          setProductos((prev) => prev.filter((p) => p.id !== tmpId));
+          return;
+        }
+        // Fetch pasos and replace tmp
+        request<any[]>(`/productos/${nuevo.id}/pasos`)
+          .then((pasos) => {
+            nuevo.pasos = pasos;
+            setProductos((prev) => prev.map((p) => (p.id === tmpId ? nuevo : p)));
+          })
+          .catch(() => {
+            // If pasos fail, still replace the tmp with producto basic
+            setProductos((prev) => prev.map((p) => (p.id === tmpId ? nuevo : p)));
+          });
+      })
+      .catch((err) => {
+        console.error('Error creando producto (revirtiendo):', err);
+        setProductos((prev) => prev.filter((p) => p.id !== tmpId));
+      });
+  };
   const editarProducto = (id: string, prod: Partial<Producto>) => {
     const actual = productos.find((p) => p.id === id);
     if (!actual) return;
@@ -489,10 +490,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
     const cantidadMeta = producto.cantidad || 0;
     const pasos = producto.pasos || [];
-    
+
     let totalRealizadasCualquierPaso = 0;
     let totalRealizadasUltimoPaso = 0;
-    
+
     // Si hay pasos, el último determina si está terminado. Si no, cualquier unidad cuenta.
     const ultimoPasoId = pasos.length > 0 ? pasos[pasos.length - 1].id : null;
 
@@ -534,18 +535,18 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   // Registros de Aseo
   const crearRegistroAseo = (payload?: object, prevEntries?: RegistroAseoEntry[]) => {
     const tmpId = `tmp-aseo-${Date.now()}`;
-    const entriesAUsar = prevEntries 
-      ? prevEntries.map((e, index) => ({ 
-          ...e, 
-          id: `tmp-entry-${Date.now()}-${index}`, 
-          completada: false 
-        }))
+    const entriesAUsar = prevEntries
+      ? prevEntries.map((e, index) => ({
+        ...e,
+        id: `tmp-entry-${Date.now()}-${index}`,
+        completada: false
+      }))
       : [];
-    const tmp: RegistroAseo = { 
-      id: tmpId, 
-      fecha: getColombiaDateString(), 
-      entries: entriesAUsar, 
-      ...(payload as any) 
+    const tmp: RegistroAseo = {
+      id: tmpId,
+      fecha: getColombiaDateString(),
+      entries: entriesAUsar,
+      ...(payload as any)
     } as RegistroAseo;
     setRegistrosAseo((prev) => [tmp, ...prev]);
 
@@ -573,113 +574,113 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       });
   };
 
-   const toggleRegistroAseoEntry = (registroId: string, entryId: string) => {
-     // Optimistic toggle
-     setRegistrosAseo((prev) =>
-       prev.map((r) =>
-         r.id !== registroId
-           ? r
-           : {
-               ...r,
-               entries: r.entries.map((e) => (e.id === entryId ? { ...e, completada: !e.completada } : e)),
-             }
-       )
-     );
-
-     request<RegistroAseo>(`/registros-aseo/${registroId}/entries/${entryId}/toggle`, {
-       method: 'PATCH',
-     })
-       .then((actualizado) => {
-         setRegistrosAseo((prev) =>
-           prev.map((r) => {
-             if (r.id !== registroId) return r;
-             const serverEntry = actualizado.entries.find((e) => e.id === entryId);
-             if (!serverEntry) return r;
-             return {
-               ...r,
-               entries: r.entries.map((e) => (e.id === entryId ? serverEntry : e)),
-             };
-           })
-         );
-       })
-       .catch((err) => {
-         console.error('Error toggle registro aseo entry (revirtiendo):', err);
-         // Revert just the toggle optimistically
-         setRegistrosAseo((prev) =>
-           prev.map((r) =>
-             r.id !== registroId
-               ? r
-               : {
-                   ...r,
-                   entries: r.entries.map((e) => (e.id === entryId ? { ...e, completada: !e.completada } : e)),
-                 }
-           )
-         );
-       });
-   };
-
-    const actualizarRegistroAseoEntry = (registroId: string, entryId: string, acciones: string[], areas: string[]) => {
-      // Capturamos el estado original específico para poder revertirlo
-      let originalEntry: RegistroAseoEntry | undefined;
-
-      setRegistrosAseo((prev) =>
-        prev.map((r) => {
-          if (r.id !== registroId) return r;
-          return {
+  const toggleRegistroAseoEntry = (registroId: string, entryId: string) => {
+    // Optimistic toggle
+    setRegistrosAseo((prev) =>
+      prev.map((r) =>
+        r.id !== registroId
+          ? r
+          : {
             ...r,
-            entries: r.entries.map((e) => {
-              if (e.id === entryId) {
-                originalEntry = { ...e };
-                return { ...e, acciones: acciones, areas: areas };
-              }
-              return e;
-            }),
-          };
-        })
-      );
-
-      request<RegistroAseo>(`/registros-aseo/${registroId}/entries/${entryId}`, {
-        method: 'PATCH',
-        body: JSON.stringify({ acciones, areas }),
-      })
-        .then((actualizado) => {
-          setRegistrosAseo((prev) =>
-            prev.map((r) => {
-              if (r.id !== registroId) return r;
-              const serverEntry = actualizado.entries.find((e) => e.id === entryId);
-              if (!serverEntry) return r;
-              return {
-                ...r,
-                entries: r.entries.map((e) => (e.id === entryId ? serverEntry : e)),
-              };
-            })
-          );
-        })
-        .catch((err) => {
-          console.error('Error actualizando acciones/areas de entry (revirtiendo):', err);
-          if (originalEntry) {
-            setRegistrosAseo((prev) =>
-              prev.map((r) =>
-                r.id !== registroId
-                  ? r
-                  : {
-                      ...r,
-                      entries: r.entries.map((e) => (e.id === entryId ? originalEntry! : e)),
-                    }
-              )
-            );
+            entries: r.entries.map((e) => (e.id === entryId ? { ...e, completada: !e.completada } : e)),
           }
-        });
-    };
+      )
+    );
 
-   const eliminarRegistroAseo = (id: string) => {
-     const snapshot = [...registrosAseo];
-     setRegistrosAseo((prev) => prev.filter((r) => r.id !== id));
-     request<void>(`/registros-aseo/${id}`, { method: 'DELETE' }).catch((err) => {
-       console.error('Error eliminando registro de aseo (revirtiendo):', err);
-       setRegistrosAseo(snapshot);
-     });
-   };
+    request<RegistroAseo>(`/registros-aseo/${registroId}/entries/${entryId}/toggle`, {
+      method: 'PATCH',
+    })
+      .then((actualizado) => {
+        setRegistrosAseo((prev) =>
+          prev.map((r) => {
+            if (r.id !== registroId) return r;
+            const serverEntry = actualizado.entries.find((e) => e.id === entryId);
+            if (!serverEntry) return r;
+            return {
+              ...r,
+              entries: r.entries.map((e) => (e.id === entryId ? serverEntry : e)),
+            };
+          })
+        );
+      })
+      .catch((err) => {
+        console.error('Error toggle registro aseo entry (revirtiendo):', err);
+        // Revert just the toggle optimistically
+        setRegistrosAseo((prev) =>
+          prev.map((r) =>
+            r.id !== registroId
+              ? r
+              : {
+                ...r,
+                entries: r.entries.map((e) => (e.id === entryId ? { ...e, completada: !e.completada } : e)),
+              }
+          )
+        );
+      });
+  };
+
+  const actualizarRegistroAseoEntry = (registroId: string, entryId: string, acciones: string[], areas: string[]) => {
+    // Capturamos el estado original específico para poder revertirlo
+    let originalEntry: RegistroAseoEntry | undefined;
+
+    setRegistrosAseo((prev) =>
+      prev.map((r) => {
+        if (r.id !== registroId) return r;
+        return {
+          ...r,
+          entries: r.entries.map((e) => {
+            if (e.id === entryId) {
+              originalEntry = { ...e };
+              return { ...e, acciones: acciones, areas: areas };
+            }
+            return e;
+          }),
+        };
+      })
+    );
+
+    request<RegistroAseo>(`/registros-aseo/${registroId}/entries/${entryId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ acciones, areas }),
+    })
+      .then((actualizado) => {
+        setRegistrosAseo((prev) =>
+          prev.map((r) => {
+            if (r.id !== registroId) return r;
+            const serverEntry = actualizado.entries.find((e) => e.id === entryId);
+            if (!serverEntry) return r;
+            return {
+              ...r,
+              entries: r.entries.map((e) => (e.id === entryId ? serverEntry : e)),
+            };
+          })
+        );
+      })
+      .catch((err) => {
+        console.error('Error actualizando acciones/areas de entry (revirtiendo):', err);
+        if (originalEntry) {
+          setRegistrosAseo((prev) =>
+            prev.map((r) =>
+              r.id !== registroId
+                ? r
+                : {
+                  ...r,
+                  entries: r.entries.map((e) => (e.id === entryId ? originalEntry! : e)),
+                }
+            )
+          );
+        }
+      });
+  };
+
+  const eliminarRegistroAseo = (id: string) => {
+    const snapshot = [...registrosAseo];
+    setRegistrosAseo((prev) => prev.filter((r) => r.id !== id));
+    request<void>(`/registros-aseo/${id}`, { method: 'DELETE' }).catch((err) => {
+      console.error('Error eliminando registro de aseo (revirtiendo):', err);
+      setRegistrosAseo(snapshot);
+    });
+  };
 
   // Empresas
   const agregarEmpresa = (emp: Omit<Empresa, 'id'>) => {
@@ -841,24 +842,24 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const editarAccionAseo = accionAseoCrud.edit;
   const eliminarAccionAseo = accionAseoCrud.remove;
 
-   return (
-     <AppContext.Provider value={{
-       productos, agregarProducto, editarProducto, eliminarProducto,
-       empleados, agregarEmpleado, editarEmpleado, eliminarEmpleado,
-       registros, agregarRegistro, editarRegistro, eliminarRegistro, unidadesDisponiblesPaso,
-       registrosAseo, crearRegistroAseo, toggleRegistroAseoEntry, actualizarRegistroAseoEntry, eliminarRegistroAseo,
-       empresas, agregarEmpresa, editarEmpresa, eliminarEmpresa,
-       movimientosFinancieros, agregarMovimiento, eliminarMovimiento, registrarNomina, nominasPagadas, marcarNominaComoPagada, desmarcarNominaComoPagada,
-       accionesProduccion, cargos, tiposDocumento, areasTrabajo, accionesAseo,
-       agregarAccionProduccion, editarAccionProduccion, eliminarAccionProduccion,
-       agregarCargo, editarCargo, eliminarCargo,
-       agregarArea, editarArea, eliminarArea,
-       agregarAccionAseo, editarAccionAseo, eliminarAccionAseo,
-       cambiarEstadoProducto
-     }}>
-       {children}
-     </AppContext.Provider>
-   );
+  return (
+    <AppContext.Provider value={{
+      productos, agregarProducto, editarProducto, eliminarProducto,
+      empleados, agregarEmpleado, editarEmpleado, eliminarEmpleado,
+      registros, agregarRegistro, editarRegistro, eliminarRegistro, unidadesDisponiblesPaso,
+      registrosAseo, crearRegistroAseo, toggleRegistroAseoEntry, actualizarRegistroAseoEntry, eliminarRegistroAseo,
+      empresas, agregarEmpresa, editarEmpresa, eliminarEmpresa,
+      movimientosFinancieros, agregarMovimiento, eliminarMovimiento, registrarNomina, nominasPagadas, marcarNominaComoPagada, desmarcarNominaComoPagada,
+      accionesProduccion, cargos, tiposDocumento, areasTrabajo, accionesAseo,
+      agregarAccionProduccion, editarAccionProduccion, eliminarAccionProduccion,
+      agregarCargo, editarCargo, eliminarCargo,
+      agregarArea, editarArea, eliminarArea,
+      agregarAccionAseo, editarAccionAseo, eliminarAccionAseo,
+      cambiarEstadoProducto
+    }}>
+      {children}
+    </AppContext.Provider>
+  );
 };
 
 export const useAppContext = () => {

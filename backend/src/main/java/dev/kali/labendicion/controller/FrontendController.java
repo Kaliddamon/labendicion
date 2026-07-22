@@ -74,7 +74,7 @@ public class FrontendController {
 
     @Autowired
     private RegistroValidationService registroValidation;
-    
+
     @Autowired
     private Validator validator;
 
@@ -106,11 +106,14 @@ public class FrontendController {
         }
 
         // Registros de aseo: cargar con entries (evita lazy init en serialización)
-        List<dev.kali.labendicion.domain.entity.RegistroAseo> registrosAseo = registroAseoRepo.findAllWithEntriesOrderByFechaDesc();
+        List<dev.kali.labendicion.domain.entity.RegistroAseo> registrosAseo = registroAseoRepo
+                .findAllWithEntriesOrderByFechaDesc();
         // Opcionalmente, si tienes miles de tareas, cargar solo las últimas 50:
-        // if (tareasAseo.size() > 50) { tareasAseo = tareasAseo.stream().limit(50).collect(Collectors.toList()); }
+        // if (tareasAseo.size() > 50) { tareasAseo =
+        // tareasAseo.stream().limit(50).collect(Collectors.toList()); }
 
-        // Transformar a DTOs planos mientras la sesión está abierta para evitar LazyInitializationException
+        // Transformar a DTOs planos mientras la sesión está abierta para evitar
+        // LazyInitializationException
         var productosDto = productos.stream().map(p -> {
             var pasosDto = p.getPasos() == null ? List.<Object>of() : p.getPasos().stream().map(ps -> {
                 var map = new java.util.HashMap<String, Object>();
@@ -152,8 +155,6 @@ public class FrontendController {
             m2.put("horaSalida", r.getHoraSalida());
             m2.put("unidadesTotales", r.getUnidadesTotales());
             m2.put("unidadesBuenas", r.getUnidadesBuenas());
-            m2.put("valorHora", r.getValorHora());
-            m2.put("tipoPago", r.getTipoPago());
             m2.put("producciones", prodDto);
             return m2;
         }).collect(Collectors.toList());
@@ -161,7 +162,17 @@ public class FrontendController {
         // Empleados, tareas y empresas: serializables simples
         var empleadosDto = empleados.stream().map(e -> {
             var m = new java.util.HashMap<String, Object>();
-            m.put("id", e.getId()); m.put("nombre", e.getNombre()); m.put("cargo", e.getCargo()); m.put("tipoDocumento", e.getTipoDocumento()); m.put("documento", e.getDocumento()); m.put("telefono", e.getTelefono()); m.put("email", e.getEmail()); m.put("fechaIngreso", e.getFechaIngreso()); m.put("estado", e.getEstado());
+            m.put("id", e.getId());
+            m.put("nombre", e.getNombre());
+            m.put("cargo", e.getCargo());
+            m.put("tipoDocumento", e.getTipoDocumento());
+            m.put("documento", e.getDocumento());
+            m.put("telefono", e.getTelefono());
+            m.put("email", e.getEmail());
+            m.put("fechaIngreso", e.getFechaIngreso());
+            m.put("estado", e.getEstado());
+            m.put("valorHora", e.getValorHora());
+            m.put("tipoPago", e.getTipoPago());
             return m;
         }).collect(Collectors.toList());
 
@@ -186,11 +197,17 @@ public class FrontendController {
 
         var empresasDto = empresas.stream().map(emp -> {
             var m = new java.util.HashMap<String, Object>();
-            m.put("id", emp.getId()); m.put("razonSocial", emp.getRazonSocial()); m.put("telefono", emp.getTelefono()); m.put("correo", emp.getCorreo()); m.put("direccion", emp.getDireccion()); m.put("estado", emp.getEstado());
+            m.put("id", emp.getId());
+            m.put("razonSocial", emp.getRazonSocial());
+            m.put("telefono", emp.getTelefono());
+            m.put("correo", emp.getCorreo());
+            m.put("direccion", emp.getDireccion());
+            m.put("estado", emp.getEstado());
             return m;
         }).collect(Collectors.toList());
 
-        var movimientosDto = movimientoFinancieroRepo.findAllByOrderByMesDescFechaDesc().stream().map(this::mapMovimientoToDto).collect(Collectors.toList());
+        var movimientosDto = movimientoFinancieroRepo.findAllByOrderByMesDescFechaDesc().stream()
+                .map(this::mapMovimientoToDto).collect(Collectors.toList());
 
         var response = new java.util.HashMap<String, Object>();
         response.put("productos", productosDto);
@@ -215,9 +232,11 @@ public class FrontendController {
             Producto producto = new Producto();
             producto.setId(body.getOrDefault("id", generateId()).toString());
             producto.setNombre((String) body.getOrDefault("nombre", ""));
-            producto.setCantidad(body.get("cantidad") == null ? null : Integer.parseInt(body.get("cantidad").toString()));
+            producto.setCantidad(
+                    body.get("cantidad") == null ? null : Integer.parseInt(body.get("cantidad").toString()));
             producto.setEmpresa((String) body.getOrDefault("empresa", ""));
-            producto.setGanancia(body.get("ganancia") == null ? null : Integer.parseInt(body.get("ganancia").toString()));
+            producto.setGanancia(
+                    body.get("ganancia") == null ? null : Integer.parseInt(body.get("ganancia").toString()));
             producto.setFechaAsignacion((String) body.getOrDefault("fechaAsignacion", ""));
             producto.setFechaTerminacion((String) body.getOrDefault("fechaTerminacion", ""));
             producto.setEstado((String) body.getOrDefault("estado", "Pendiente"));
@@ -228,10 +247,11 @@ public class FrontendController {
                 return ResponseEntity.badRequest().body(Map.of("error", msg));
             }
 
-            if (producto.getFechaTerminacion() != null && !producto.getFechaTerminacion().isBlank() && 
-                producto.getFechaAsignacion() != null && !producto.getFechaAsignacion().isBlank()) {
+            if (producto.getFechaTerminacion() != null && !producto.getFechaTerminacion().isBlank() &&
+                    producto.getFechaAsignacion() != null && !producto.getFechaAsignacion().isBlank()) {
                 if (producto.getFechaTerminacion().compareTo(producto.getFechaAsignacion()) < 0) {
-                    return ResponseEntity.badRequest().body(Map.of("error", "La fecha límite no puede ser anterior a la fecha de asignación."));
+                    return ResponseEntity.badRequest()
+                            .body(Map.of("error", "La fecha límite no puede ser anterior a la fecha de asignación."));
                 }
             }
 
@@ -270,14 +290,18 @@ public class FrontendController {
             return ResponseEntity.ok(dto);
         } catch (Exception e) {
             e.printStackTrace();
-            try { TransactionAspectSupport.currentTransactionStatus().setRollbackOnly(); } catch (Exception ignore) {}
+            try {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+            } catch (Exception ignore) {
+            }
             return serverError(e, "/api/frontend/productos");
         }
     }
 
     @PatchMapping("/productos/{id}/estado")
     @Transactional
-    public ResponseEntity<?> actualizarEstadoProducto(@PathVariable String id, @RequestBody java.util.Map<String, Object> body) {
+    public ResponseEntity<?> actualizarEstadoProducto(@PathVariable String id,
+            @RequestBody java.util.Map<String, Object> body) {
         if (!productoRepo.existsById(id)) {
             return ResponseEntity.notFound().build();
         }
@@ -292,7 +316,9 @@ public class FrontendController {
                             if (r.getProducciones() != null) {
                                 for (var p : r.getProducciones()) {
                                     if (id.equals(p.getProductoId())) {
-                                        acumulado.merge(p.getPasoId(), p.getUnidadesTotales() == null ? 0 : p.getUnidadesTotales(), Integer::sum);
+                                        acumulado.merge(p.getPasoId(),
+                                                p.getUnidadesTotales() == null ? 0 : p.getUnidadesTotales(),
+                                                Integer::sum);
                                     }
                                 }
                             }
@@ -300,7 +326,11 @@ public class FrontendController {
                         for (var paso : actual.getPasos()) {
                             int sum = acumulado.getOrDefault(paso.getId(), 0);
                             if (sum < actual.getCantidad()) {
-                                return ResponseEntity.badRequest().body(Map.of("error", "No se puede terminar la orden: el paso " + paso.getDescripcion() + " solo tiene " + sum + " unidades reportadas de " + actual.getCantidad() + " requeridas."));
+                                return ResponseEntity.badRequest()
+                                        .body(Map.of("error",
+                                                "No se puede terminar la orden: el paso " + paso.getDescripcion()
+                                                        + " solo tiene " + sum + " unidades reportadas de "
+                                                        + actual.getCantidad() + " requeridas."));
                             }
                         }
                     }
@@ -323,23 +353,32 @@ public class FrontendController {
             return ResponseEntity.ok(dto);
         } catch (Exception e) {
             e.printStackTrace();
-            try { TransactionAspectSupport.currentTransactionStatus().setRollbackOnly(); } catch (Exception ignore) {}
+            try {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+            } catch (Exception ignore) {
+            }
             return serverError(e, "/api/frontend/productos/" + id + "/estado");
         }
     }
 
     @PutMapping("/productos/{id}")
     @Transactional
-    public ResponseEntity<?> actualizarProducto(@PathVariable String id, @RequestBody java.util.Map<String, Object> body) {
+    public ResponseEntity<?> actualizarProducto(@PathVariable String id,
+            @RequestBody java.util.Map<String, Object> body) {
         if (!productoRepo.existsById(id)) {
             return ResponseEntity.notFound().build();
         }
         try {
             Producto actual = productoRepo.findById(id).orElseThrow();
             actual.setNombre((String) body.getOrDefault("nombre", actual.getNombre()));
-            if (body.containsKey("cantidad")) actual.setCantidad(body.get("cantidad") == null ? null : Integer.parseInt(body.get("cantidad").toString()));
-            if (body.containsKey("empresa")) actual.setEmpresa((String) body.get("empresa"));
-            if (body.containsKey("ganancia")) actual.setGanancia(body.get("ganancia") == null ? null : Integer.parseInt(body.get("ganancia").toString()));
+            if (body.containsKey("cantidad"))
+                actual.setCantidad(
+                        body.get("cantidad") == null ? null : Integer.parseInt(body.get("cantidad").toString()));
+            if (body.containsKey("empresa"))
+                actual.setEmpresa((String) body.get("empresa"));
+            if (body.containsKey("ganancia"))
+                actual.setGanancia(
+                        body.get("ganancia") == null ? null : Integer.parseInt(body.get("ganancia").toString()));
             actual.setFechaAsignacion((String) body.getOrDefault("fechaAsignacion", actual.getFechaAsignacion()));
             actual.setFechaTerminacion((String) body.getOrDefault("fechaTerminacion", actual.getFechaTerminacion()));
             actual.setEstado((String) body.getOrDefault("estado", actual.getEstado()));
@@ -350,10 +389,11 @@ public class FrontendController {
                 return ResponseEntity.badRequest().body(Map.of("error", msg));
             }
 
-            if (actual.getFechaTerminacion() != null && !actual.getFechaTerminacion().isBlank() && 
-                actual.getFechaAsignacion() != null && !actual.getFechaAsignacion().isBlank()) {
+            if (actual.getFechaTerminacion() != null && !actual.getFechaTerminacion().isBlank() &&
+                    actual.getFechaAsignacion() != null && !actual.getFechaAsignacion().isBlank()) {
                 if (actual.getFechaTerminacion().compareTo(actual.getFechaAsignacion()) < 0) {
-                    return ResponseEntity.badRequest().body(Map.of("error", "La fecha límite no puede ser anterior a la fecha de asignación."));
+                    return ResponseEntity.badRequest()
+                            .body(Map.of("error", "La fecha límite no puede ser anterior a la fecha de asignación."));
                 }
             }
 
@@ -361,7 +401,7 @@ public class FrontendController {
             Object pasosObj = body.get("pasos");
             if (pasosObj != null && pasosObj instanceof java.util.List) {
                 java.util.List<?> pasosList = (java.util.List<?>) pasosObj;
-                
+
                 // Mapear los pasos entrantes
                 java.util.Map<String, java.util.Map<String, Object>> incomingMap = new java.util.HashMap<>();
                 for (Object paso : pasosList) {
@@ -375,7 +415,7 @@ public class FrontendController {
                         }
                     }
                 }
-                
+
                 if (actual.getPasos() == null) {
                     actual.setPasos(new java.util.ArrayList<>());
                 }
@@ -391,7 +431,7 @@ public class FrontendController {
                         iterator.remove();
                     }
                 }
-                
+
                 // Añadir los nuevos
                 for (java.util.Map<String, Object> newPasoMap : incomingMap.values()) {
                     PasoProduccion nuevoPaso = new PasoProduccion();
@@ -406,7 +446,8 @@ public class FrontendController {
                 }
             }
 
-            // Guardar una sola vez: Hibernate manejará la cascada y eliminará/insertará pasos automaticamente
+            // Guardar una sola vez: Hibernate manejará la cascada y eliminará/insertará
+            // pasos automaticamente
             Producto guardado = productoRepo.save(actual);
 
             // Actualizar estado de empresa asociada (si se cambió empresa)
@@ -423,7 +464,10 @@ public class FrontendController {
             return ResponseEntity.ok(dto);
         } catch (Exception e) {
             e.printStackTrace();
-            try { TransactionAspectSupport.currentTransactionStatus().setRollbackOnly(); } catch (Exception ignore) {}
+            try {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+            } catch (Exception ignore) {
+            }
             return serverError(e, "/api/frontend/productos/" + id);
         }
     }
@@ -434,9 +478,10 @@ public class FrontendController {
         boolean tieneReportes = registroRepo.findAll().stream()
                 .filter(r -> r.getProducciones() != null)
                 .anyMatch(r -> r.getProducciones().stream().anyMatch(p -> id.equals(p.getProductoId())));
-        
+
         if (tieneReportes) {
-            return ResponseEntity.badRequest().body(Map.of("error", "No se puede eliminar esta orden de producción porque ya tiene reportes de trabajo (evaluaciones) asociados."));
+            return ResponseEntity.badRequest().body(Map.of("error",
+                    "No se puede eliminar esta orden de producción porque ya tiene reportes de trabajo (evaluaciones) asociados."));
         }
 
         Producto producto = productoRepo.findById(id).orElse(null);
@@ -447,7 +492,7 @@ public class FrontendController {
 
         productoRepo.delete(producto);
         productoRepo.flush();
-        
+
         // Actualizar estado de empresa asociada si ya no tiene órdenes
         if (nombreEmpresa != null && !nombreEmpresa.isBlank()) {
             boolean tieneMas = productoRepo.findAll().stream()
@@ -459,7 +504,7 @@ public class FrontendController {
                 });
             }
         }
-        
+
         eventService.emitAsync("PRODUCTO_ELIMINADO", Map.of("id", id));
         return ResponseEntity.noContent().build();
     }
@@ -472,7 +517,8 @@ public class FrontendController {
 
     @PostMapping("/empresas")
     public ResponseEntity<Empresa> crearEmpresa(@RequestBody Empresa empresa) {
-        if (empresa.getId() == null) empresa.setId(generateId());
+        if (empresa.getId() == null)
+            empresa.setId(generateId());
         Empresa saved = empresaRepo.save(empresa);
         eventService.emitAsync("EMPRESA_CREADA", saved);
         return ResponseEntity.ok(saved);
@@ -480,7 +526,8 @@ public class FrontendController {
 
     @PutMapping("/empresas/{id}")
     public ResponseEntity<Empresa> actualizarEmpresa(@PathVariable String id, @RequestBody Empresa empresa) {
-        if (!empresaRepo.existsById(id)) return ResponseEntity.notFound().build();
+        if (!empresaRepo.existsById(id))
+            return ResponseEntity.notFound().build();
         empresa.setId(id);
         Empresa saved = empresaRepo.save(empresa);
         eventService.emitAsync("EMPRESA_ACTUALIZADA", saved);
@@ -499,23 +546,25 @@ public class FrontendController {
         if (empleado.getId() == null) {
             empleado.setId(generateId());
         }
-        
+
         Set<ConstraintViolation<Empleado>> violations = validator.validate(empleado);
         if (!violations.isEmpty()) {
             return ResponseEntity.badRequest().body(Map.of("error", violations.iterator().next().getMessage()));
         }
-        
+
         if (empleadoRepo.findByDocumento(empleado.getDocumento()).isPresent()) {
             return ResponseEntity.badRequest().body(Map.of("error", "Ya existe un empleado con este documento."));
         }
-        
+
         if (empleado.getFechaIngreso() != null && !empleado.getFechaIngreso().isBlank()) {
             try {
                 java.time.LocalDate fechaIngreso = java.time.LocalDate.parse(empleado.getFechaIngreso().split("T")[0]);
                 if (fechaIngreso.isAfter(java.time.LocalDate.now(java.time.ZoneId.of("America/Bogota")))) {
-                    return ResponseEntity.badRequest().body(Map.of("error", "La fecha de ingreso no puede ser futura."));
+                    return ResponseEntity.badRequest()
+                            .body(Map.of("error", "La fecha de ingreso no puede ser futura."));
                 }
-            } catch (Exception e) {}
+            } catch (Exception e) {
+            }
         }
 
         Empleado guardado = empleadoRepo.save(empleado);
@@ -528,24 +577,26 @@ public class FrontendController {
         if (!empleadoRepo.existsById(id)) {
             return ResponseEntity.notFound().build();
         }
-        
+
         Set<ConstraintViolation<Empleado>> violations = validator.validate(empleado);
         if (!violations.isEmpty()) {
             return ResponseEntity.badRequest().body(Map.of("error", violations.iterator().next().getMessage()));
         }
-        
+
         var existing = empleadoRepo.findByDocumento(empleado.getDocumento());
         if (existing.isPresent() && !existing.get().getId().equals(id)) {
             return ResponseEntity.badRequest().body(Map.of("error", "Ya existe otro empleado con este documento."));
         }
-        
+
         if (empleado.getFechaIngreso() != null && !empleado.getFechaIngreso().isBlank()) {
             try {
                 java.time.LocalDate fechaIngreso = java.time.LocalDate.parse(empleado.getFechaIngreso().split("T")[0]);
                 if (fechaIngreso.isAfter(java.time.LocalDate.now(java.time.ZoneId.of("America/Bogota")))) {
-                    return ResponseEntity.badRequest().body(Map.of("error", "La fecha de ingreso no puede ser futura."));
+                    return ResponseEntity.badRequest()
+                            .body(Map.of("error", "La fecha de ingreso no puede ser futura."));
                 }
-            } catch (Exception e) {}
+            } catch (Exception e) {
+            }
         }
 
         empleado.setId(id);
@@ -557,13 +608,14 @@ public class FrontendController {
     @DeleteMapping("/empleados/{id}")
     @Transactional
     public ResponseEntity<?> eliminarEmpleado(@PathVariable String id) {
-        if (!empleadoRepo.existsById(id)) return ResponseEntity.notFound().build();
-        
+        if (!empleadoRepo.existsById(id))
+            return ResponseEntity.notFound().build();
+
         try {
             // Eliminar registros de producción usando JPA
             List<dev.kali.labendicion.domain.entity.Registro> registrosAsociados = registroRepo.findAll().stream()
-                .filter(r -> id.equals(r.getEmpleadoId()))
-                .collect(java.util.stream.Collectors.toList());
+                    .filter(r -> id.equals(r.getEmpleadoId()))
+                    .collect(java.util.stream.Collectors.toList());
             if (!registrosAsociados.isEmpty()) {
                 registroRepo.deleteAll(registrosAsociados);
             }
@@ -586,7 +638,7 @@ public class FrontendController {
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR)
-                .body("Error eliminando empleado: " + e.getMessage());
+                    .body("Error eliminando empleado: " + e.getMessage());
         }
     }
 
@@ -666,10 +718,12 @@ public class FrontendController {
         return ResponseEntity.noContent().build();
     }
 
-    // Registros de Aseo: nuevo modelo que agrupa por fecha y contiene entradas por empleado
+    // Registros de Aseo: nuevo modelo que agrupa por fecha y contiene entradas por
+    // empleado
     @GetMapping("/registros-aseo")
     public ResponseEntity<List<Map<String, Object>>> listarRegistrosAseo() {
-        List<dev.kali.labendicion.domain.entity.RegistroAseo> regs = registroAseoRepo.findAllWithEntriesOrderByFechaDesc();
+        List<dev.kali.labendicion.domain.entity.RegistroAseo> regs = registroAseoRepo
+                .findAllWithEntriesOrderByFechaDesc();
         List<Map<String, Object>> dto = regs.stream().map(this::mapRegistroAseoToDto).collect(Collectors.toList());
         return ResponseEntity.ok(dto);
     }
@@ -686,7 +740,8 @@ public class FrontendController {
     public ResponseEntity<?> crearRegistroAseo(@RequestBody(required = false) java.util.Map<String, Object> body) {
         try {
             String fecha = null;
-            if (body != null && body.get("fecha") != null) fecha = body.get("fecha").toString();
+            if (body != null && body.get("fecha") != null)
+                fecha = body.get("fecha").toString();
             if (fecha == null || fecha.isBlank()) {
                 fecha = java.time.LocalDate.now(java.time.ZoneId.of("America/Bogota")).toString();
             }
@@ -698,7 +753,8 @@ public class FrontendController {
                                 "registro", mapRegistroAseoToDto(existente.get())));
             }
 
-            dev.kali.labendicion.domain.entity.RegistroAseo ultimo = registroAseoRepo.findFirstByOrderByFechaDesc().orElse(null);
+            dev.kali.labendicion.domain.entity.RegistroAseo ultimo = registroAseoRepo.findFirstByOrderByFechaDesc()
+                    .orElse(null);
             String defaultAcciones = CsvListUtil.toCsv(accionAseoRepo.findAllByActivaTrueOrderByNombreAsc().stream()
                     .map(AccionAseo::getNombre).collect(Collectors.toList()));
             String defaultAreas = CsvListUtil.toCsv(areaTrabajoRepo.findAllByActivaTrueOrderByNombreAsc().stream()
@@ -743,7 +799,10 @@ public class FrontendController {
             return ResponseEntity.ok(mapRegistroAseoToDto(saved));
         } catch (Exception e) {
             e.printStackTrace();
-            try { TransactionAspectSupport.currentTransactionStatus().setRollbackOnly(); } catch (Exception ignore) {}
+            try {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+            } catch (Exception ignore) {
+            }
             return serverError(e, "/api/frontend/registros-aseo");
         }
     }
@@ -762,35 +821,41 @@ public class FrontendController {
                     break;
                 }
             }
-                if (changed) {
-                    RegistroAseo saved = registroAseoRepo.save(reg);
-                    eventService.emitAsync("REGISTRO_ASEO_ENTRY_TOGGLE", mapRegistroAseoToDto(saved));
-                    return ResponseEntity.ok(mapRegistroAseoToDto(saved));
-                }
+            if (changed) {
+                RegistroAseo saved = registroAseoRepo.save(reg);
+                eventService.emitAsync("REGISTRO_ASEO_ENTRY_TOGGLE", mapRegistroAseoToDto(saved));
+                return ResponseEntity.ok(mapRegistroAseoToDto(saved));
+            }
             return ResponseEntity.notFound().build();
         } catch (Exception e) {
             e.printStackTrace();
-            try { TransactionAspectSupport.currentTransactionStatus().setRollbackOnly(); } catch (Exception ignore) {}
+            try {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+            } catch (Exception ignore) {
+            }
             return serverError(e, "/api/frontend/registros-aseo/" + registroId + "/entries/" + entryId + "/toggle");
         }
     }
 
     @PatchMapping("/registros-aseo/{registroId}/entries/{entryId}")
     @Transactional
-    public ResponseEntity<?> actualizarEntryAccionesYAreas(@PathVariable String registroId, @PathVariable String entryId,
-                                                           @RequestBody java.util.Map<String, Object> body) {
+    public ResponseEntity<?> actualizarEntryAccionesYAreas(@PathVariable String registroId,
+            @PathVariable String entryId,
+            @RequestBody java.util.Map<String, Object> body) {
         try {
             // Validar que haya al menos 1 acción y 1 área
             if (body.containsKey("acciones")) {
                 Object accionesObj = body.get("acciones");
                 if (accionesObj instanceof java.util.List && ((java.util.List<?>) accionesObj).isEmpty()) {
-                    return ResponseEntity.badRequest().body(Map.of("error", "Debes asignar al menos una acción de aseo al empleado."));
+                    return ResponseEntity.badRequest()
+                            .body(Map.of("error", "Debes asignar al menos una acción de aseo al empleado."));
                 }
             }
             if (body.containsKey("areas")) {
                 Object areasObj = body.get("areas");
                 if (areasObj instanceof java.util.List && ((java.util.List<?>) areasObj).isEmpty()) {
-                    return ResponseEntity.badRequest().body(Map.of("error", "Debes asignar al menos un área de trabajo al empleado."));
+                    return ResponseEntity.badRequest()
+                            .body(Map.of("error", "Debes asignar al menos un área de trabajo al empleado."));
                 }
             }
 
@@ -824,7 +889,10 @@ public class FrontendController {
             return ResponseEntity.notFound().build();
         } catch (Exception e) {
             e.printStackTrace();
-            try { TransactionAspectSupport.currentTransactionStatus().setRollbackOnly(); } catch (Exception ignore) {}
+            try {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+            } catch (Exception ignore) {
+            }
             return serverError(e, "/api/frontend/registros-aseo/" + registroId + "/entries/" + entryId);
         }
     }
@@ -845,7 +913,8 @@ public class FrontendController {
 
     @PostMapping("/productos/{productoId}/pasos")
     @Transactional
-    public ResponseEntity<?> crearPaso(@PathVariable String productoId, @RequestBody java.util.Map<String, Object> body) {
+    public ResponseEntity<?> crearPaso(@PathVariable String productoId,
+            @RequestBody java.util.Map<String, Object> body) {
         try {
             Producto producto = productoRepo.findById(productoId).orElseThrow();
             PasoProduccion paso = new PasoProduccion();
@@ -856,24 +925,35 @@ public class FrontendController {
             return ResponseEntity.ok(guardado);
         } catch (Exception e) {
             e.printStackTrace();
-            try { TransactionAspectSupport.currentTransactionStatus().setRollbackOnly(); } catch (Exception ignore) {}
+            try {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+            } catch (Exception ignore) {
+            }
             return serverError(e, "/api/frontend/productos/" + productoId + "/pasos");
         }
     }
 
     @PutMapping("/pasos/{pasoId}")
     @Transactional
-    public ResponseEntity<?> actualizarPaso(@PathVariable String pasoId, @RequestBody java.util.Map<String, Object> body) {
+    public ResponseEntity<?> actualizarPaso(@PathVariable String pasoId,
+            @RequestBody java.util.Map<String, Object> body) {
         try {
             PasoProduccion paso = pasoRepo.findById(pasoId).orElseThrow();
-            if (body.containsKey("descripcion")) paso.setDescripcion((String) body.get("descripcion"));
-            if (body.containsKey("metaUnidadesHora")) paso.setMetaUnidadesHora(body.get("metaUnidadesHora") == null ? null : Integer.parseInt(body.get("metaUnidadesHora").toString()));
-            if (body.containsKey("completado")) paso.setCompletado((Boolean) body.get("completado"));
+            if (body.containsKey("descripcion"))
+                paso.setDescripcion((String) body.get("descripcion"));
+            if (body.containsKey("metaUnidadesHora"))
+                paso.setMetaUnidadesHora(body.get("metaUnidadesHora") == null ? null
+                        : Integer.parseInt(body.get("metaUnidadesHora").toString()));
+            if (body.containsKey("completado"))
+                paso.setCompletado((Boolean) body.get("completado"));
             PasoProduccion guardado = pasoRepo.save(paso);
             return ResponseEntity.ok(guardado);
         } catch (Exception e) {
             e.printStackTrace();
-            try { TransactionAspectSupport.currentTransactionStatus().setRollbackOnly(); } catch (Exception ignore) {}
+            try {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+            } catch (Exception ignore) {
+            }
             return serverError(e, "/api/frontend/pasos/" + pasoId);
         }
     }
@@ -888,7 +968,10 @@ public class FrontendController {
             return ResponseEntity.ok(guardado);
         } catch (Exception e) {
             e.printStackTrace();
-            try { TransactionAspectSupport.currentTransactionStatus().setRollbackOnly(); } catch (Exception ignore) {}
+            try {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+            } catch (Exception ignore) {
+            }
             return serverError(e, "/api/frontend/pasos/" + pasoId + "/toggle");
         }
     }
@@ -917,17 +1000,22 @@ public class FrontendController {
                     : java.time.LocalDate.now(java.time.ZoneId.of("America/Bogota")).toString().substring(0, 7);
 
             String nombre = body.containsKey("nombre") ? body.get("nombre").toString() : "";
-            if (nombre.isBlank()) return ResponseEntity.badRequest().body(Map.of("error", "El nombre es obligatorio."));
+            if (nombre.isBlank())
+                return ResponseEntity.badRequest().body(Map.of("error", "El nombre es obligatorio."));
 
-            String montoStr = body.containsKey("monto") && body.get("monto") != null ? body.get("monto").toString() : null;
-            if (montoStr == null || montoStr.isBlank()) return ResponseEntity.badRequest().body(Map.of("error", "El monto es obligatorio."));
+            String montoStr = body.containsKey("monto") && body.get("monto") != null ? body.get("monto").toString()
+                    : null;
+            if (montoStr == null || montoStr.isBlank())
+                return ResponseEntity.badRequest().body(Map.of("error", "El monto es obligatorio."));
             double monto = Double.parseDouble(montoStr);
 
             String tipo = body.containsKey("tipo") ? body.get("tipo").toString() : "GASTO";
-            if (!tipo.equals("GASTO") && !tipo.equals("INGRESO")) tipo = "GASTO";
+            if (!tipo.equals("GASTO") && !tipo.equals("INGRESO"))
+                tipo = "GASTO";
 
             Double porcentaje = null;
-            if (body.containsKey("porcentaje") && body.get("porcentaje") != null && !body.get("porcentaje").toString().isBlank()) {
+            if (body.containsKey("porcentaje") && body.get("porcentaje") != null
+                    && !body.get("porcentaje").toString().isBlank()) {
                 porcentaje = Double.parseDouble(body.get("porcentaje").toString());
             }
 
@@ -942,7 +1030,8 @@ public class FrontendController {
             mv.setOrigen("MANUAL");
             mv.setFecha(java.time.LocalDate.now(java.time.ZoneId.of("America/Bogota")).toString());
 
-            if (body.containsKey("evidenciaUrl") && body.get("evidenciaUrl") != null && !body.get("evidenciaUrl").toString().isBlank()) {
+            if (body.containsKey("evidenciaUrl") && body.get("evidenciaUrl") != null
+                    && !body.get("evidenciaUrl").toString().isBlank()) {
                 mv.setEvidenciaUrl(body.get("evidenciaUrl").toString());
             }
 
@@ -960,14 +1049,15 @@ public class FrontendController {
     public ResponseEntity<?> registrarNomina(@PathVariable String mes) {
         try {
             // Borrar nomina previa del mes para reemplazarla
-            List<dev.kali.labendicion.domain.entity.MovimientoFinanciero> previos =
-                    movimientoFinancieroRepo.findByMesOrderByFechaDesc(mes).stream()
-                            .filter(m -> "NOMINA".equals(m.getOrigen()))
-                            .collect(Collectors.toList());
+            List<dev.kali.labendicion.domain.entity.MovimientoFinanciero> previos = movimientoFinancieroRepo
+                    .findByMesOrderByFechaDesc(mes).stream()
+                    .filter(m -> "NOMINA".equals(m.getOrigen()))
+                    .collect(Collectors.toList());
             movimientoFinancieroRepo.deleteAll(previos);
 
             List<dev.kali.labendicion.domain.entity.Empleado> empleados = empleadoRepo.findAll();
-            List<dev.kali.labendicion.domain.entity.Registro> registros = registroRepo.findAllWithProduccionesOrderByFechaDesc();
+            List<dev.kali.labendicion.domain.entity.Registro> registros = registroRepo
+                    .findAllWithProduccionesOrderByFechaDesc();
             List<dev.kali.labendicion.domain.entity.Producto> productos = productoRepo.findAllWithPasosOrderByNombre();
 
             String fechaHoy = java.time.LocalDate.now(java.time.ZoneId.of("America/Bogota")).toString();
@@ -980,14 +1070,15 @@ public class FrontendController {
                                 && r.getFecha() != null && r.getFecha().startsWith(mes))
                         .collect(Collectors.toList());
 
-                if (regEmp.isEmpty()) continue;
+                if (regEmp.isEmpty())
+                    continue;
 
                 double pagoHoras = 0.0;
                 double pagoProduccion = 0.0;
 
                 for (dev.kali.labendicion.domain.entity.Registro reg : regEmp) {
                     // Pago por horas
-                    if (reg.getValorHora() != null && reg.getHoraEntrada() != null && reg.getHoraSalida() != null
+                    if (emp.getValorHora() != null && reg.getHoraEntrada() != null && reg.getHoraSalida() != null
                             && !"--:--".equals(reg.getHoraEntrada()) && !"--:--".equals(reg.getHoraSalida())) {
                         try {
                             String[] entrada = reg.getHoraEntrada().split(":");
@@ -995,16 +1086,19 @@ public class FrontendController {
                             double hEntrada = Integer.parseInt(entrada[0]) + Integer.parseInt(entrada[1]) / 60.0;
                             double hSalida = Integer.parseInt(salida[0]) + Integer.parseInt(salida[1]) / 60.0;
                             double horas = Math.max(0, hSalida - hEntrada);
-                            pagoHoras += horas * reg.getValorHora();
-                        } catch (Exception ignored) {}
+                            pagoHoras += horas * emp.getValorHora();
+                        } catch (Exception ignored) {
+                        }
                     }
                     // Pago por producción
                     if (reg.getProducciones() != null) {
                         for (dev.kali.labendicion.domain.entity.ProduccionRegistro pr : reg.getProducciones()) {
                             // Calcular directamente sin lambda anidado
                             for (dev.kali.labendicion.domain.entity.Producto prod : productos) {
-                                if (!prod.getId().equals(pr.getProductoId())) continue;
-                                if (prod.getPasos() == null) continue;
+                                if (!prod.getId().equals(pr.getProductoId()))
+                                    continue;
+                                if (prod.getPasos() == null)
+                                    continue;
                                 for (PasoProduccion ps : prod.getPasos()) {
                                     if (ps.getId().equals(pr.getPasoId()) && ps.getValorPorUnidad() != null) {
                                         int unidades = pr.getUnidadesTotales() == null ? 0 : pr.getUnidadesTotales();
@@ -1017,7 +1111,8 @@ public class FrontendController {
                 }
 
                 double totalPago = pagoHoras + pagoProduccion;
-                if (totalPago <= 0) continue;
+                if (totalPago <= 0)
+                    continue;
 
                 dev.kali.labendicion.domain.entity.MovimientoFinanciero mv = new dev.kali.labendicion.domain.entity.MovimientoFinanciero();
                 mv.setId(generateId());
@@ -1037,7 +1132,10 @@ public class FrontendController {
             return ResponseEntity.ok(dto);
         } catch (Exception e) {
             e.printStackTrace();
-            try { TransactionAspectSupport.currentTransactionStatus().setRollbackOnly(); } catch (Exception ignore) {}
+            try {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+            } catch (Exception ignore) {
+            }
             return serverError(e, "/api/frontend/finanzas/nomina/" + mes);
         }
     }
@@ -1073,24 +1171,24 @@ public class FrontendController {
 
     private void seedCatalogsIfEmpty() {
         if (accionProduccionRepo.count() == 0) {
-            String[][] defaults = {{"Confeccionar", "1"}, {"Revisar calidad", "2"}, {"Empacar", "3"}};
+            String[][] defaults = { { "Confeccionar", "1" }, { "Revisar calidad", "2" }, { "Empacar", "3" } };
             for (String[] d : defaults) {
                 accionProduccionRepo.save(AccionProduccion.builder()
                         .id(generateId()).nombre(d[0]).orden(Integer.parseInt(d[1])).activa(true).build());
             }
         }
         if (cargoRepo.count() == 0) {
-            for (String nombre : new String[]{"Costurera", "Cortador", "Empacador", "Supervisor"}) {
+            for (String nombre : new String[] { "Costurera", "Cortador", "Empacador", "Supervisor" }) {
                 cargoRepo.save(CargoEmpleado.builder().id(generateId()).nombre(nombre).activa(true).build());
             }
         }
         if (areaTrabajoRepo.count() == 0) {
-            for (String nombre : new String[]{"Taller", "Almacén", "Oficina", "Baño"}) {
+            for (String nombre : new String[] { "Taller", "Almacén", "Oficina", "Baño" }) {
                 areaTrabajoRepo.save(AreaTrabajo.builder().id(generateId()).nombre(nombre).activa(true).build());
             }
         }
         if (accionAseoRepo.count() == 0) {
-            for (String nombre : new String[]{"Barrer", "Trapear", "Organizar", "Desechar"}) {
+            for (String nombre : new String[] { "Barrer", "Trapear", "Organizar", "Desechar" }) {
                 accionAseoRepo.save(AccionAseo.builder().id(generateId()).nombre(nombre).activa(true).build());
             }
         }
@@ -1107,7 +1205,8 @@ public class FrontendController {
         } else if (paso.getDescripcion() == null) {
             paso.setDescripcion("");
         }
-        paso.setMetaUnidadesHora(pasoMap.get("metaUnidadesHora") == null ? null : Integer.parseInt(pasoMap.get("metaUnidadesHora").toString()));
+        paso.setMetaUnidadesHora(pasoMap.get("metaUnidadesHora") == null ? null
+                : Integer.parseInt(pasoMap.get("metaUnidadesHora").toString()));
         paso.setCompletado((Boolean) pasoMap.getOrDefault("completado", false));
         if (pasoMap.containsKey("valorPorUnidad") && pasoMap.get("valorPorUnidad") != null) {
             paso.setValorPorUnidad(Double.parseDouble(pasoMap.get("valorPorUnidad").toString()));
@@ -1130,7 +1229,8 @@ public class FrontendController {
         registro.setUnidadesBuenas(buenas);
     }
 
-    // Convierte una entidad Producto a un DTO plano (evita serializar objetos Hibernate con referencias recursivas)
+    // Convierte una entidad Producto a un DTO plano (evita serializar objetos
+    // Hibernate con referencias recursivas)
     private Map<String, Object> mapProductoToDto(Producto p) {
         var pasosDto = (p.getPasos() == null) ? List.<Object>of() : p.getPasos().stream().map(ps -> {
             var m = new java.util.HashMap<String, Object>();
