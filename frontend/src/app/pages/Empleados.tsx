@@ -96,7 +96,7 @@ export const Empleados = () => {
 
   const resetFormEmpleado = () => {
     setNombre(''); setCargo(''); setTipoDocumento('CC'); setDocumento(''); setTelefono(''); setEmail('');
-    setFechaIngreso(''); setEstado('Activo'); setValorHora(''); setTipoPago('AMBOS'); setEmpleadoEditando(null); setMostrarFormEmpleado(false);
+    setFechaIngreso(''); setEstado('Activo'); setEmpleadoEditando(null); setMostrarFormEmpleado(false);
   };
 
   const iniciarEdicion = (emp: Empleado) => {
