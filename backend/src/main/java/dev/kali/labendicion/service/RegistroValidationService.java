@@ -66,7 +66,15 @@ public class RegistroValidationService {
             }
         }
 
-        Map<String, Integer> acumuladoExistente = calcularAcumuladoPorPaso(registroIdExcluir);
+        // Extraer los productoIds del registro entrante para filtrar la consulta histórica
+        var productoIdsFiltro = new java.util.HashSet<String>();
+        if (registro.getProducciones() != null) {
+            for (ProduccionRegistro prod : registro.getProducciones()) {
+                if (prod.getProductoId() != null) productoIdsFiltro.add(prod.getProductoId());
+            }
+        }
+
+        Map<String, Integer> acumuladoExistente = calcularAcumuladoPorPasoFiltrado(registroIdExcluir, productoIdsFiltro);
 
         for (ProduccionRegistro prod : registro.getProducciones()) {
             if (prod.getProductoId() == null || prod.getProductoId().isBlank()) {
@@ -114,8 +122,15 @@ public class RegistroValidationService {
     }
 
     private Map<String, Integer> calcularAcumuladoPorPaso(String registroIdExcluir) {
+        return calcularAcumuladoPorPasoFiltrado(registroIdExcluir, null);
+    }
+
+    private Map<String, Integer> calcularAcumuladoPorPasoFiltrado(String registroIdExcluir, java.util.Set<String> productoIds) {
         Map<String, Integer> acumulado = new HashMap<>();
-        for (Registro r : registroRepo.findAllWithProduccionesOrderByFechaDesc()) {
+        List<Registro> registros = (productoIds != null && !productoIds.isEmpty())
+                ? registroRepo.findByProduccionesProductoIdIn(productoIds)
+                : registroRepo.findAllWithProduccionesOrderByFechaDesc();
+        for (Registro r : registros) {
             if (registroIdExcluir != null && registroIdExcluir.equals(r.getId())) continue;
             if (r.getProducciones() == null) continue;
             for (ProduccionRegistro p : r.getProducciones()) {

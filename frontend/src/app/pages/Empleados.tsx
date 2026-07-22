@@ -749,6 +749,25 @@ export const Empleados = () => {
                                 )}
                               </div>
 
+                              {/* Acciones del registro (siempre visibles) */}
+                              <div className="flex gap-2 justify-end" style={{ borderTop: '1px solid var(--border-fiber-light)', paddingTop: '10px', marginTop: '-4px' }}>
+                                <button
+                                  type="button"
+                                  onClick={() => cargarRegistroParaEdicion(reg)}
+                                  className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold border bg-white transition-colors hover:bg-amber-50"
+                                  style={{ color: 'var(--accent-copper)', borderColor: 'rgba(212,160,18,0.3)' }}
+                                >
+                                  <Edit2 size={13} /> Editar evaluación
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={async () => { if (await confirm({ title: '¿Eliminar evaluación?', description: `¿Seguro que deseas eliminar la evaluación del ${reg.fecha}? Esta acción no se puede deshacer.`, confirmText: 'Eliminar' })) eliminarRegistro(reg.id); }}
+                                  className="inline-flex items-center gap-1.5 rounded-lg border border-rose-200 bg-white px-3 py-1.5 text-xs font-semibold text-rose-600 transition-colors hover:bg-rose-50"
+                                >
+                                  <Trash2 size={13} /> Eliminar
+                                </button>
+                              </div>
+
                               {reg.horaEntrada !== '--:--' && (reg.producciones?.length ?? 0) > 0 && (
                                 <div className="pt-2 space-y-1.5" style={{ borderTop: '1px solid var(--border-fiber-light)' }}>
                                   <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
@@ -778,21 +797,6 @@ export const Empleados = () => {
                                           className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[10px] font-semibold text-blue-700 hover:bg-blue-50 border border-blue-200 bg-white"
                                         >
                                           <FileText size={12} /> Ver
-                                        </button>
-                                        <button
-                                          type="button"
-                                          onClick={() => cargarRegistroParaEdicion(reg)}
-                                          className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[10px] font-semibold border bg-white"
-                                          style={{ color: 'var(--accent-copper)', borderColor: 'rgba(212,160,18,0.3)' }}
-                                        >
-                                          <Edit2 size={12} /> Editar
-                                        </button>
-                                        <button
-                                          type="button"
-                                          onClick={async () => { if (await confirm({ title: '¿Eliminar evaluación?', description: '¿Seguro que deseas eliminar esta evaluación?', confirmText: 'Eliminar' })) eliminarRegistro(reg.id); }}
-                                          className="inline-flex items-center gap-1 rounded-lg border border-rose-200 bg-white px-2.5 py-1 text-[10px] font-semibold text-rose-600"
-                                        >
-                                          <Trash2 size={12} /> Eliminar
                                         </button>
                                       </div>
                                     </div>
