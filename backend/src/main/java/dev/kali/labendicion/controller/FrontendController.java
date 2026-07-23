@@ -101,8 +101,8 @@ public class FrontendController {
         // Registros: cargar últimos 100 para evitar queries gigantescas
         // En Render/Supabase si tienes miles de registros, esto es crucial
         List<Registro> registros = registroRepo.findAllWithProduccionesOrderByFechaDesc();
-        if (registros.size() > 100) {
-            registros = registros.stream().limit(100).collect(Collectors.toList());
+        if (registros.size() > 2000) {
+            registros = registros.stream().limit(2000).collect(Collectors.toList());
         }
 
         // Registros de aseo: cargar con entries (evita lazy init en serialización)
