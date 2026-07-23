@@ -88,6 +88,11 @@ export const Empleados = () => {
 
   const [empleadoViendoHistorial, setEmpleadoViendoHistorial] = useState<string | null>(null);
   const [filtroHistorial, setFiltroHistorial] = useState<'quincena' | 'mes' | 'todo'>('quincena');
+  const [paginaHistorial, setPaginaHistorial] = useState(1);
+
+  useEffect(() => {
+    setPaginaHistorial(1);
+  }, [empleadoViendoHistorial, filtroHistorial]);
 
   const [modalOrdenProduccion, setModalOrdenProduccion] = useState<{
     fecha: string;
@@ -156,11 +161,19 @@ export const Empleados = () => {
     setRegistroEditando(null);
     setEmpleadoCalificando(empId);
     setCalificacionProducciones([crearLineaProduccionVacia()]);
+    setTimeout(() => {
+      document.getElementById(`panel-evaluacion-${empId}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
   };
 
   const abrirHistorial = (empId: string) => {
     setEmpleadoCalificando(null);
     setEmpleadoViendoHistorial(empleadoViendoHistorial === empId ? null : empId);
+    if (empleadoViendoHistorial !== empId) {
+      setTimeout(() => {
+        document.getElementById(`panel-historial-${empId}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+    }
   };
 
   const etiquetaPaso = (productoId: string, pasoId: string) => {
@@ -186,6 +199,9 @@ export const Empleados = () => {
     setCalificacionTipoPago(reg.tipoPago || 'AMBOS');
     setEmpleadoCalificando(reg.empleadoId);
     setEmpleadoViendoHistorial(null);
+    setTimeout(() => {
+      document.getElementById(`panel-evaluacion-${reg.empleadoId}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
   };
 
   const guardarCalificacion = async (e: React.FormEvent) => {
@@ -666,7 +682,7 @@ export const Empleados = () => {
                 const hayPago = regsFiltrados.some(r => r.valorHora != null) || productos.some(p => p.pasos?.some(ps => ps.valorPorUnidad != null));
 
                 return (
-                  <div className="p-5 animate-fade-up" style={{ background: 'var(--surface-linen)' }}>
+                  <div id={`panel-historial-${emp.id}`} className="p-5 animate-fade-up" style={{ background: 'var(--surface-linen)' }}>
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
                       <h4 className="font-semibold text-sm flex items-center gap-2" style={{ fontFamily: 'var(--font-heading)', color: 'var(--carbon)' }}>
                         <History size={16} className="text-blue-600" /> Historial de Rendimiento
@@ -700,9 +716,15 @@ export const Empleados = () => {
                       <p className="text-slate-500 bg-white p-4 rounded-xl text-center text-sm" style={{ border: '1px solid var(--border-fiber)' }}>
                         No hay registros para este período.
                       </p>
-                    ) : (
-                      <div className="grid gap-2.5">
-                        {regsFiltrados.map(reg => {
+                    ) : (() => {
+                      const itemsPorPaginaHistorial = 5;
+                      const totalPaginasHistorial = Math.ceil(regsFiltrados.length / itemsPorPaginaHistorial);
+                      const regsPaginados = regsFiltrados.slice((paginaHistorial - 1) * itemsPorPaginaHistorial, paginaHistorial * itemsPorPaginaHistorial);
+
+                      return (
+                        <div className="flex flex-col gap-4">
+                          <div className="grid gap-2.5">
+                            {regsPaginados.map(reg => {
                           const { pagoHoras, pagoProduccion } = calcularPagaDiaria(reg, emp);
                           return (
                             <div key={reg.id} className="bg-white p-4 rounded-xl flex flex-col gap-3" style={{ border: '1px solid var(--border-fiber)' }}>
@@ -805,7 +827,16 @@ export const Empleados = () => {
                           );
                         })}
                       </div>
-                    )}
+                      {totalPaginasHistorial > 1 && (
+                        <Paginador
+                          paginaActual={paginaHistorial}
+                          totalPaginas={totalPaginasHistorial}
+                          cambiarPagina={setPaginaHistorial}
+                        />
+                      )}
+                    </div>
+                  );
+                })()}
 
                     {/* Resumen compacto del período */}
                     {regsFiltrados.length > 0 && (
@@ -841,7 +872,7 @@ export const Empleados = () => {
 
               {/* Evaluation form */}
               {empleadoCalificando === emp.id && (
-                <form onSubmit={guardarCalificacion} className="p-5 animate-fade-up" style={{ background: 'rgba(212,160,18,0.04)' }}>
+                <form id={`panel-evaluacion-${emp.id}`} onSubmit={guardarCalificacion} className="p-5 animate-fade-up" style={{ background: 'rgba(212,160,18,0.04)' }}>
                   <h4 className="font-semibold text-sm flex items-center gap-2 mb-4" style={{ fontFamily: 'var(--font-heading)', color: 'var(--carbon)' }}>
                     <Star size={16} style={{ color: 'var(--accent-copper)' }} />
                     {registroEditando ? 'Editar evaluación' : 'Registrar trabajo de hoy'}
