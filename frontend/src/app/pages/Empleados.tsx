@@ -162,7 +162,7 @@ export const Empleados = () => {
     setEmpleadoCalificando(empId);
     setCalificacionProducciones([crearLineaProduccionVacia()]);
     setTimeout(() => {
-      document.getElementById(`panel-evaluacion-${empId}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      document.getElementById(`emp-card-${empId}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, 100);
   };
 
@@ -171,7 +171,7 @@ export const Empleados = () => {
     setEmpleadoViendoHistorial(empleadoViendoHistorial === empId ? null : empId);
     if (empleadoViendoHistorial !== empId) {
       setTimeout(() => {
-        document.getElementById(`panel-historial-${empId}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        document.getElementById(`emp-card-${empId}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }, 100);
     }
   };
@@ -200,7 +200,7 @@ export const Empleados = () => {
     setEmpleadoCalificando(reg.empleadoId);
     setEmpleadoViendoHistorial(null);
     setTimeout(() => {
-      document.getElementById(`panel-evaluacion-${reg.empleadoId}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      document.getElementById(`emp-card-${reg.empleadoId}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, 100);
   };
 
@@ -593,7 +593,7 @@ export const Empleados = () => {
           </div>
         ) : (
           empleadosPaginados.map(emp => (
-            <div key={emp.id} className="card-premium-static rounded-2xl overflow-hidden">
+            <div key={emp.id} id={`emp-card-${emp.id}`} className="card-premium-static rounded-2xl overflow-hidden">
 
               {/* Employee card header */}
               <div className="p-5 md:p-6 flex flex-col md:flex-row gap-5 items-start md:items-center justify-between" style={{ borderBottom: '1px solid var(--border-fiber-light)' }}>
