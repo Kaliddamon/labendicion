@@ -88,3 +88,30 @@ export const getQuincenaInfo = (mes: string, quincena: Quincena): QuincenaInfo =
     mesLabel: `${mesNombre} ${year}`,
   };
 };
+
+export const redondearHora = (horaStr: string): number => {
+  if (!horaStr || horaStr === '--:--') return 0;
+  const [hStr, mStr] = horaStr.split(':');
+  let h = parseInt(hStr, 10);
+  let m = parseInt(mStr, 10);
+
+  if (isNaN(h) || isNaN(m)) return 0;
+
+  if (m < 15) {
+    m = 0;
+  } else if (m >= 15 && m < 45) {
+    m = 30;
+  } else {
+    m = 0;
+    h += 1;
+  }
+
+  return h + (m / 60);
+};
+
+export const calcularHorasTrabajadasRedondeadas = (horaEntrada: string, horaSalida: string): number => {
+  if (!horaEntrada || horaEntrada === '--:--' || !horaSalida || horaSalida === '--:--') return 0;
+  const hEntrada = redondearHora(horaEntrada);
+  const hSalida = redondearHora(horaSalida);
+  return Math.max(0, hSalida - hEntrada);
+};

@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { Wallet, Plus, Trash2, X, TrendingUp, TrendingDown, BarChart3, DollarSign, Calendar, Edit2, Save, CheckCircle, Paperclip, Loader2, ZoomIn, ZoomOut, Download } from 'lucide-react';
 import { toast } from 'sonner';
 import { useConfirm } from '../context/ConfirmContext';
-import { getColombiaDateString, getQuincenaInfo, getQuincenaOfDate, Quincena } from '../utils/dateUtils';
+import { getColombiaDateString, getQuincenaInfo, getQuincenaOfDate, Quincena, calcularHorasTrabajadasRedondeadas } from '../utils/dateUtils';
 import { uploadEvidencia, deleteEvidencia } from '../utils/supabaseClient';
 
 const MES_ACTUAL = getColombiaDateString().substring(0, 7);
@@ -129,9 +129,7 @@ export const Finanzas = () => {
             reg.horaEntrada !== '--:--' && reg.horaSalida !== '--:--'
           ) {
             try {
-              const [hE, mE] = reg.horaEntrada.split(':').map(Number);
-              const [hS, mS] = reg.horaSalida.split(':').map(Number);
-              const horas = Math.max(0, (hS + mS / 60) - (hE + mE / 60));
+              const horas = calcularHorasTrabajadasRedondeadas(reg.horaEntrada, reg.horaSalida);
               pagoHoras += horas * regValorHora;
             } catch {}
           }
@@ -208,9 +206,7 @@ export const Finanzas = () => {
 
       if ((modalidad === 'HORAS' || modalidad === 'AMBOS') && emp.valorHora && reg.horaEntrada && reg.horaSalida && reg.horaEntrada !== '--:--' && reg.horaSalida !== '--:--') {
         try {
-          const [hE, mE] = reg.horaEntrada.split(':').map(Number);
-          const [hS, mS] = reg.horaSalida.split(':').map(Number);
-          const horas = Math.max(0, (hS + mS / 60) - (hE + mE / 60));
+          const horas = calcularHorasTrabajadasRedondeadas(reg.horaEntrada, reg.horaSalida);
           pagoHoras += horas * emp.valorHora;
         } catch {}
       }

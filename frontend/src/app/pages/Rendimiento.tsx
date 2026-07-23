@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { AlertTriangle, TrendingUp, Gauge, ShieldCheck, Clock, Activity } from 'lucide-react';
-import { getColombiaDateString } from '../utils/dateUtils';
+import { getColombiaDateString, calcularHorasTrabajadasRedondeadas as horasTrabajadas } from '../utils/dateUtils';
 import {
   Bar,
   BarChart,
@@ -51,13 +51,7 @@ const getEstadoByThresholdInverse = (
   return 'rojo';
 };
 
-const horasTrabajadas = (entrada: string, salida: string) => {
-  const [hIn, mIn] = entrada.split(':').map(Number);
-  const [hOut, mOut] = salida.split(':').map(Number);
-  if ([hIn, mIn, hOut, mOut].some(Number.isNaN)) return 0;
-  const minutos = hOut * 60 + mOut - (hIn * 60 + mIn);
-  return Math.max(minutos / 60, 0);
-};
+
 
 const fechaHaceDias = (dias: number) => {
   const date = new Date();

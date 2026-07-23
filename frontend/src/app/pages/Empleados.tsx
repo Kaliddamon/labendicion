@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAppContext, Empleado, ProduccionRegistro } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 import { Search, Plus, Edit2, Trash2, X, Users, PackageSearch, Save, ArrowRight, UserCircle, Star, BadgeCheck, CheckCircle2, Circle, ClipboardList, History, Clock, MinusCircle, FileText, Filter, DollarSign, CalendarDays } from 'lucide-react';
-import { getColombiaDateString } from '../utils/dateUtils';
+import { getColombiaDateString, calcularHorasTrabajadasRedondeadas } from '../utils/dateUtils';
 import { toast } from 'sonner';
 import { useConfirm } from '../context/ConfirmContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
@@ -337,9 +337,7 @@ export const Empleados = () => {
     // Pago por horas
     if (reg.valorHora && reg.horaEntrada && reg.horaSalida && reg.horaEntrada !== '--:--' && reg.horaSalida !== '--:--') {
       try {
-        const [hE, mE] = reg.horaEntrada.split(':').map(Number);
-        const [hS, mS] = reg.horaSalida.split(':').map(Number);
-        const horas = Math.max(0, (hS + mS / 60) - (hE + mE / 60));
+        const horas = calcularHorasTrabajadasRedondeadas(reg.horaEntrada, reg.horaSalida);
         pagoHoras = horas * reg.valorHora;
       } catch { }
     }
