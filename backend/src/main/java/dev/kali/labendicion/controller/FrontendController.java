@@ -155,6 +155,8 @@ public class FrontendController {
             m2.put("horaSalida", r.getHoraSalida());
             m2.put("unidadesTotales", r.getUnidadesTotales());
             m2.put("unidadesBuenas", r.getUnidadesBuenas());
+            m2.put("valorHora", r.getValorHora());
+            m2.put("tipoPago", r.getTipoPago());
             m2.put("producciones", prodDto);
             return m2;
         }).collect(Collectors.toList());
