@@ -6,6 +6,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.core.context.SecurityContextHolder;
+import dev.kali.labendicion.domain.entity.Usuario;
 
 import java.util.List;
 
@@ -21,7 +23,11 @@ public class ContactoMensajeController {
     private ContactoMensajeRepository repository;
 
     @GetMapping("/mi-mensaje")
-    public ResponseEntity<ContactoMensaje> getMiMensaje(@RequestParam String email) {
+    public ResponseEntity<?> getMiMensaje(@RequestParam String email) {
+        Usuario authUser = (Usuario) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if (!email.equals(authUser.getEmail())) {
+            return ResponseEntity.status(403).body("No tienes permisos para ver este mensaje.");
+        }
         return repository.findByUsuarioEmailAndEliminadoFalse(email)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.noContent().build());
@@ -58,7 +64,8 @@ public class ContactoMensajeController {
         }
         return repository.findById(id).map(mensaje -> {
             // Ownership validation
-            if (!mensaje.getUsuarioEmail().equals(updated.getUsuarioEmail())) {
+            Usuario authUser = (Usuario) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            if (!mensaje.getUsuarioEmail().equals(authUser.getEmail())) {
                 return ResponseEntity.status(403).body("No tienes permisos para editar este mensaje.");
             }
             // Freeze if read
@@ -81,7 +88,8 @@ public class ContactoMensajeController {
     public ResponseEntity<?> deleteMensaje(@PathVariable Long id, @RequestParam String email) {
         return repository.findById(id).map(mensaje -> {
             // Ownership validation
-            if (!mensaje.getUsuarioEmail().equals(email)) {
+            Usuario authUser = (Usuario) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            if (!mensaje.getUsuarioEmail().equals(authUser.getEmail())) {
                 return ResponseEntity.status(403).body("No tienes permisos para eliminar este mensaje.");
             }
             // Freeze if read

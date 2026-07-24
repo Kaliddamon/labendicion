@@ -21,7 +21,11 @@ export const MensajesContacto = () => {
 
   const cargarMensajes = async () => {
     try {
-      const res = await fetch(`${API_BASE}/contacto-mensajes`);
+      const res = await fetch(`${API_BASE}/contacto-mensajes`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+        }
+      });
       if (res.ok) {
         const data = await res.json();
         setMensajes(data);
@@ -50,7 +54,10 @@ export const MensajesContacto = () => {
     try {
       const res = await fetch(`${API_BASE}/contacto-mensajes/${id}/leido`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+        },
         body: JSON.stringify({ leido: !actual })
       });
       if (res.ok) {

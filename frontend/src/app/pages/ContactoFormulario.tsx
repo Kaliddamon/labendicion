@@ -29,7 +29,11 @@ export const ContactoFormulario = () => {
   const cargarMiMensaje = async () => {
     if (!user?.email) return;
     try {
-      const res = await fetch(`${API_BASE}/contacto-mensajes/mi-mensaje?email=${encodeURIComponent(user.email)}`);
+      const res = await fetch(`${API_BASE}/contacto-mensajes/mi-mensaje?email=${encodeURIComponent(user.email)}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+        }
+      });
       if (res.status === 200) {
         const data = await res.json();
         setMiMensaje(data);
@@ -62,7 +66,10 @@ export const ContactoFormulario = () => {
 
       const res = await fetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+        },
         body: JSON.stringify({
           usuarioEmail: user?.email,
           usuarioNombre: user?.name,
@@ -100,7 +107,10 @@ export const ContactoFormulario = () => {
     
     try {
       const res = await fetch(`${API_BASE}/contacto-mensajes/${miMensaje.id}?email=${encodeURIComponent(user.email)}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+        }
       });
       if (res.ok) {
         setMiMensaje(null);

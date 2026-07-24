@@ -4,6 +4,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.interceptor.TransactionAspectSupport;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -29,6 +31,8 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/frontend")
 public class FrontendController {
+
+    private static final Logger log = LoggerFactory.getLogger(FrontendController.class);
 
     @Autowired
     private ProductoRepository productoRepo;
@@ -291,7 +295,7 @@ public class FrontendController {
             eventService.emitAsync("PRODUCTO_CREADO", dto);
             return ResponseEntity.ok(dto);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Error: ", e);
             try {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
             } catch (Exception ignore) {
@@ -354,7 +358,7 @@ public class FrontendController {
             eventService.emitAsync("PRODUCTO_ESTADO_ACTUALIZADO", dto);
             return ResponseEntity.ok(dto);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Error: ", e);
             try {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
             } catch (Exception ignore) {
@@ -465,7 +469,7 @@ public class FrontendController {
             eventService.emitAsync("PRODUCTO_ACTUALIZADO", dto);
             return ResponseEntity.ok(dto);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Error: ", e);
             try {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
             } catch (Exception ignore) {
@@ -638,7 +642,7 @@ public class FrontendController {
             eventService.emitAsync("EMPLEADO_ELIMINADO", Map.of("id", id));
             return ResponseEntity.noContent().build();
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Error: ", e);
             return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error eliminando empleado: " + e.getMessage());
         }
@@ -800,7 +804,7 @@ public class FrontendController {
             eventService.emitAsync("REGISTRO_ASEO_CREADO", mapRegistroAseoToDto(saved));
             return ResponseEntity.ok(mapRegistroAseoToDto(saved));
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Error: ", e);
             try {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
             } catch (Exception ignore) {
@@ -830,7 +834,7 @@ public class FrontendController {
             }
             return ResponseEntity.notFound().build();
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Error: ", e);
             try {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
             } catch (Exception ignore) {
@@ -890,7 +894,7 @@ public class FrontendController {
             }
             return ResponseEntity.notFound().build();
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Error: ", e);
             try {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
             } catch (Exception ignore) {
@@ -926,7 +930,7 @@ public class FrontendController {
             PasoProduccion guardado = pasoRepo.save(paso);
             return ResponseEntity.ok(guardado);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Error: ", e);
             try {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
             } catch (Exception ignore) {
@@ -951,7 +955,7 @@ public class FrontendController {
             PasoProduccion guardado = pasoRepo.save(paso);
             return ResponseEntity.ok(guardado);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Error: ", e);
             try {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
             } catch (Exception ignore) {
@@ -969,7 +973,7 @@ public class FrontendController {
             PasoProduccion guardado = pasoRepo.save(paso);
             return ResponseEntity.ok(guardado);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Error: ", e);
             try {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
             } catch (Exception ignore) {
@@ -1041,7 +1045,7 @@ public class FrontendController {
             eventService.emitAsync("MOVIMIENTO_CREADO", mapMovimientoToDto(guardado));
             return ResponseEntity.ok(mapMovimientoToDto(guardado));
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Error: ", e);
             return serverError(e, "/api/frontend/finanzas/movimientos");
         }
     }
@@ -1133,7 +1137,7 @@ public class FrontendController {
             eventService.emitAsync("NOMINA_REGISTRADA", Map.of("mes", mes, "movimientos", dto));
             return ResponseEntity.ok(dto);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Error: ", e);
             try {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
             } catch (Exception ignore) {

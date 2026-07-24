@@ -12,6 +12,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.beans.factory.annotation.Value;
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -20,6 +23,9 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
+
+    @Value("${app.superadmin.email:cristian.san.garcia@gmail.com}")
+    private String superadminEmail;
 
     private static final String GOOGLE_CLIENT_ID = System.getenv("GOOGLE_CLIENT_ID") != null
         ? System.getenv("GOOGLE_CLIENT_ID")
@@ -69,7 +75,7 @@ public class AuthController {
 
                         // Asignar rol por defecto según el email
                         try {
-                            if ("cristian.san.garcia@gmail.com".equals(email)) {
+                            if (superadminEmail.equals(email)) {
                                 rolService.asignarRolAUsuarioPorEmail(email, "SUPERADMINISTRADOR");
                             } else {
                                 rolService.asignarRolAUsuarioPorEmail(email, "USUARIO");
@@ -82,7 +88,7 @@ public class AuthController {
                     });
 
                 // Verificar y asignar rol SUPERADMINISTRADOR si es el email específico
-                if ("cristian.san.garcia@gmail.com".equals(email)) {
+                if (superadminEmail.equals(email)) {
                     boolean tieneSuperAdmin = usuario.getRoles().stream()
                         .anyMatch(rol -> "SUPERADMINISTRADOR".equals(rol.getNombre()));
 
