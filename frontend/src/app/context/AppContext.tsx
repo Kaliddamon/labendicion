@@ -212,6 +212,18 @@ const request = async <T,>(path: string, options?: RequestInit): Promise<T> => {
     ...options,
     headers: { ...headers, ...options?.headers },
   });
+
+  // Token expirado o inválido → limpiar sesión y redirigir al login
+  if (res.status === 401 || res.status === 403) {
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('authUser');
+    localStorage.removeItem('authRoles');
+    if (!window.location.pathname.includes('/login')) {
+      window.location.href = '/login';
+    }
+    throw new Error(`API ${res.status}: Sesión expirada. Por favor vuelve a iniciar sesión.`);
+  }
+
   if (!res.ok) {
     const text = await res.text();
     console.error(`API ${res.status}: ${text || 'Error desconocido'}`);
@@ -250,6 +262,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   }, [nominasPagadas]);
 
   useEffect(() => {
+    // No llamar al backend si el usuario no está autenticado
+    const token = localStorage.getItem('authToken');
+    if (!token) return;
+
     let mounted = true;
     request<BootstrapResponse>('/bootstrap')
       .then((data) => {
@@ -267,7 +283,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         setTiposDocumento(filtrarCatalogo(data.tiposDocumento));
         setAreasTrabajo(filtrarCatalogo(data.areasTrabajo));
         setAccionesAseo(filtrarCatalogo(data.accionesAseo));
-        console.log('Bootstrap cargado:', data.productos);
       })
       .catch((err) => {
         console.warn('No se pudo cargar bootstrap del backend:', err);

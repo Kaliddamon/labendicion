@@ -43,7 +43,13 @@ public class SecurityConfig {
             .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/frontend/contacto-mensajes").permitAll()
             .anyRequest().authenticated()
         );
-        
+
+        // Devolver 401 (no 403) cuando el token es inválido o falta
+        http.exceptionHandling(ex -> ex
+            .authenticationEntryPoint((request, response, authException) ->
+                response.sendError(jakarta.servlet.http.HttpServletResponse.SC_UNAUTHORIZED, "Token inválido o expirado"))
+        );
+
         http.addFilterBefore(googleTokenFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

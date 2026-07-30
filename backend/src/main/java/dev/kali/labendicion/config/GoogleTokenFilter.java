@@ -12,6 +12,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -29,9 +30,8 @@ import java.util.stream.Collectors;
 @Component
 public class GoogleTokenFilter extends OncePerRequestFilter {
 
-    private static final String GOOGLE_CLIENT_ID = System.getenv("GOOGLE_CLIENT_ID") != null
-            ? System.getenv("GOOGLE_CLIENT_ID")
-            : "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com";
+    @Value("${google.client.id:}")
+    private String googleClientId;
 
     @Autowired
     private UsuarioRepository usuarioRepository;
@@ -40,6 +40,13 @@ public class GoogleTokenFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
 
+        // Si el client ID no está configurado en las propiedades, saltamos la verificación
+        if (googleClientId == null || googleClientId.isBlank()) {
+            logger.warn("google.client.id no está configurado — la verificación de tokens está desactivada");
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         String authHeader = request.getHeader("Authorization");
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String token = authHeader.substring(7);
@@ -47,7 +54,7 @@ public class GoogleTokenFilter extends OncePerRequestFilter {
                 JsonFactory jsonFactory = JacksonFactory.getDefaultInstance();
                 GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(
                         new NetHttpTransport(), jsonFactory)
-                        .setAudience(Collections.singletonList(GOOGLE_CLIENT_ID))
+                        .setAudience(Collections.singletonList(googleClientId))
                         .build();
 
                 GoogleIdToken idToken = verifier.verify(token);
@@ -68,12 +75,15 @@ public class GoogleTokenFilter extends OncePerRequestFilter {
 
                         SecurityContextHolder.getContext().setAuthentication(authentication);
                     }
+                } else {
+                    logger.debug("Token de Google inválido o expirado para la solicitud: " + request.getRequestURI());
                 }
             } catch (GeneralSecurityException | IOException e) {
                 logger.error("Error validando token de Google: " + e.getMessage());
             }
         }
-        
+
         filterChain.doFilter(request, response);
     }
 }
+
