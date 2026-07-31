@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAppContext, Empleado, ProduccionRegistro } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
-import { Search, Plus, Edit2, Trash2, X, Users, PackageSearch, Save, ArrowRight, UserCircle, Star, BadgeCheck, CheckCircle2, Circle, ClipboardList, History, Clock, MinusCircle, FileText, Filter, DollarSign, CalendarDays } from 'lucide-react';
+import { Search, Plus, Edit2, Trash2, X, Users, PackageSearch, Save, ArrowRight, UserCircle, Star, BadgeCheck, CheckCircle2, Circle, ClipboardList, History, Clock, MinusCircle, FileText, Filter, DollarSign, CalendarDays, Receipt, ChevronLeft } from 'lucide-react';
 import { getColombiaDateString, calcularHorasTrabajadasRedondeadas } from '../utils/dateUtils';
 import { toast } from 'sonner';
 import { useConfirm } from '../context/ConfirmContext';
@@ -93,6 +93,70 @@ export const Empleados = () => {
   useEffect(() => {
     setPaginaHistorial(1);
   }, [empleadoViendoHistorial, filtroHistorial]);
+
+  // ── Módulo de Nómina ─────────────────────────────────────
+  const [mostrarNomina, setMostrarNomina] = useState(false);
+  const [quincenaSeleccionada, setQuincenaSeleccionada] = useState<string | null>(null);
+
+  /** Devuelve la clave de quincena para una fecha: "YYYY-MM-1" (días 1-15) o "YYYY-MM-2" (días 16-fin) */
+  const claveQuincena = (fecha: string): string => {
+    const [y, m, d] = fecha.split('-').map(Number);
+    return `${y}-${String(m).padStart(2, '0')}-${d <= 15 ? '1' : '2'}`;
+  };
+
+  /** Genera etiqueta legible para la clave de quincena */
+  const etiquetaQuincena = (clave: string): string => {
+    const [y, m, mitad] = clave.split('-');
+    const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+    const nombreMes = meses[parseInt(m) - 1];
+    return `${mitad === '1' ? '1ra' : '2da'} quincena — ${nombreMes} ${y}`;
+  };
+
+  /** Rango de fechas de la quincena (desde/hasta) */
+  const rangoQuincena = (clave: string): { desde: string; hasta: string } => {
+    const [y, m, mitad] = clave.split('-');
+    const year = parseInt(y);
+    const mes = parseInt(m);
+    if (mitad === '1') {
+      return { desde: `${y}-${m}-01`, hasta: `${y}-${m}-15` };
+    } else {
+      const diasMes = new Date(year, mes, 0).getDate();
+      return { desde: `${y}-${m}-16`, hasta: `${y}-${m}-${String(diasMes).padStart(2, '0')}` };
+    }
+  };
+
+  /** Lista de quincenas detectadas de más reciente a más antigua */
+  const generarQuincenas = (): string[] => {
+    const set = new Set<string>();
+    registros.forEach(r => set.add(claveQuincena(r.fecha)));
+    return Array.from(set).sort((a, b) => b.localeCompare(a));
+  };
+
+  /** Calcula la nómina para una quincena: empleados con ingresos > 0 */
+  const calcularNominaQuincena = (clave: string) => {
+    const { desde, hasta } = rangoQuincena(clave);
+    const regsQuincena = registros.filter(r => r.fecha >= desde && r.fecha <= hasta && r.horaEntrada !== '--:--');
+
+    const mapa = new Map<string, { totalHoras: number; totalProduccion: number }>();
+    regsQuincena.forEach(reg => {
+      const emp = empleados.find(e => e.id === reg.empleadoId);
+      if (!emp) return;
+      const { pagoHoras, pagoProduccion } = calcularPagaDiaria(reg, emp);
+      const total = (mapa.get(emp.id) ?? { totalHoras: 0, totalProduccion: 0 });
+      mapa.set(emp.id, {
+        totalHoras: total.totalHoras + pagoHoras,
+        totalProduccion: total.totalProduccion + pagoProduccion,
+      });
+    });
+
+    return Array.from(mapa.entries())
+      .map(([empId, vals]) => {
+        const emp = empleados.find(e => e.id === empId)!;
+        return { emp, ...vals, total: vals.totalHoras + vals.totalProduccion };
+      })
+      .filter(row => row.total > 0)
+      .sort((a, b) => b.total - a.total);
+  };
 
   const [modalOrdenProduccion, setModalOrdenProduccion] = useState<{
     fecha: string;
@@ -381,6 +445,214 @@ export const Empleados = () => {
 
   return (
     <>
+      {/* ── Modal de Nómina ───────────────────────────────── */}
+      {mostrarNomina && (
+        <div
+          className="fixed inset-0 z-[200] flex items-center justify-center p-4"
+          style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(6px)' }}
+          onClick={e => { if (e.target === e.currentTarget) { setMostrarNomina(false); setQuincenaSeleccionada(null); } }}
+        >
+          <div
+            className="card-premium-static rounded-2xl w-full max-w-3xl max-h-[88vh] flex flex-col overflow-hidden"
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Header del modal */}
+            <div className="flex items-center justify-between px-6 py-5" style={{ borderBottom: '1px solid var(--border-fiber)' }}>
+              <div className="flex items-center gap-3">
+                {quincenaSeleccionada && (
+                  <button
+                    onClick={() => setQuincenaSeleccionada(null)}
+                    className="p-2 rounded-xl hover:bg-[var(--surface-linen)] transition-colors"
+                    style={{ border: '1px solid var(--border-fiber)' }}
+                  >
+                    <ChevronLeft size={18} style={{ color: 'var(--carbon)' }} />
+                  </button>
+                )}
+                <div>
+                  <h2 className="text-lg font-bold" style={{ fontFamily: 'var(--font-heading)', color: 'var(--carbon)' }}>
+                    {quincenaSeleccionada ? etiquetaQuincena(quincenaSeleccionada) : 'Nómina — Quincenas'}
+                  </h2>
+                  {quincenaSeleccionada && (() => {
+                    const { desde, hasta } = rangoQuincena(quincenaSeleccionada);
+                    return <p className="text-xs text-slate-400 mt-0.5">{desde} al {hasta}</p>;
+                  })()}
+                </div>
+              </div>
+              <button
+                onClick={() => { setMostrarNomina(false); setQuincenaSeleccionada(null); }}
+                className="p-2 rounded-xl hover:bg-[var(--surface-linen)] transition-colors"
+              >
+                <X size={20} style={{ color: 'var(--carbon)' }} />
+              </button>
+            </div>
+
+            {/* Cuerpo del modal */}
+            <div className="overflow-y-auto flex-1 p-6">
+              {!quincenaSeleccionada ? (
+                /* ── Vista: Lista de quincenas ── */
+                (() => {
+                  const quincenas = generarQuincenas();
+                  if (quincenas.length === 0) {
+                    return (
+                      <div className="text-center py-16 text-slate-400">
+                        <Receipt size={40} className="mx-auto mb-4 opacity-30" />
+                        <p className="font-medium">No hay registros de trabajo aún.</p>
+                        <p className="text-sm mt-1">Agrega evaluaciones a los empleados para ver la nómina.</p>
+                      </div>
+                    );
+                  }
+                  return (
+                    <div className="grid gap-3">
+                      {quincenas.map(clave => {
+                        const filas = calcularNominaQuincena(clave);
+                        const totalNomina = filas.reduce((acc, f) => acc + f.total, 0);
+                        const { desde, hasta } = rangoQuincena(clave);
+                        return (
+                          <button
+                            key={clave}
+                            onClick={() => setQuincenaSeleccionada(clave)}
+                            className="w-full text-left rounded-2xl p-5 transition-all active:scale-[0.99] hover:shadow-md group"
+                            style={{
+                              background: 'var(--surface-silk)',
+                              border: '1px solid var(--border-fiber)',
+                              boxShadow: 'var(--shadow-sm)',
+                            }}
+                          >
+                            <div className="flex items-center justify-between gap-4">
+                              <div className="flex items-center gap-4">
+                                <div
+                                  className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
+                                  style={{ background: 'rgba(212,160,18,0.12)', border: '1px solid rgba(212,160,18,0.25)' }}
+                                >
+                                  <Receipt size={20} style={{ color: 'var(--accent-copper)' }} />
+                                </div>
+                                <div>
+                                  <p className="font-bold text-sm" style={{ fontFamily: 'var(--font-heading)', color: 'var(--carbon)' }}>
+                                    {etiquetaQuincena(clave)}
+                                  </p>
+                                  <p className="text-xs text-slate-400 mt-0.5">{desde} → {hasta}</p>
+                                </div>
+                              </div>
+                              <div className="text-right shrink-0">
+                                <p className="font-bold text-base" style={{ fontFamily: 'var(--font-heading)', color: 'var(--accent-copper)' }}>
+                                  {formatCOP(totalNomina)}
+                                </p>
+                                <p className="text-xs text-slate-400">{filas.length} empleado{filas.length !== 1 ? 's' : ''} con ingreso</p>
+                              </div>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  );
+                })()
+              ) : (
+                /* ── Vista: Tabla de nómina ── */
+                (() => {
+                  const filas = calcularNominaQuincena(quincenaSeleccionada);
+                  const totalGeneral = filas.reduce((acc, f) => acc + f.total, 0);
+                  const totalHorasGeneral = filas.reduce((acc, f) => acc + f.totalHoras, 0);
+                  const totalProdGeneral = filas.reduce((acc, f) => acc + f.totalProduccion, 0);
+
+                  if (filas.length === 0) {
+                    return (
+                      <div className="text-center py-16 text-slate-400">
+                        <Users size={40} className="mx-auto mb-4 opacity-30" />
+                        <p className="font-medium">Ningún empleado tiene ingresos en esta quincena.</p>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div className="overflow-x-auto rounded-xl" style={{ border: '1px solid var(--border-fiber)' }}>
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr style={{ background: 'var(--surface-linen)', borderBottom: '1px solid var(--border-fiber)' }}>
+                            <th className="text-left px-5 py-3 text-xs font-bold uppercase tracking-wider text-slate-500" style={{ fontFamily: 'var(--font-heading)' }}>Empleado</th>
+                            <th className="text-left px-5 py-3 text-xs font-bold uppercase tracking-wider text-slate-500" style={{ fontFamily: 'var(--font-heading)' }}>Cargo</th>
+                            <th className="text-right px-5 py-3 text-xs font-bold uppercase tracking-wider" style={{ fontFamily: 'var(--font-heading)', color: 'var(--accent-copper)' }}>$/Horas</th>
+                            <th className="text-right px-5 py-3 text-xs font-bold uppercase tracking-wider text-violet-600" style={{ fontFamily: 'var(--font-heading)' }}>$/Producción</th>
+                            <th className="text-right px-5 py-3 text-xs font-bold uppercase tracking-wider" style={{ fontFamily: 'var(--font-heading)', color: 'var(--carbon)' }}>Total</th>
+                          </tr>
+                        </thead>
+                        <tbody style={{ background: 'var(--surface-silk)' }}>
+                          {filas.map((fila, idx) => (
+                            <tr
+                              key={fila.emp.id}
+                              style={{
+                                borderBottom: idx < filas.length - 1 ? '1px solid var(--border-fiber-light)' : 'none',
+                              }}
+                              className="hover:bg-[var(--surface-linen)] transition-colors"
+                            >
+                              <td className="px-5 py-4">
+                                <div className="flex items-center gap-3">
+                                  <div
+                                    className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold shrink-0"
+                                    style={{
+                                      background: fila.emp.estado === 'Activo' ? 'linear-gradient(135deg, #16a34a, #15803d)' : 'var(--surface-linen)',
+                                      color: fila.emp.estado === 'Activo' ? '#fff' : 'var(--carbon)',
+                                    }}
+                                  >
+                                    {fila.emp.nombre.charAt(0).toUpperCase()}
+                                  </div>
+                                  <span className="font-semibold" style={{ color: 'var(--carbon)' }}>{fila.emp.nombre}</span>
+                                </div>
+                              </td>
+                              <td className="px-5 py-4 text-slate-500 text-xs">{fila.emp.cargo?.nombre || '—'}</td>
+                              <td className="px-5 py-4 text-right font-semibold" style={{ color: fila.totalHoras > 0 ? 'var(--accent-copper)' : 'var(--border-fiber)' }}>
+                                {fila.totalHoras > 0 ? formatCOP(fila.totalHoras) : '—'}
+                              </td>
+                              <td className="px-5 py-4 text-right font-semibold" style={{ color: fila.totalProduccion > 0 ? '#7c3aed' : 'var(--border-fiber)' }}>
+                                {fila.totalProduccion > 0 ? formatCOP(fila.totalProduccion) : '—'}
+                              </td>
+                              <td className="px-5 py-4 text-right">
+                                <span
+                                  className="font-bold text-base"
+                                  style={{ fontFamily: 'var(--font-heading)', color: 'var(--carbon)' }}
+                                >
+                                  {formatCOP(fila.total)}
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                        {/* Fila de totales */}
+                        <tfoot>
+                          <tr style={{ background: 'var(--surface-linen)', borderTop: '2px solid var(--border-fiber)' }}>
+                            <td colSpan={2} className="px-5 py-4">
+                              <span className="text-xs font-bold uppercase tracking-wider text-slate-500" style={{ fontFamily: 'var(--font-heading)' }}>
+                                Total Nómina
+                              </span>
+                            </td>
+                            <td className="px-5 py-4 text-right font-bold" style={{ color: totalHorasGeneral > 0 ? 'var(--accent-copper)' : 'var(--border-fiber)' }}>
+                              {totalHorasGeneral > 0 ? formatCOP(totalHorasGeneral) : '—'}
+                            </td>
+                            <td className="px-5 py-4 text-right font-bold" style={{ color: totalProdGeneral > 0 ? '#7c3aed' : 'var(--border-fiber)' }}>
+                              {totalProdGeneral > 0 ? formatCOP(totalProdGeneral) : '—'}
+                            </td>
+                            <td className="px-5 py-4 text-right">
+                              <span
+                                className="font-black text-lg px-3 py-1 rounded-xl"
+                                style={{
+                                  fontFamily: 'var(--font-heading)',
+                                  color: '#1a1a2e',
+                                  background: 'var(--accent-copper)',
+                                }}
+                              >
+                                {formatCOP(totalGeneral)}
+                              </span>
+                            </td>
+                          </tr>
+                        </tfoot>
+                      </table>
+                    </div>
+                  );
+                })()
+              )}
+            </div>
+          </div>
+        </div>
+      )}
       {/* Modal formulario empleado — FUERA del div animado para que fixed cubra todo el viewport */}
       {mostrarFormEmpleado && (
         <div
@@ -514,13 +786,27 @@ export const Empleados = () => {
             </h1>
             <p className="text-slate-500 mt-1.5 text-sm">Gestiona el personal y revisa su desempeño</p>
           </div>
-          <button
-            onClick={() => { resetFormEmpleado(); setMostrarFormEmpleado(true); }}
-            className="px-5 py-3 rounded-xl font-semibold text-sm flex items-center gap-2 transition-all active:scale-[0.97] text-[#1a1a2e]"
-            style={{ background: 'var(--accent-copper)', boxShadow: 'var(--shadow-copper)' }}
-          >
-            <Plus size={20} /> Nuevo Empleado
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => { setMostrarNomina(true); setQuincenaSeleccionada(null); }}
+              className="px-5 py-3 rounded-xl font-semibold text-sm flex items-center gap-2 transition-all active:scale-[0.97]"
+              style={{
+                background: 'var(--surface-silk)',
+                border: '1px solid var(--border-fiber)',
+                color: 'var(--indigo-deep)',
+                boxShadow: 'var(--shadow-sm)',
+              }}
+            >
+              <Receipt size={18} /> Nómina
+            </button>
+            <button
+              onClick={() => { resetFormEmpleado(); setMostrarFormEmpleado(true); }}
+              className="px-5 py-3 rounded-xl font-semibold text-sm flex items-center gap-2 transition-all active:scale-[0.97] text-[#1a1a2e]"
+              style={{ background: 'var(--accent-copper)', boxShadow: 'var(--shadow-copper)' }}
+            >
+              <Plus size={20} /> Nuevo Empleado
+            </button>
+          </div>
         </div>
 
         {/* Search & List */}
