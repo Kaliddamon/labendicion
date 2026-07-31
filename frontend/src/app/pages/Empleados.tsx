@@ -97,6 +97,7 @@ export const Empleados = () => {
   // ── Módulo de Nómina ─────────────────────────────────────
   const [mostrarNomina, setMostrarNomina] = useState(false);
   const [quincenaSeleccionada, setQuincenaSeleccionada] = useState<string | null>(null);
+  const [empleadosSeleccionadosNomina, setEmpleadosSeleccionadosNomina] = useState<Set<string>>(new Set());
 
   /** Devuelve la clave de quincena para una fecha: "YYYY-MM-1" (días 1-15) o "YYYY-MM-2" (días 16-fin) */
   const claveQuincena = (fecha: string): string => {
@@ -137,15 +138,22 @@ export const Empleados = () => {
     const { desde, hasta } = rangoQuincena(clave);
     const regsQuincena = registros.filter(r => r.fecha >= desde && r.fecha <= hasta && r.horaEntrada !== '--:--');
 
-    const mapa = new Map<string, { totalHoras: number; totalProduccion: number }>();
+    const mapa = new Map<string, { totalHoras: number; totalProduccion: number; horasTrabajadas: number }>();
     regsQuincena.forEach(reg => {
       const emp = empleados.find(e => e.id === reg.empleadoId);
       if (!emp) return;
       const { pagoHoras, pagoProduccion } = calcularPagaDiaria(reg, emp);
-      const total = (mapa.get(emp.id) ?? { totalHoras: 0, totalProduccion: 0 });
+      let horas = 0;
+      try {
+        if (reg.horaEntrada && reg.horaSalida && reg.horaEntrada !== '--:--' && reg.horaSalida !== '--:--') {
+          horas = calcularHorasTrabajadasRedondeadas(reg.horaEntrada, reg.horaSalida);
+        }
+      } catch { }
+      const prev = mapa.get(emp.id) ?? { totalHoras: 0, totalProduccion: 0, horasTrabajadas: 0 };
       mapa.set(emp.id, {
-        totalHoras: total.totalHoras + pagoHoras,
-        totalProduccion: total.totalProduccion + pagoProduccion,
+        totalHoras: prev.totalHoras + pagoHoras,
+        totalProduccion: prev.totalProduccion + pagoProduccion,
+        horasTrabajadas: prev.horasTrabajadas + horas,
       });
     });
 
@@ -461,7 +469,7 @@ export const Empleados = () => {
               <div className="flex items-center gap-3">
                 {quincenaSeleccionada && (
                   <button
-                    onClick={() => setQuincenaSeleccionada(null)}
+                    onClick={() => { setQuincenaSeleccionada(null); setEmpleadosSeleccionadosNomina(new Set()); }}
                     className="p-2 rounded-xl hover:bg-[var(--surface-linen)] transition-colors"
                     style={{ border: '1px solid var(--border-fiber)' }}
                   >
@@ -510,7 +518,12 @@ export const Empleados = () => {
                         return (
                           <button
                             key={clave}
-                            onClick={() => setQuincenaSeleccionada(clave)}
+                            onClick={() => {
+              setQuincenaSeleccionada(clave);
+              // Inicializar todos los empleados seleccionados al entrar
+              const filas = calcularNominaQuincena(clave);
+              setEmpleadosSeleccionadosNomina(new Set(filas.map(f => f.emp.id)));
+            }}
                             className="w-full text-left rounded-2xl p-5 transition-all active:scale-[0.99] hover:shadow-md group"
                             style={{
                               background: 'var(--surface-silk)',
@@ -550,9 +563,29 @@ export const Empleados = () => {
                 /* ── Vista: Tabla de nómina ── */
                 (() => {
                   const filas = calcularNominaQuincena(quincenaSeleccionada);
-                  const totalGeneral = filas.reduce((acc, f) => acc + f.total, 0);
-                  const totalHorasGeneral = filas.reduce((acc, f) => acc + f.totalHoras, 0);
-                  const totalProdGeneral = filas.reduce((acc, f) => acc + f.totalProduccion, 0);
+                  const filasSel = filas.filter(f => empleadosSeleccionadosNomina.has(f.emp.id));
+                  const todosSeleccionados = filas.length > 0 && filas.every(f => empleadosSeleccionadosNomina.has(f.emp.id));
+
+                  const totalGeneral = filasSel.reduce((acc, f) => acc + f.total, 0);
+                  const totalHorasGeneral = filasSel.reduce((acc, f) => acc + f.totalHoras, 0);
+                  const totalProdGeneral = filasSel.reduce((acc, f) => acc + f.totalProduccion, 0);
+                  const totalHorasTrabajadasGeneral = filasSel.reduce((acc, f) => acc + f.horasTrabajadas, 0);
+
+                  const toggleEmpleado = (empId: string) => {
+                    setEmpleadosSeleccionadosNomina(prev => {
+                      const next = new Set(prev);
+                      if (next.has(empId)) next.delete(empId); else next.add(empId);
+                      return next;
+                    });
+                  };
+
+                  const toggleTodos = () => {
+                    if (todosSeleccionados) {
+                      setEmpleadosSeleccionadosNomina(new Set());
+                    } else {
+                      setEmpleadosSeleccionadosNomina(new Set(filas.map(f => f.emp.id)));
+                    }
+                  };
 
                   if (filas.length === 0) {
                     return (
@@ -564,87 +597,134 @@ export const Empleados = () => {
                   }
 
                   return (
-                    <div className="overflow-x-auto rounded-xl" style={{ border: '1px solid var(--border-fiber)' }}>
-                      <table className="w-full text-sm">
-                        <thead>
-                          <tr style={{ background: 'var(--surface-linen)', borderBottom: '1px solid var(--border-fiber)' }}>
-                            <th className="text-left px-5 py-3 text-xs font-bold uppercase tracking-wider text-slate-500" style={{ fontFamily: 'var(--font-heading)' }}>Empleado</th>
-                            <th className="text-left px-5 py-3 text-xs font-bold uppercase tracking-wider text-slate-500" style={{ fontFamily: 'var(--font-heading)' }}>Cargo</th>
-                            <th className="text-right px-5 py-3 text-xs font-bold uppercase tracking-wider" style={{ fontFamily: 'var(--font-heading)', color: 'var(--accent-copper)' }}>$/Horas</th>
-                            <th className="text-right px-5 py-3 text-xs font-bold uppercase tracking-wider text-violet-600" style={{ fontFamily: 'var(--font-heading)' }}>$/Producción</th>
-                            <th className="text-right px-5 py-3 text-xs font-bold uppercase tracking-wider" style={{ fontFamily: 'var(--font-heading)', color: 'var(--carbon)' }}>Total</th>
-                          </tr>
-                        </thead>
-                        <tbody style={{ background: 'var(--surface-silk)' }}>
-                          {filas.map((fila, idx) => (
-                            <tr
-                              key={fila.emp.id}
-                              style={{
-                                borderBottom: idx < filas.length - 1 ? '1px solid var(--border-fiber-light)' : 'none',
-                              }}
-                              className="hover:bg-[var(--surface-linen)] transition-colors"
-                            >
-                              <td className="px-5 py-4">
-                                <div className="flex items-center gap-3">
-                                  <div
-                                    className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold shrink-0"
-                                    style={{
-                                      background: fila.emp.estado === 'Activo' ? 'linear-gradient(135deg, #16a34a, #15803d)' : 'var(--surface-linen)',
-                                      color: fila.emp.estado === 'Activo' ? '#fff' : 'var(--carbon)',
-                                    }}
-                                  >
-                                    {fila.emp.nombre.charAt(0).toUpperCase()}
-                                  </div>
-                                  <span className="font-semibold" style={{ color: 'var(--carbon)' }}>{fila.emp.nombre}</span>
-                                </div>
-                              </td>
-                              <td className="px-5 py-4 text-slate-500 text-xs">{fila.emp.cargo?.nombre || '—'}</td>
-                              <td className="px-5 py-4 text-right font-semibold" style={{ color: fila.totalHoras > 0 ? 'var(--accent-copper)' : 'var(--border-fiber)' }}>
-                                {fila.totalHoras > 0 ? formatCOP(fila.totalHoras) : '—'}
-                              </td>
-                              <td className="px-5 py-4 text-right font-semibold" style={{ color: fila.totalProduccion > 0 ? '#7c3aed' : 'var(--border-fiber)' }}>
-                                {fila.totalProduccion > 0 ? formatCOP(fila.totalProduccion) : '—'}
-                              </td>
-                              <td className="px-5 py-4 text-right">
-                                <span
-                                  className="font-bold text-base"
-                                  style={{ fontFamily: 'var(--font-heading)', color: 'var(--carbon)' }}
+                    <div className="flex flex-col gap-3">
+                      {/* Contador de seleccionados */}
+                      <div className="flex items-center justify-between text-xs text-slate-500 px-1">
+                        <span>
+                          <span className="font-bold" style={{ color: 'var(--carbon)' }}>{filasSel.length}</span> de {filas.length} empleados incluidos en el total
+                        </span>
+                        <button
+                          onClick={toggleTodos}
+                          className="font-semibold underline underline-offset-2 hover:opacity-70 transition-opacity"
+                          style={{ color: 'var(--accent-copper)' }}
+                        >
+                          {todosSeleccionados ? 'Deseleccionar todos' : 'Seleccionar todos'}
+                        </button>
+                      </div>
+
+                      <div className="overflow-x-auto rounded-xl" style={{ border: '1px solid var(--border-fiber)' }}>
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr style={{ background: 'var(--surface-linen)', borderBottom: '1px solid var(--border-fiber)' }}>
+                              <th className="px-4 py-3 w-10">
+                                <input
+                                  type="checkbox"
+                                  checked={todosSeleccionados}
+                                  onChange={toggleTodos}
+                                  className="w-4 h-4 rounded accent-[var(--accent-copper)] cursor-pointer"
+                                />
+                              </th>
+                              <th className="text-left px-4 py-3 text-xs font-bold uppercase tracking-wider text-slate-500" style={{ fontFamily: 'var(--font-heading)' }}>Empleado</th>
+                              <th className="text-left px-4 py-3 text-xs font-bold uppercase tracking-wider text-slate-500" style={{ fontFamily: 'var(--font-heading)' }}>Cargo</th>
+                              <th className="text-right px-4 py-3 text-xs font-bold uppercase tracking-wider text-blue-500" style={{ fontFamily: 'var(--font-heading)' }}>Horas</th>
+                              <th className="text-right px-4 py-3 text-xs font-bold uppercase tracking-wider" style={{ fontFamily: 'var(--font-heading)', color: 'var(--accent-copper)' }}>$/Horas</th>
+                              <th className="text-right px-4 py-3 text-xs font-bold uppercase tracking-wider text-violet-600" style={{ fontFamily: 'var(--font-heading)' }}>$/Producción</th>
+                              <th className="text-right px-4 py-3 text-xs font-bold uppercase tracking-wider" style={{ fontFamily: 'var(--font-heading)', color: 'var(--carbon)' }}>Total</th>
+                            </tr>
+                          </thead>
+                          <tbody style={{ background: 'var(--surface-silk)' }}>
+                            {filas.map((fila, idx) => {
+                              const seleccionado = empleadosSeleccionadosNomina.has(fila.emp.id);
+                              return (
+                                <tr
+                                  key={fila.emp.id}
+                                  onClick={() => toggleEmpleado(fila.emp.id)}
+                                  style={{
+                                    borderBottom: idx < filas.length - 1 ? '1px solid var(--border-fiber-light)' : 'none',
+                                    opacity: seleccionado ? 1 : 0.4,
+                                    cursor: 'pointer',
+                                  }}
+                                  className="hover:bg-[var(--surface-linen)] transition-all"
                                 >
-                                  {formatCOP(fila.total)}
+                                  <td className="px-4 py-4 w-10" onClick={e => e.stopPropagation()}>
+                                    <input
+                                      type="checkbox"
+                                      checked={seleccionado}
+                                      onChange={() => toggleEmpleado(fila.emp.id)}
+                                      className="w-4 h-4 rounded accent-[var(--accent-copper)] cursor-pointer"
+                                    />
+                                  </td>
+                                  <td className="px-4 py-4">
+                                    <div className="flex items-center gap-3">
+                                      <div
+                                        className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold shrink-0"
+                                        style={{
+                                          background: fila.emp.estado === 'Activo' ? 'linear-gradient(135deg, #16a34a, #15803d)' : 'var(--surface-linen)',
+                                          color: fila.emp.estado === 'Activo' ? '#fff' : 'var(--carbon)',
+                                        }}
+                                      >
+                                        {fila.emp.nombre.charAt(0).toUpperCase()}
+                                      </div>
+                                      <span className="font-semibold" style={{ color: 'var(--carbon)' }}>{fila.emp.nombre}</span>
+                                    </div>
+                                  </td>
+                                  <td className="px-4 py-4 text-slate-500 text-xs">{fila.emp.cargo?.nombre || '—'}</td>
+                                  <td className="px-4 py-4 text-right font-semibold text-blue-600">
+                                    {fila.horasTrabajadas > 0 ? `${fila.horasTrabajadas}h` : '—'}
+                                  </td>
+                                  <td className="px-4 py-4 text-right font-semibold" style={{ color: fila.totalHoras > 0 ? 'var(--accent-copper)' : 'var(--border-fiber)' }}>
+                                    {fila.totalHoras > 0 ? formatCOP(fila.totalHoras) : '—'}
+                                  </td>
+                                  <td className="px-4 py-4 text-right font-semibold" style={{ color: fila.totalProduccion > 0 ? '#7c3aed' : 'var(--border-fiber)' }}>
+                                    {fila.totalProduccion > 0 ? formatCOP(fila.totalProduccion) : '—'}
+                                  </td>
+                                  <td className="px-4 py-4 text-right">
+                                    <span
+                                      className="font-bold text-base"
+                                      style={{ fontFamily: 'var(--font-heading)', color: 'var(--carbon)' }}
+                                    >
+                                      {formatCOP(fila.total)}
+                                    </span>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                          {/* Fila de totales — solo seleccionados */}
+                          <tfoot>
+                            <tr style={{ background: 'var(--surface-linen)', borderTop: '2px solid var(--border-fiber)' }}>
+                              <td />
+                              <td colSpan={2} className="px-4 py-4">
+                                <span className="text-xs font-bold uppercase tracking-wider text-slate-500" style={{ fontFamily: 'var(--font-heading)' }}>
+                                  Total Nómina
+                                </span>
+                              </td>
+                              <td className="px-4 py-4 text-right font-bold text-blue-600">
+                                {totalHorasTrabajadasGeneral > 0 ? `${totalHorasTrabajadasGeneral}h` : '—'}
+                              </td>
+                              <td className="px-4 py-4 text-right font-bold" style={{ color: totalHorasGeneral > 0 ? 'var(--accent-copper)' : 'var(--border-fiber)' }}>
+                                {totalHorasGeneral > 0 ? formatCOP(totalHorasGeneral) : '—'}
+                              </td>
+                              <td className="px-4 py-4 text-right font-bold" style={{ color: totalProdGeneral > 0 ? '#7c3aed' : 'var(--border-fiber)' }}>
+                                {totalProdGeneral > 0 ? formatCOP(totalProdGeneral) : '—'}
+                              </td>
+                              <td className="px-4 py-4 text-right">
+                                <span
+                                  className="font-black text-lg px-3 py-1 rounded-xl"
+                                  style={{
+                                    fontFamily: 'var(--font-heading)',
+                                    color: '#1a1a2e',
+                                    background: 'var(--accent-copper)',
+                                    opacity: filasSel.length === 0 ? 0.4 : 1,
+                                  }}
+                                >
+                                  {formatCOP(totalGeneral)}
                                 </span>
                               </td>
                             </tr>
-                          ))}
-                        </tbody>
-                        {/* Fila de totales */}
-                        <tfoot>
-                          <tr style={{ background: 'var(--surface-linen)', borderTop: '2px solid var(--border-fiber)' }}>
-                            <td colSpan={2} className="px-5 py-4">
-                              <span className="text-xs font-bold uppercase tracking-wider text-slate-500" style={{ fontFamily: 'var(--font-heading)' }}>
-                                Total Nómina
-                              </span>
-                            </td>
-                            <td className="px-5 py-4 text-right font-bold" style={{ color: totalHorasGeneral > 0 ? 'var(--accent-copper)' : 'var(--border-fiber)' }}>
-                              {totalHorasGeneral > 0 ? formatCOP(totalHorasGeneral) : '—'}
-                            </td>
-                            <td className="px-5 py-4 text-right font-bold" style={{ color: totalProdGeneral > 0 ? '#7c3aed' : 'var(--border-fiber)' }}>
-                              {totalProdGeneral > 0 ? formatCOP(totalProdGeneral) : '—'}
-                            </td>
-                            <td className="px-5 py-4 text-right">
-                              <span
-                                className="font-black text-lg px-3 py-1 rounded-xl"
-                                style={{
-                                  fontFamily: 'var(--font-heading)',
-                                  color: '#1a1a2e',
-                                  background: 'var(--accent-copper)',
-                                }}
-                              >
-                                {formatCOP(totalGeneral)}
-                              </span>
-                            </td>
-                          </tr>
-                        </tfoot>
-                      </table>
+                          </tfoot>
+                        </table>
+                      </div>
                     </div>
                   );
                 })()
