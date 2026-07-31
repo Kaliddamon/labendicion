@@ -23,7 +23,7 @@ public class SecurityConfig {
     @Autowired
     private GoogleTokenFilter googleTokenFilter;
 
-    @Value("${app.cors.allowed-origins:http://localhost:5173,http://127.0.0.1:5173,https://labendicion.vercel.app}")
+    @Value("${CORS_ALLOWED_ORIGINS:http://localhost:5173,http://127.0.0.1:5173,https://labendicion.vercel.app,https://labendicion-beta.vercel.app}")
     private String allowedOrigins;
 
     @Bean
