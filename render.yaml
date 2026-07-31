@@ -18,6 +18,8 @@ services:
         value: 'https://labendicion.vercel.app'
       - key: SWAGGER_ENABLED
         value: 'false'
+      - key: CRON_ENABLED
+        value: 'false'
       # IMPORTANTE: Agrega estas variables en Render Dashboard
       # DATABASE_URL: postgresql://postgres:PASSWORD@db.xxxxxxxxxxxxx.supabase.co:5432/postgres
       # PGUSER: postgres

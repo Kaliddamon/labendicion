@@ -8,6 +8,7 @@ import dev.kali.labendicion.repository.RegistroRepository;
 import dev.kali.labendicion.repository.UsuarioRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -18,6 +19,7 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @Service
+@ConditionalOnProperty(name = "cron.enabled", havingValue = "true")
 public class AlertaEmailService {
 
     @Autowired

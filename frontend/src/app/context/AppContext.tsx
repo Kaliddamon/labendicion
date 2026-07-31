@@ -194,9 +194,56 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-/** En dev, Vite reenvía /api → backend (vite.config). En prod, define VITE_API_BASE_URL al desplegar el API. */
-const fromEnv = import.meta.env.VITE_API_BASE_URL as string | undefined;
-const API_BASE = fromEnv && fromEnv.trim() !== '' ? `${fromEnv.trim()}/api/frontend` : '/api/frontend';
+/** En dev, Vite reenvía /api → backend (vite.config). En prod, usamos Azure en horario laboral y Render el resto. */
+const getApiBaseUrl = (): string => {
+  const ahora = new Date();
+  
+  const options = { timeZone: 'America/Bogota', hour12: false };
+  const formatter = new Intl.DateTimeFormat('en-US', {
+    ...options,
+    weekday: 'short',
+    hour: 'numeric',
+    minute: 'numeric',
+  });
+  
+  const parts = formatter.formatToParts(ahora);
+  const getPart = (type: string) => parts.find((p) => p.type === type)?.value;
+  
+  const day = getPart('weekday');
+  const hour = parseInt(getPart('hour') || '0', 10);
+  const minute = parseInt(getPart('minute') || '0', 10);
+  const time = hour + minute / 60;
+  
+  const isWeekday = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'].includes(day || '');
+  const isSaturday = day === 'Sat';
+  
+  let useAzure = false;
+  
+  // Lunes a Viernes de 6:30 a.m. a 5:30 p.m.
+  if (isWeekday && time >= 6.5 && time < 17.5) {
+    useAzure = true;
+  } 
+  // Sábados de 7:00 a.m. a 4:00 p.m.
+  else if (isSaturday && time >= 7 && time < 16) {
+    useAzure = true;
+  }
+  
+  const azureUrl = import.meta.env.VITE_API_URL_AZURE as string | undefined;
+  const renderUrl = import.meta.env.VITE_API_URL_RENDER as string | undefined;
+  const fallbackUrl = import.meta.env.VITE_API_BASE_URL as string | undefined;
+
+  let baseUrl = '/api/frontend'; // Default (local proxy)
+  
+  if (useAzure && azureUrl && azureUrl.trim() !== '') {
+    baseUrl = `${azureUrl.trim()}/api/frontend`;
+  } else if (!useAzure && renderUrl && renderUrl.trim() !== '') {
+    baseUrl = `${renderUrl.trim()}/api/frontend`;
+  } else if (fallbackUrl && fallbackUrl.trim() !== '') {
+    baseUrl = `${fallbackUrl.trim()}/api/frontend`;
+  }
+  
+  return baseUrl;
+};
 
 const request = async <T,>(path: string, options?: RequestInit): Promise<T> => {
   const headers: Record<string, string> = {
@@ -208,7 +255,7 @@ const request = async <T,>(path: string, options?: RequestInit): Promise<T> => {
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const res = await fetch(`${API_BASE}${path}`, {
+  const res = await fetch(`${getApiBaseUrl()}${path}`, {
     ...options,
     headers: { ...headers, ...options?.headers },
   });
