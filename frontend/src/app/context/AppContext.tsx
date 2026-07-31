@@ -195,7 +195,7 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 /** En dev, Vite reenvía /api → backend (vite.config). En prod, usamos Azure en horario laboral y Render el resto. */
-const getApiBaseUrl = (): string => {
+export const getApiBaseUrl = (): string => {
   const ahora = new Date();
   
   const options = { timeZone: 'America/Bogota', hour12: false };
@@ -232,14 +232,19 @@ const getApiBaseUrl = (): string => {
   const renderUrl = import.meta.env.VITE_API_URL_RENDER as string | undefined;
   const fallbackUrl = import.meta.env.VITE_API_BASE_URL as string | undefined;
 
-  let baseUrl = '/api/frontend'; // Default (local proxy)
+  let baseUrl = ''; // Default (local proxy, Vite usará '/')
   
   if (useAzure && azureUrl && azureUrl.trim() !== '') {
-    baseUrl = `${azureUrl.trim()}/api/frontend`;
+    baseUrl = azureUrl.trim();
   } else if (!useAzure && renderUrl && renderUrl.trim() !== '') {
-    baseUrl = `${renderUrl.trim()}/api/frontend`;
+    baseUrl = renderUrl.trim();
   } else if (fallbackUrl && fallbackUrl.trim() !== '') {
-    baseUrl = `${fallbackUrl.trim()}/api/frontend`;
+    baseUrl = fallbackUrl.trim();
+  }
+  
+  // Eliminar slash final si lo tiene
+  if (baseUrl.endsWith('/')) {
+    baseUrl = baseUrl.slice(0, -1);
   }
   
   return baseUrl;
@@ -255,7 +260,7 @@ const request = async <T,>(path: string, options?: RequestInit): Promise<T> => {
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const res = await fetch(`${getApiBaseUrl()}${path}`, {
+  const res = await fetch(`${getApiBaseUrl()}/api/frontend${path}`, {
     ...options,
     headers: { ...headers, ...options?.headers },
   });

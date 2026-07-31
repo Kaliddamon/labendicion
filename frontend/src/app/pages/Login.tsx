@@ -3,8 +3,7 @@ import { useNavigate } from 'react-router';
 // @ts-ignore
 import { GoogleLogin, CredentialResponse } from '@react-oauth/google';
 import { useAuth } from '../context/AuthContext';
-
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+import { getApiBaseUrl } from '../context/AppContext';
 
 export const Login = () => {
   const navigate = useNavigate();
@@ -14,7 +13,7 @@ export const Login = () => {
   const handleSuccess = async (credentialResponse: CredentialResponse) => {
     try {
       setError('');
-      const response = await fetch(`${API_BASE}/api/auth/verify-google`, {
+      const response = await fetch(`${getApiBaseUrl()}/api/auth/verify-google`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token: credentialResponse.credential }),
