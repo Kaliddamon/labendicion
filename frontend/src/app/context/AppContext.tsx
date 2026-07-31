@@ -247,6 +247,11 @@ export const getApiBaseUrl = (): string => {
     baseUrl = baseUrl.slice(0, -1);
   }
   
+  // Asegurar que tenga protocolo http/https
+  if (baseUrl !== '' && !baseUrl.startsWith('http')) {
+    baseUrl = 'https://' + baseUrl;
+  }
+  
   return baseUrl;
 };
 
