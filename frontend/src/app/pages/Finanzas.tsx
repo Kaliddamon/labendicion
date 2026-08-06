@@ -73,6 +73,7 @@ export const Finanzas = () => {
   const [fDescripcion, setFDescripcion] = useState('');
   const [fMontoStr, setFMontoStr] = useState('');
   const [fTipo, setFTipo] = useState<'GASTO' | 'INGRESO'>('GASTO');
+  const [fOrigen, setFOrigen] = useState<'MANUAL' | 'NOMINA'>('MANUAL');
   const [fArchivo, setFArchivo] = useState<File | null>(null);
   const [subiendo, setSubiendo] = useState(false);
   const [evidenciaPreview, setEvidenciaPreview] = useState<MovimientoFinanciero | null>(null);
@@ -92,6 +93,7 @@ export const Finanzas = () => {
 
   const resetForm = () => {
     setFNombre(''); setFDescripcion(''); setFMontoStr(''); setFTipo('GASTO');
+    setFOrigen('MANUAL');
     setFArchivo(null); setSubiendo(false);
     setMostrarForm(false); setEditandoId(null);
   };
@@ -102,6 +104,7 @@ export const Finanzas = () => {
     setFDescripcion(mv.descripcion || '');
     setFMontoStr(formatMiles(mv.monto.toString().replace('.', ',')));
     setFTipo(mv.tipo);
+    setFOrigen(mv.origen as 'MANUAL' | 'NOMINA');
     setMostrarForm(true);
   };
 
@@ -278,6 +281,34 @@ export const Finanzas = () => {
 
     try {
       setSubiendo(true);
+
+      if (fOrigen === 'NOMINA') {
+        if (fArchivo && editandoId) {
+          const url = await uploadEvidencia(fArchivo);
+          const oldRecord = movimientosFinancieros.find(m => m.origen === 'NOMINA_EVIDENCIA' && m.descripcion === editandoId);
+          if (oldRecord && oldRecord.evidenciaUrl) {
+            await deleteEvidencia(oldRecord.evidenciaUrl);
+            eliminarMovimiento(oldRecord.id);
+          }
+          await agregarMovimiento({
+            mes: mesSel,
+            nombre: 'Evidencia Nómina: ' + editandoId,
+            descripcion: editandoId,
+            monto: 0,
+            tipo: 'GASTO',
+            origen: 'NOMINA_EVIDENCIA' as any,
+            fecha: getColombiaDateString(),
+            evidenciaUrl: url,
+          });
+          toast.success('Evidencia adjuntada a la nómina exitosamente.');
+        } else {
+          toast.info('No se adjuntó ninguna evidencia nueva.');
+        }
+        resetForm();
+        return;
+      }
+
+      // Lógica para MANUAL
       let evidenciaUrl = editandoId ? movimientosFinancieros.find(m => m.id === editandoId)?.evidenciaUrl : undefined;
       const oldEvidenciaUrl = evidenciaUrl;
       
@@ -636,49 +667,27 @@ export const Finanzas = () => {
                       </td>
                       <td className="px-5 py-3.5">
                         {mv.evidenciaUrl ? (
-                          <div className="flex items-center gap-1.5">
-                            <button
-                              onClick={() => { setZoom(1); setEvidenciaPreview(mv); }}
-                              className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-700 transition-colors"
-                              title="Ver evidencia adjunta"
-                            >
-                              <Paperclip size={14} />
-                            </button>
-                            {mv.origen === 'NOMINA' && (
-                              <button
-                                onClick={() => handleEliminarEvidenciaNomina(mv.id)}
-                                className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-slate-400 hover:bg-rose-50 hover:text-rose-500 transition-colors"
-                                title="Eliminar evidencia"
-                              >
-                                <Trash2 size={14} />
-                              </button>
-                            )}
-                          </div>
+                          <button
+                            onClick={() => { setZoom(1); setEvidenciaPreview(mv); }}
+                            className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-700 transition-colors"
+                            title="Ver evidencia adjunta"
+                          >
+                            <Paperclip size={14} />
+                          </button>
                         ) : (
-                          mv.origen === 'NOMINA' ? (
-                            <button
-                              disabled={uploadingNominaId === mv.id}
-                              onClick={() => { setTargetNominaId(mv.id); nominaFileInputRef.current?.click(); }}
-                              className="inline-flex items-center justify-center h-8 px-3 rounded-lg bg-slate-100 text-slate-500 hover:bg-slate-200 transition-colors text-[11px] font-semibold"
-                            >
-                              {uploadingNominaId === mv.id ? <Loader2 size={12} className="animate-spin mr-1.5" /> : <Plus size={12} className="mr-1" />}
-                              Adjuntar
-                            </button>
-                          ) : (
-                            <span className="text-slate-300 pl-3">—</span>
-                          )
+                          <span className="text-slate-300 pl-3">—</span>
                         )}
                       </td>
                       <td className="px-5 py-3.5">
-                        {mv.origen !== 'NOMINA' && (
-                          <div className="flex items-center gap-1.5">
-                            <button
-                              onClick={() => abrirEdicion(mv)}
-                              className="p-1.5 rounded-lg text-slate-400 hover:bg-blue-50 hover:text-blue-600 transition-colors"
-                              title="Editar"
-                            >
-                              <Edit2 size={14} />
-                            </button>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            onClick={() => abrirEdicion(mv)}
+                            className="p-1.5 rounded-lg text-slate-400 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                            title={mv.origen === 'NOMINA' ? "Adjuntar evidencia" : "Editar"}
+                          >
+                            {mv.origen === 'NOMINA' ? <Paperclip size={14} /> : <Edit2 size={14} />}
+                          </button>
+                          {mv.origen !== 'NOMINA' && (
                             <button
                               onClick={async () => {
                                 if (await confirm({ title: '¿Eliminar movimiento?', description: '¿Seguro que deseas eliminar este movimiento?', confirmText: 'Eliminar' })) {
@@ -691,8 +700,8 @@ export const Finanzas = () => {
                             >
                               <Trash2 size={14} />
                             </button>
-                          </div>
-                        )}
+                          )}
+                        </div>
                         {mv.origen === 'NOMINA' && (
                           <div className="flex items-center gap-1.5">
                             <button
@@ -748,65 +757,78 @@ export const Finanzas = () => {
             </div>
 
             <div className="space-y-4">
-              {/* Tipo selector */}
-              <div className="flex rounded-xl overflow-hidden border" style={{ borderColor: 'var(--border-fiber)' }}>
-                {(['GASTO', 'INGRESO'] as const).map(t => (
-                  <button
-                    key={t}
-                    type="button"
-                    onClick={() => setFTipo(t)}
-                    className={`flex-1 py-2.5 text-sm font-bold transition-all ${fTipo === t ? 'text-white' : 'text-slate-500 hover:text-slate-700'}`}
-                    style={fTipo === t
-                      ? { background: t === 'GASTO' ? '#dc2626' : '#16a34a' }
-                      : { background: 'white' }
-                    }
-                  >
-                    {t === 'GASTO' ? '📤 Gasto' : '📥 Ingreso'}
-                  </button>
-                ))}
-              </div>
-
               <div>
-                <label className="block text-xs font-semibold text-slate-500 mb-1.5">Nombre *</label>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Nombre</label>
                 <input
-                  className="w-full rounded-xl px-4 py-3 text-sm"
-                  style={{ background: 'var(--surface-linen)', border: '1px solid var(--border-fiber)' }}
-                  placeholder="Ej. Pago proveedor, Venta..."
+                  type="text"
                   value={fNombre}
                   onChange={e => setFNombre(e.target.value)}
-                  required
+                  className="w-full px-4 py-3 rounded-xl outline-none focus:ring-2 focus:ring-slate-200 transition-all text-sm"
+                  style={{ background: 'var(--surface-linen)', color: 'var(--carbon)' }}
+                  placeholder="Ej: Pago de arriendo"
+                  disabled={fOrigen === 'NOMINA'}
+                  autoFocus={fOrigen !== 'NOMINA'}
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-500 mb-1.5">Descripción <span className="font-normal text-slate-400">(opcional)</span></label>
-                <input
-                  className="w-full rounded-xl px-4 py-3 text-sm"
-                  style={{ background: 'var(--surface-linen)', border: '1px solid var(--border-fiber)' }}
-                  placeholder="Detalles adicionales..."
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Descripción (Opcional)</label>
+                <textarea
                   value={fDescripcion}
                   onChange={e => setFDescripcion(e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl outline-none focus:ring-2 focus:ring-slate-200 transition-all text-sm resize-none"
+                  style={{ background: 'var(--surface-linen)', color: 'var(--carbon)' }}
+                  placeholder="Detalles adicionales..."
+                  rows={2}
+                  disabled={fOrigen === 'NOMINA'}
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-500 mb-1.5">Monto ($) *</label>
-                <div className="relative">
-                  <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    className="w-full rounded-xl pl-8 pr-3 py-3 text-sm font-semibold"
-                    style={{ background: 'var(--surface-linen)', border: '1px solid var(--border-fiber)' }}
-                    placeholder="0"
-                    value={fMontoStr}
-                    onChange={e => setFMontoStr(formatMiles(e.target.value))}
-                    required
-                  />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Monto</label>
+                  <div className="relative">
+                    <span className="absolute left-4 top-3 font-bold text-slate-400">$</span>
+                    <input
+                      type="text"
+                      value={fMontoStr}
+                      onChange={e => {
+                        const raw = e.target.value.replace(/\D/g, '');
+                        if (!raw) setFMontoStr('');
+                        else setFMontoStr(formatMiles(raw));
+                      }}
+                      className="w-full pl-9 pr-4 py-3 rounded-xl outline-none focus:ring-2 focus:ring-slate-200 transition-all font-semibold"
+                      style={{ background: 'var(--surface-linen)', color: 'var(--carbon)', fontFamily: 'var(--font-heading)' }}
+                      placeholder="0"
+                      disabled={fOrigen === 'NOMINA'}
+                    />
+                  </div>
                 </div>
-                <p className="text-[10px] text-slate-400 mt-1.5">
-                  El porcentaje se calcula automáticamente como proporción del total del mes.
-                </p>
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Tipo</label>
+                  <div className="flex rounded-xl p-1" style={{ background: 'var(--surface-linen)' }}>
+                    <button
+                      type="button"
+                      disabled={fOrigen === 'NOMINA'}
+                      onClick={() => setFTipo('GASTO')}
+                      className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
+                        fTipo === 'GASTO' ? 'bg-white text-rose-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'
+                      } ${fOrigen === 'NOMINA' ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                      GASTO
+                    </button>
+                    <button
+                      type="button"
+                      disabled={fOrigen === 'NOMINA'}
+                      onClick={() => setFTipo('INGRESO')}
+                      className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
+                        fTipo === 'INGRESO' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'
+                      } ${fOrigen === 'NOMINA' ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                      INGRESO
+                    </button>
+                  </div>
+                </div>
               </div>
 
               <div>
@@ -824,26 +846,38 @@ export const Finanzas = () => {
                       hover:file:bg-slate-200 transition-colors cursor-pointer"
                   />
                 </div>
-                {editandoId && movimientosFinancieros.find(m => m.id === editandoId)?.evidenciaUrl && (
+                {editandoId && (
+                  fOrigen === 'NOMINA' 
+                    ? movimientosFinancieros.some(m => m.origen === 'NOMINA_EVIDENCIA' && m.descripcion === editandoId && m.evidenciaUrl)
+                    : movimientosFinancieros.find(m => m.id === editandoId)?.evidenciaUrl
+                ) && (
                   <p className="text-[10px] text-emerald-600 mt-1.5 flex items-center gap-1">
                     <CheckCircle size={12} /> Ya tiene una evidencia adjunta.
                   </p>
                 )}
               </div>
-            </div>
 
-            <div className="flex gap-3 mt-6">
-              <button type="button" onClick={resetForm} className="flex-1 py-3 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-100 transition-colors">
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                disabled={subiendo}
-                className="flex-1 py-3 rounded-xl text-sm font-bold text-[#1a1a2e] active:scale-[0.97] transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:pointer-events-none"
-                style={{ background: 'var(--accent-copper)', boxShadow: 'var(--shadow-copper)' }}
-              >
-                {subiendo ? <><Loader2 size={15} className="animate-spin" /> Subiendo...</> : (editandoId ? <><Save size={15} /> Actualizar</> : 'Guardar')}
-              </button>
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={resetForm}
+                  className="flex-1 py-3.5 rounded-xl text-sm font-bold transition-all text-slate-500 hover:text-slate-700 hover:bg-slate-100"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={subiendo || (fOrigen === 'NOMINA' && !fArchivo)}
+                  className="flex-1 py-3.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+                  style={{ background: 'var(--carbon)', color: 'white', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                >
+                  {subiendo ? (
+                    <Loader2 size={18} className="animate-spin" />
+                  ) : (
+                    fOrigen === 'NOMINA' ? 'Subir Comprobante' : (editandoId ? 'Actualizar' : 'Añadir')
+                  )}
+                </button>
+              </div>
             </div>
           </form>
         </div>
