@@ -22,6 +22,7 @@ export const Empleados = () => {
     productos,
     cargos,
     tiposDocumento,
+    cargando,
   } = useAppContext();
   const { tieneRol } = useAuth();
   const { confirm } = useConfirm();
@@ -951,7 +952,14 @@ export const Empleados = () => {
 
         {/* Employee list */}
         <div className="grid gap-4">
-        {empleadosFiltrados.length === 0 ? (
+        {cargando ? (
+          <div className="text-center py-16 rounded-2xl border-2 border-dashed flex flex-col items-center justify-center gap-4 text-slate-400" style={{ background: 'var(--surface-silk)', borderColor: 'var(--border-fiber)' }}>
+            <div className="w-10 h-10 rounded-full border-4 border-slate-200 animate-spin" style={{ borderTopColor: 'var(--accent-copper)' }}></div>
+            <p className="text-base font-medium" style={{ color: 'var(--carbon)' }}>
+              Cargando información...
+            </p>
+          </div>
+        ) : empleadosFiltrados.length === 0 ? (
           <div className="text-center py-12 rounded-2xl border-2 border-dashed text-slate-400" style={{ background: 'var(--surface-silk)', borderColor: 'var(--border-fiber)' }}>
             <p className="text-base font-medium" style={{ color: 'var(--carbon)' }}>
               {empleados.length === 0 ? 'No hay empleados registrados aún.' : 'No se encontraron empleados.'}

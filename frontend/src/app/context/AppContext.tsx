@@ -190,6 +190,8 @@ interface AppContextType {
   nominasPagadas: Set<string>;
   marcarNominaComoPagada: (nominaId: string) => void;
   desmarcarNominaComoPagada: (nominaId: string) => void;
+  
+  cargando: boolean;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -305,6 +307,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [areasTrabajo, setAreasTrabajo] = useState<CatalogoItem[]>([]);
   const [accionesAseo, setAccionesAseo] = useState<CatalogoItem[]>([]);
 
+  const [cargando, setCargando] = useState(true);
+
   const [nominasPagadas, setNominasPagadas] = useState<Set<string>>(() => {
     try {
       const saved = localStorage.getItem('nominasPagadas');
@@ -321,8 +325,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     // No llamar al backend si el usuario no está autenticado
     const token = localStorage.getItem('authToken');
-    if (!token) return;
+    if (!token) {
+      setCargando(false);
+      return;
+    }
 
+    setCargando(true);
     let mounted = true;
     request<BootstrapResponse>('/bootstrap')
       .then((data) => {
@@ -340,9 +348,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         setTiposDocumento(filtrarCatalogo(data.tiposDocumento));
         setAreasTrabajo(filtrarCatalogo(data.areasTrabajo));
         setAccionesAseo(filtrarCatalogo(data.accionesAseo));
+        setCargando(false);
       })
       .catch((err) => {
         console.warn('No se pudo cargar bootstrap del backend:', err);
+        if (mounted) setCargando(false);
       });
     return () => {
       mounted = false;
@@ -935,7 +945,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       agregarCargo, editarCargo, eliminarCargo,
       agregarArea, editarArea, eliminarArea,
       agregarAccionAseo, editarAccionAseo, eliminarAccionAseo,
-      cambiarEstadoProducto
+      cambiarEstadoProducto, cargando
     }}>
       {children}
     </AppContext.Provider>
