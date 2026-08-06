@@ -81,6 +81,11 @@ export const Finanzas = () => {
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [startPos, setStartPos] = useState({ x: 0, y: 0 });
 
+  // Upload nómina evidencia state
+  const nominaFileInputRef = React.useRef<HTMLInputElement>(null);
+  const [uploadingNominaId, setUploadingNominaId] = useState<string | null>(null);
+  const [targetNominaId, setTargetNominaId] = useState<string | null>(null);
+
   useEffect(() => {
     if (zoom <= 1) setPosition({ x: 0, y: 0 });
   }, [zoom]);
@@ -165,6 +170,7 @@ export const Finanzas = () => {
         }
 
         const idNomina = `nomina-${emp.id}-${mesSel}-${q}`;
+        const evidenciaRecord = movimientosFinancieros.find(m => m.origen === 'NOMINA_EVIDENCIA' && m.descripcion === idNomina);
 
         rows.push({
           id: idNomina,
@@ -178,6 +184,7 @@ export const Finanzas = () => {
           fecha: qInfo.fin,
           quincena: q,
           estadoPago: nominasPagadas.has(idNomina) ? 'PAGADO' : 'PENDIENTE',
+          evidenciaUrl: evidenciaRecord?.evidenciaUrl,
         });
       }
     }
@@ -243,9 +250,9 @@ export const Finanzas = () => {
     return Array.from(set).sort((a, b) => b.localeCompare(a));
   }, [movimientosFinancieros, mesSel]);
 
-  // Movimientos manuales del mes
+  // Movimientos manuales del mes (excluyendo EVIDENCIAS DE NOMINA)
   const manualesMes = useMemo(
-    () => movimientosFinancieros.filter(m => m.mes === mesSel),
+    () => movimientosFinancieros.filter(m => m.mes === mesSel && m.origen !== 'NOMINA_EVIDENCIA'),
     [movimientosFinancieros, mesSel]
   );
 
@@ -309,9 +316,51 @@ export const Finanzas = () => {
         toast.success('Movimiento añadido.');
       }
       resetForm();
-    } catch (err: any) {
-      toast.error(err.message || 'Error al guardar el movimiento.');
+    } catch (error) {
+      toast.error('Ocurrió un error al guardar.');
+    } finally {
       setSubiendo(false);
+    }
+  };
+
+  const handleNominaEvidenciaChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !targetNominaId) return;
+    
+    try {
+      setUploadingNominaId(targetNominaId);
+      const url = await uploadEvidencia(file);
+      await agregarMovimiento({
+        mes: mesSel,
+        nombre: 'Evidencia Nómina: ' + targetNominaId,
+        descripcion: targetNominaId, // Guardamos el ID de la nómina aquí para vincularlos
+        monto: 0,
+        tipo: 'GASTO', 
+        origen: 'NOMINA_EVIDENCIA' as any,
+        fecha: getColombiaDateString(),
+        evidenciaUrl: url,
+      });
+      toast.success('Evidencia adjuntada a la nómina exitosamente.');
+    } catch (error) {
+      toast.error('Error al subir la evidencia. Inténtalo de nuevo.');
+    } finally {
+      setUploadingNominaId(null);
+      setTargetNominaId(null);
+      if (nominaFileInputRef.current) nominaFileInputRef.current.value = '';
+    }
+  };
+
+  const handleEliminarEvidenciaNomina = async (nominaId: string) => {
+    const record = movimientosFinancieros.find(m => m.origen === 'NOMINA_EVIDENCIA' && m.descripcion === nominaId);
+    if (!record || !record.evidenciaUrl) return;
+    if (await confirm({ title: 'Eliminar evidencia', description: '¿Seguro que deseas eliminar el comprobante de esta nómina?', confirmText: 'Eliminar' })) {
+      try {
+        await deleteEvidencia(record.evidenciaUrl);
+        eliminarMovimiento(record.id);
+        toast.success('Evidencia eliminada');
+      } catch {
+        toast.error('Error al eliminar evidencia');
+      }
     }
   };
 
@@ -587,15 +636,37 @@ export const Finanzas = () => {
                       </td>
                       <td className="px-5 py-3.5">
                         {mv.evidenciaUrl ? (
-                          <button
-                            onClick={() => { setZoom(1); setEvidenciaPreview(mv); }}
-                            className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-700 transition-colors"
-                            title="Ver evidencia adjunta"
-                          >
-                            <Paperclip size={14} />
-                          </button>
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              onClick={() => { setZoom(1); setEvidenciaPreview(mv); }}
+                              className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-700 transition-colors"
+                              title="Ver evidencia adjunta"
+                            >
+                              <Paperclip size={14} />
+                            </button>
+                            {mv.origen === 'NOMINA' && (
+                              <button
+                                onClick={() => handleEliminarEvidenciaNomina(mv.id)}
+                                className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-slate-400 hover:bg-rose-50 hover:text-rose-500 transition-colors"
+                                title="Eliminar evidencia"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            )}
+                          </div>
                         ) : (
-                          <span className="text-slate-300 pl-3">—</span>
+                          mv.origen === 'NOMINA' ? (
+                            <button
+                              disabled={uploadingNominaId === mv.id}
+                              onClick={() => { setTargetNominaId(mv.id); nominaFileInputRef.current?.click(); }}
+                              className="inline-flex items-center justify-center h-8 px-3 rounded-lg bg-slate-100 text-slate-500 hover:bg-slate-200 transition-colors text-[11px] font-semibold"
+                            >
+                              {uploadingNominaId === mv.id ? <Loader2 size={12} className="animate-spin mr-1.5" /> : <Plus size={12} className="mr-1" />}
+                              Adjuntar
+                            </button>
+                          ) : (
+                            <span className="text-slate-300 pl-3">—</span>
+                          )
                         )}
                       </td>
                       <td className="px-5 py-3.5">
@@ -645,6 +716,14 @@ export const Finanzas = () => {
           )}
         </div>
       </div>
+
+      <input 
+        type="file" 
+        ref={nominaFileInputRef} 
+        onChange={handleNominaEvidenciaChange}
+        accept="image/*,.pdf" 
+        className="hidden" 
+      />
 
       {/* Modal — fuera del div animado para que fixed cubra toda la pantalla */}
       {mostrarForm && (

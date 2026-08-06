@@ -1033,7 +1033,8 @@ public class FrontendController {
             mv.setMonto(monto);
             mv.setPorcentaje(porcentaje);
             mv.setTipo(tipo);
-            mv.setOrigen("MANUAL");
+            String origen = body.containsKey("origen") ? body.get("origen").toString() : "MANUAL";
+            mv.setOrigen(origen);
             mv.setFecha(java.time.LocalDate.now(java.time.ZoneId.of("America/Bogota")).toString());
 
             if (body.containsKey("evidenciaUrl") && body.get("evidenciaUrl") != null
