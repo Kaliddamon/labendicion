@@ -62,7 +62,7 @@ const fechaHaceDias = (dias: number) => {
 const PIE_COLORS = ['#d4a012', '#2563eb', '#16a34a', '#d97706', '#7c3aed', '#e11d48'];
 
 export const Rendimiento = () => {
-  const { registros, empleados, productos } = useAppContext();
+  const { registros, empleados, productos, cargando } = useAppContext();
   const { user, tieneRol } = useAuth();
   const [periodo, setPeriodo] = useState<Periodo>('7d');
   const [empleadoSeleccionado, setEmpleadoSeleccionado] = useState<string>('todos');
@@ -361,6 +361,14 @@ export const Rendimiento = () => {
       </div>
 
       {/* Metric cards */}
+      {cargando ? (
+        <div className="text-center py-16 rounded-2xl border-2 border-dashed flex flex-col items-center justify-center gap-4 text-slate-400 mb-6" style={{ background: 'var(--surface-silk)', borderColor: 'var(--border-fiber)' }}>
+          <div className="w-10 h-10 rounded-full border-4 border-slate-200 animate-spin" style={{ borderTopColor: 'var(--accent-copper)' }}></div>
+          <p className="text-base font-medium" style={{ color: 'var(--carbon)' }}>Cargando datos de rendimiento...</p>
+        </div>
+      ) : null}
+      {!cargando && (
+      <>
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4 mb-6">
         {metricCards.map((card, i) => (
           <div key={card.label} className={`card-premium-static rounded-2xl p-5 animate-fade-up stagger-${i + 1}`}>
@@ -553,7 +561,9 @@ export const Rendimiento = () => {
               })}
             </div>
           </div>
-        </>
+          </>
+      )}
+      </>
       )}
     </div>
   );

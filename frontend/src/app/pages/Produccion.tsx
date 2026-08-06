@@ -11,7 +11,7 @@ import { AccessibleCardSelector } from '../components/ui/accessible/AccessibleCa
 import { Paginador } from '../components/Paginador';
 
 export const Produccion = () => {
-  const { productos, agregarProducto, editarProducto, eliminarProducto, cambiarEstadoProducto, accionesProduccion, empresas } = useAppContext();
+  const { productos, agregarProducto, editarProducto, eliminarProducto, cambiarEstadoProducto, accionesProduccion, empresas, cargando } = useAppContext();
   const { tieneRol } = useAuth();
   const [busqueda, setBusqueda] = useState('');
   const [filtroEstado, setFiltroEstado] = useState<string>('Todos');
@@ -359,7 +359,12 @@ export const Produccion = () => {
         </div>
 
         <div className="grid gap-4">
-          {productosFiltrados.length === 0 ? (
+          {cargando ? (
+            <div className="text-center py-16 rounded-2xl border-2 border-dashed flex flex-col items-center justify-center gap-4 text-slate-400" style={{ background: 'var(--surface-silk)', borderColor: 'var(--border-fiber)' }}>
+              <div className="w-10 h-10 rounded-full border-4 border-slate-200 animate-spin" style={{ borderTopColor: 'var(--accent-copper)' }}></div>
+              <p className="text-base font-medium" style={{ color: 'var(--carbon)' }}>Cargando órdenes...</p>
+            </div>
+          ) : productosFiltrados.length === 0 ? (
             <div className="text-center py-16 rounded-2xl border-2 border-dashed text-slate-400" style={{ background: 'var(--surface-silk)', borderColor: 'var(--border-fiber)' }}>
               <div className="w-16 h-16 rounded-2xl mx-auto mb-4 flex items-center justify-center" style={{ background: 'var(--surface-linen)' }}>
                 <Package size={28} className="opacity-50" />

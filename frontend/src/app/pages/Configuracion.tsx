@@ -17,6 +17,7 @@ export const Configuracion = () => {
     agregarArea, editarArea, eliminarArea,
     agregarAccionAseo, editarAccionAseo, eliminarAccionAseo,
     agregarEmpresa, editarEmpresa, eliminarEmpresa,
+    cargando,
   } = useAppContext();
   
   const { tieneRol } = useAuth();
@@ -261,7 +262,12 @@ export const Configuracion = () => {
 
       {/* List */}
       <ul className="space-y-2">
-        {tab !== 'empresas' && listaActual().length === 0 ? (
+        {cargando && tab !== 'empresas' && tab !== 'roles' ? (
+          <li className="text-center py-10 rounded-2xl border-2 border-dashed flex flex-col items-center justify-center gap-3" style={{ background: 'var(--surface-silk)', borderColor: 'var(--border-fiber)' }}>
+            <div className="w-8 h-8 rounded-full border-4 border-slate-200 animate-spin" style={{ borderTopColor: 'var(--accent-copper)' }}></div>
+            <span className="text-sm text-slate-400">Cargando catálogo...</span>
+          </li>
+        ) : tab !== 'empresas' && listaActual().length === 0 ? (
           <li className="text-center py-8 text-slate-400 rounded-2xl border-2 border-dashed text-sm" style={{ background: 'var(--surface-silk)', borderColor: 'var(--border-fiber)' }}>
             Sin ítems en este catálogo
           </li>

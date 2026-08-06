@@ -16,6 +16,7 @@ export const Aseo = () => {
     eliminarRegistroAseo,
     accionesAseo,
     areasTrabajo,
+    cargando,
   } = useAppContext();
 
   const { tieneRol } = useAuth();
@@ -189,7 +190,12 @@ export const Aseo = () => {
 
       {/* Tasks table */}
       <div className="card-premium-static rounded-2xl overflow-hidden mb-6">
-        {(!tareasMostradas || tareasMostradas.length === 0) ? (
+        {cargando ? (
+          <div className="text-center py-12 flex flex-col items-center justify-center gap-4">
+            <div className="w-10 h-10 rounded-full border-4 border-slate-200 animate-spin" style={{ borderTopColor: 'var(--accent-copper)' }}></div>
+            <p className="text-sm font-medium" style={{ color: 'var(--carbon)' }}>Cargando información...</p>
+          </div>
+        ) : (!tareasMostradas || tareasMostradas.length === 0) ? (
           <div className="text-center py-12">
             <div className="w-14 h-14 rounded-2xl mx-auto mb-3 flex items-center justify-center" style={{ background: 'var(--surface-linen)' }}>
               <Sparkles size={24} className="text-slate-400" />

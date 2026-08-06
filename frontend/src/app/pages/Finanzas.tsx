@@ -51,6 +51,7 @@ export const Finanzas = () => {
     movimientosFinancieros,
     agregarMovimiento,
     eliminarMovimiento,
+    cargando,
     registros,
     empleados,
     productos,
@@ -505,7 +506,12 @@ export const Finanzas = () => {
 
         {/* Table */}
         <div className="card-premium rounded-2xl overflow-hidden">
-          {todosLosMov.length === 0 ? (
+          {cargando ? (
+            <div className="text-center py-16 flex flex-col items-center justify-center gap-4 text-slate-400">
+              <div className="w-10 h-10 rounded-full border-4 border-slate-200 animate-spin" style={{ borderTopColor: 'var(--accent-copper)' }}></div>
+              <p className="text-sm font-medium" style={{ color: 'var(--carbon)' }}>Cargando información...</p>
+            </div>
+          ) : todosLosMov.length === 0 ? (
             <div className="text-center py-16 text-slate-400">
               <Wallet size={36} className="mx-auto mb-3 opacity-30" />
               <p className="font-medium text-sm">Sin movimientos en {labelMes(mesSel)}</p>

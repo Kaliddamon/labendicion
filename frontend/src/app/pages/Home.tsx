@@ -16,7 +16,7 @@ import { useAuth } from '../context/AuthContext';
 
 export const Home = () => {
   const navigate = useNavigate();
-  const { productos, registrosAseo, empleados, registros } = useAppContext();
+  const { productos, registrosAseo, empleados, registros, cargando } = useAppContext();
   const { user } = useAuth();
 
   // ── Datos rápidos ───────────────────────────────────────
@@ -220,6 +220,14 @@ export const Home = () => {
       })()}
 
       {/* ── Barra de Progreso Global ────────────────────── */}
+      {cargando ? (
+        <div className="text-center py-16 rounded-2xl border-2 border-dashed flex flex-col items-center justify-center gap-4 text-slate-400 mb-6" style={{ background: 'var(--surface-silk)', borderColor: 'var(--border-fiber)' }}>
+          <div className="w-10 h-10 rounded-full border-4 border-slate-200 animate-spin" style={{ borderTopColor: 'var(--accent-copper)' }}></div>
+          <p className="text-base font-medium" style={{ color: 'var(--carbon)' }}>Cargando datos del taller...</p>
+        </div>
+      ) : null}
+      {!cargando && (
+      <>
       <div
         className="rounded-2xl p-6 mb-6 animate-fade-up stagger-1"
         style={{
@@ -471,6 +479,8 @@ export const Home = () => {
           100% { transform: translateX(200%); }
         }
       `}</style>
+      </>
+      )}
     </div>
   );
 };
