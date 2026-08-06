@@ -201,14 +201,15 @@ export const Finanzas = () => {
       const emp = empleados.find(e => e.id === reg.empleadoId);
       if (!emp) continue;
       
-      const modalidad = (emp.tipoPago as TipoPago) || 'AMBOS';
+      const modalidad = (reg.tipoPago as TipoPago) || (emp.tipoPago as TipoPago) || 'AMBOS';
+      const valorHora = reg.valorHora ?? emp.valorHora;
       let pagoHoras = 0;
       let pagoProduccion = 0;
 
-      if ((modalidad === 'HORAS' || modalidad === 'AMBOS') && emp.valorHora && reg.horaEntrada && reg.horaSalida && reg.horaEntrada !== '--:--' && reg.horaSalida !== '--:--') {
+      if ((modalidad === 'HORAS' || modalidad === 'AMBOS') && valorHora && reg.horaEntrada && reg.horaSalida && reg.horaEntrada !== '--:--' && reg.horaSalida !== '--:--') {
         try {
           const horas = calcularHorasTrabajadasRedondeadas(reg.horaEntrada, reg.horaSalida);
-          pagoHoras += horas * emp.valorHora;
+          pagoHoras += horas * valorHora;
         } catch {}
       }
 
@@ -225,12 +226,12 @@ export const Finanzas = () => {
       gastosNomina += (pagoHoras + pagoProduccion);
     }
     
-    gastos += gastosNomina;
-
     return {
       ingresos,
-      gastos,
-      balance: ingresos - gastos
+      gastosOperativos: gastos, // These were the manual expenses accumulated in the first loop
+      gastosNomina,
+      gastosTotales: gastos + gastosNomina,
+      balance: ingresos - (gastos + gastosNomina)
     };
   }, [movimientosFinancieros, registros, empleados, productos]);
 
@@ -422,8 +423,13 @@ export const Finanzas = () => {
                   </div>
                   <div className="flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded-lg border border-white/10 backdrop-blur-md">
                     <TrendingDown size={16} className="text-rose-400" />
-                    <span className="text-slate-300">Gastos:</span>
-                    <span className="text-white font-semibold">{formatCOP(historico.gastos)}</span>
+                    <span className="text-slate-300">Gastos Operativos:</span>
+                    <span className="text-white font-semibold">{formatCOP(historico.gastosOperativos)}</span>
+                  </div>
+                  <div className="flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded-lg border border-white/10 backdrop-blur-md">
+                    <TrendingDown size={16} className="text-violet-400" />
+                    <span className="text-slate-300">Nómina:</span>
+                    <span className="text-white font-semibold">{formatCOP(historico.gastosNomina)}</span>
                   </div>
                 </div>
               </div>
